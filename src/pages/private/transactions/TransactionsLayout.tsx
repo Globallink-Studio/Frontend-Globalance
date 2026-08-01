@@ -12,13 +12,13 @@ const tabs = [
 export default function TransactionsLayout() {
   return (
     <div>
-      <nav style={{ display: 'flex', gap: 12, marginBottom: 24, borderBottom: '1px solid #ccc', paddingBottom: 8 }}>
+      <nav className="mb-6 flex flex-wrap gap-6 border-b border-gray-300 pb-2">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.to === '/dashboard/transactions'}
-            style={({ isActive }) => ({ fontWeight: isActive ? 700 : 400, fontSize: 14 })}
+            className={({ isActive }) => `text-sm ${isActive ? 'font-bold text-blue-600' : 'text-gray-600'}`}
           >
             {tab.label}
           </NavLink>

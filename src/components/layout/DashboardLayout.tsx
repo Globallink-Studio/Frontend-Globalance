@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
+import { getCurrentUserProfile } from '../../api/users'
+import type { CompanyProfile } from '../../mocks/data/companyProfiles'
 
 const menuItems = [
   { label: 'Dashboard', to: '/dashboard' },
@@ -12,24 +15,36 @@ const menuItems = [
 ]
 
 export default function DashboardLayout() {
+  const [displayName, setDisplayName] = useState('')
+
+  useEffect(() => {
+    getCurrentUserProfile().then((profile) => {
+      if (!profile) return
+      if ('first_name' in profile) {
+        setDisplayName(`${profile.first_name} ${profile.last_name}`)
+      } else {
+        setDisplayName((profile as CompanyProfile).legal_name)
+      }
+    })
+  }, [])
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <aside style={{ width: 200, borderRight: '1px solid #ccc', padding: 16 }}>
-        <div style={{ marginBottom: 24 }}>
-          <NavLink to="/" style={{ fontSize: 14 }}>← Home</NavLink>
+    <div className="flex min-h-screen">
+      <aside className="w-48 border-r border-gray-300 p-4">
+        <div className="mb-6">
+          <NavLink to="/" className="text-sm">
+            ← Home
+          </NavLink>
         </div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <nav className="flex flex-col gap-1">
           {menuItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/dashboard'}
-              style={({ isActive }) => ({
-                display: 'block',
-                padding: '6px 8px',
-                fontSize: 14,
-                background: isActive ? '#eee' : 'transparent',
-              })}
+              className={({ isActive }) =>
+                `block px-2 py-1.5 text-sm ${isActive ? 'bg-gray-200 font-semibold' : ''}`
+              }
             >
               {item.label}
             </NavLink>
@@ -37,16 +52,16 @@ export default function DashboardLayout() {
         </nav>
       </aside>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <header style={{ height: 48, borderBottom: '1px solid #ccc', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
-          <span style={{ fontSize: 14 }}>Globalance</span>
+      <div className="flex flex-1 flex-col">
+        <header className="flex h-12 items-center justify-between border-b border-gray-300 px-4">
+          <span className="text-sm">Globalance</span>
+          {displayName && <span className="text-sm">Hola, {displayName}</span>}
         </header>
 
-        <main style={{ flex: 1, padding: 24 }}>
+        <main className="flex-1 p-6">
           <Outlet />
         </main>
       </div>
-
     </div>
   )
 }

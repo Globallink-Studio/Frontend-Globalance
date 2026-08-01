@@ -10,13 +10,13 @@ const tabs = [
 export default function WalletLayout() {
   return (
     <div>
-      <nav style={{ display: 'flex', gap: 12, marginBottom: 24, borderBottom: '1px solid #ccc', paddingBottom: 8 }}>
+      <nav className="mb-6 flex gap-6 border-b border-gray-300 pb-2">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.to === '/dashboard/wallet'}
-            style={({ isActive }) => ({ fontWeight: isActive ? 700 : 400, fontSize: 14 })}
+            className={({ isActive }) => `text-sm ${isActive ? 'font-bold text-blue-600' : 'text-gray-600'}`}
           >
             {tab.label}
           </NavLink>
