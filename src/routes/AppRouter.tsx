@@ -32,6 +32,8 @@ import NotificationsSettings from '../pages/private/profile/NotificationsSetting
 import Settings from '../pages/private/profile/Settings'
 import Search from '../pages/private/Search'
 import Assistant from '../pages/private/Assistant'
+import SigninAuth from '../pages/public/signinAuth'
+import SignupAuth from '../pages/public/signupAuth'
 
 export default function AppRouter() {
   return (
@@ -39,6 +41,8 @@ export default function AppRouter() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<Home />} />
+        <Route path="/signin" element={<SigninAuth />} />
+        <Route path="/signup" element={<SignupAuth />} />
 
         {/* Private */}
         <Route path="/dashboard" element={<DashboardLayout />}>
