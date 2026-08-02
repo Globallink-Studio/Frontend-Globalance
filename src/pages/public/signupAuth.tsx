@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
+import { useAuth } from "../../providers/authentication/AuthContext";
 
 
 interface SignupFormState {
@@ -13,6 +14,7 @@ interface SignupFormState {
 }
 export default function SignupAuth() {
     const navigate = useNavigate();
+    const { register } = useAuth();
     const [formData, setFormData] = useState<SignupFormState>({
         fullName: '',
         email: '',
@@ -26,7 +28,7 @@ export default function SignupAuth() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
         if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
             setErrorMessage('Por favor, completa todos los campos');
@@ -41,8 +43,12 @@ export default function SignupAuth() {
             return;
         }
         setErrorMessage('');
-        console.log("Registro:", formData);
-        navigate('/signin');
+        try {
+            await register({ fullName: formData.fullName, email: formData.email });
+            navigate('/dashboard');
+        } catch (err) {
+            setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
+        }
     };
 
     return (
@@ -100,7 +106,7 @@ export default function SignupAuth() {
             </form>
 
             <div>
-                <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión aquí</Link></p>
+                <p>¿Ya tienes cuenta? <Link to="/signin">Inicia sesión aquí</Link></p>
                 <p><Link to="/">← Volver al inicio</Link></p>
             </div>
         </AuthCard>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { GoogleButton } from "../../components/register/GoogleButton";
+import { useAuth } from "../../providers/authentication/AuthContext";
 
 interface SigninAuthState {
     email: string;
@@ -11,6 +12,7 @@ interface SigninAuthState {
 
 export default function SigninAuth() {
     const navigate = useNavigate()
+    const { login } = useAuth()
     const [formData, setFormData] = useState<SigninAuthState>({
         email: '',
         password: '',
@@ -28,8 +30,12 @@ export default function SigninAuth() {
             return;
         }
         setErrorMessage('');
-        console.log("signin:", formData);
-        navigate('/dashboard');
+        try {
+            await login(formData.email);
+            navigate('/dashboard');
+        } catch (err) {
+            setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión');
+        }
     };
 
     return (
@@ -67,7 +73,7 @@ export default function SigninAuth() {
                 <GoogleButton text="Continuar con Google" onClick={() => { }} />
 
                 <div>
-                    <p>¿Aún no tienes cuenta? <Link to="/register">Regístrate aquí</Link></p>
+                    <p>¿Aún no tienes cuenta? <Link to="/signup">Regístrate aquí</Link></p>
                     <p><Link to="/">← Volver al inicio</Link></p>
                 </div>
             </form>

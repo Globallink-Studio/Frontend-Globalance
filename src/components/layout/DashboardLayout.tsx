@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { getCurrentUserProfile } from '../../api/users'
+import { useAuth } from '../../providers/authentication/AuthContext'
 import type { CompanyProfile } from '../../mocks/data/companyProfiles'
 
 const menuItems = [
@@ -16,6 +17,8 @@ const menuItems = [
 
 export default function DashboardLayout() {
   const [displayName, setDisplayName] = useState('')
+  const { logout } = useAuth()
+  const navigate = useNavigate()
 
   useEffect(() => {
     getCurrentUserProfile().then((profile) => {
@@ -27,6 +30,11 @@ export default function DashboardLayout() {
       }
     })
   }, [])
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -55,7 +63,16 @@ export default function DashboardLayout() {
       <div className="flex flex-1 flex-col">
         <header className="flex h-12 items-center justify-between border-b border-gray-300 px-4">
           <span className="text-sm">Globalance</span>
-          {displayName && <span className="text-sm">Hola, {displayName}</span>}
+          <div className="flex items-center gap-3">
+            {displayName && <span className="text-sm">Hola, {displayName}</span>}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            >
+              Cerrar sesión
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 p-6">

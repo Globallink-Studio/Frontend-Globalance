@@ -1,11 +1,10 @@
-import { login as mockLogin, logout as mockLogout } from '../mocks/handlers/auth'
+import { login as mockLogin, logout as mockLogout, register as mockRegister } from '../mocks/handlers/auth'
 import type { User } from '../mocks/data/users'
 
 const STORAGE_KEY = 'globalance.currentUserId'
-const DEFAULT_USER_ID = '11111111-1111-4111-8111-111111111111'
 
-export function getCurrentUserId(): string {
-  return localStorage.getItem(STORAGE_KEY) ?? DEFAULT_USER_ID
+export function getCurrentUserId(): string | null {
+  return localStorage.getItem(STORAGE_KEY)
 }
 
 export function setCurrentUser(userId: string): void {
@@ -18,6 +17,12 @@ export function clearCurrentUser(): void {
 
 export async function login(email: string): Promise<User> {
   const user = await mockLogin(email)
+  setCurrentUser(user.id)
+  return user
+}
+
+export async function register(input: { fullName: string; email: string }): Promise<User> {
+  const user = await mockRegister(input)
   setCurrentUser(user.id)
   return user
 }
