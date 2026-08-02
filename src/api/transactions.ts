@@ -1,6 +1,15 @@
 import { getTransactions } from '../mocks/handlers/transactions'
 import { getCurrentWallet } from './wallets'
-import type { Transaction, TransactionType } from '../mocks/data/transactions'
+import type { Transaction, TransactionStatus, TransactionType } from '../mocks/data/transactions'
+
+export const transactionStatusLabels: Record<TransactionStatus, string> = {
+  pending: 'Pendiente',
+  processing: 'Procesando',
+  completed: 'Completada',
+  failed: 'Fallida',
+  cancelled: 'Cancelada',
+  reversed: 'Revertida',
+}
 
 async function getCurrentWalletTransactions(): Promise<Transaction[]> {
   const wallet = await getCurrentWallet()
