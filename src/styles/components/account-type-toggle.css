@@ -42,10 +42,8 @@
 }
 
 .account-type-toggle__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.375rem;
+  width: 1.375rem;
+  height: 1.375rem;
 }
 
 .account-type-toggle__label {

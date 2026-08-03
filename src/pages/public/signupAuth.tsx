@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { User, Building2 } from "lucide-react";
 import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
@@ -20,29 +21,13 @@ const accountOptions = [
         value: "personal" as AccountType,
         label: "Personal",
         description: "Gestiona tus finanzas",
-        icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-            </svg>
-        ),
+        icon: <User className="account-type-toggle__icon" />,
     },
     {
         value: "business" as AccountType,
         label: "Empresa",
         description: "Operá como organización",
-        icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 21h18" />
-                <path d="M5 21V7l7-4 7 4v14" />
-                <path d="M9 9h1" />
-                <path d="M9 13h1" />
-                <path d="M9 17h1" />
-                <path d="M14 9h1" />
-                <path d="M14 13h1" />
-                <path d="M14 17h1" />
-            </svg>
-        ),
+        icon: <Building2 className="account-type-toggle__icon" />,
     },
 ];
 

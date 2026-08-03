@@ -1,7 +1,8 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
+import { Tabs } from '../../../components/layout/Tabs'
 
 const tabs = [
-  { label: 'Resumen', to: '/dashboard/transactions' },
+  { label: 'Resumen', to: '/dashboard/transactions', end: true },
   { label: 'Transferencias', to: '/dashboard/transactions/transfers' },
   { label: 'Depósitos', to: '/dashboard/transactions/deposits' },
   { label: 'Conversiones', to: '/dashboard/transactions/conversions' },
@@ -12,18 +13,7 @@ const tabs = [
 export default function TransactionsLayout() {
   return (
     <div>
-      <nav style={{ display: 'flex', gap: 12, marginBottom: 24, borderBottom: '1px solid #ccc', paddingBottom: 8 }}>
-        {tabs.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            end={tab.to === '/dashboard/transactions'}
-            style={({ isActive }) => ({ fontWeight: isActive ? 700 : 400, fontSize: 14 })}
-          >
-            {tab.label}
-          </NavLink>
-        ))}
-      </nav>
+      <Tabs items={tabs} />
       <Outlet />
     </div>
   )

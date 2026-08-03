@@ -27,7 +27,7 @@ export const AccountTypeToggle: React.FC<AccountTypeToggleProps> = ({
                         className={`account-type-toggle__option${isActive ? " account-type-toggle__option--active" : ""}`}
                         onClick={() => onChange(option.value)}
                     >
-                        {option.icon && <span className="account-type-toggle__icon" aria-hidden="true">{option.icon}</span>}
+                        {option.icon}
                         <span className="account-type-toggle__label">{option.label}</span>
                         {option.description && (
                             <span className="account-type-toggle__description">{option.description}</span>

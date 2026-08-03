@@ -43,7 +43,7 @@
   background-image: var(--gradient-iridescent);
 }
 
-.auth-card__logo svg {
+.auth-card__logo-icon {
   width: 1.125rem;
   height: 1.125rem;
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { Wallet } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
 import "../../styles/components/auth-card.css";
 
@@ -21,12 +22,7 @@ export const AuthCard: React.FC<authCardProps> = ({
                 <header className="auth-card__header">
                     <div className="auth-card__brand">
                         <span className="auth-card__logo" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M2 12h2" />
-                                <path d="M20 12h2" />
-                                <path d="M6 12a6 6 0 0 1 12 0" />
-                                <circle cx="12" cy="12" r="2" />
-                            </svg>
+                            <Wallet className="auth-card__logo-icon" />
                         </span>
                         <span className="auth-card__name">Globalance</span>
                     </div>
