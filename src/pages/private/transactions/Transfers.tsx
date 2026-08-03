@@ -7,6 +7,7 @@ import TransactionList from '../../../components/TransactionList'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Contact } from '../../../mocks/data/contacts'
 import type { Balance } from '../../../mocks/data/balances'
+import '../../../styles/pages/private/transactions.css'
 
 interface ReviewData {
   recipient: string
@@ -119,55 +120,56 @@ export default function Transfers() {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold">Nueva transferencia</h2>
+    <div className="tx-page">
+      <h2 className="tx-page__title">Nueva transferencia</h2>
 
       {review ? (
-        <div className="max-w-md space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-700">Confirmá la transferencia</h3>
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Destinatario</dt>
-              <dd className="font-medium">{review.recipient}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Moneda</dt>
-              <dd className="font-medium">{review.currencyCode}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Monto</dt>
-              <dd className="font-semibold">{review.amount.toLocaleString('es-AR')} {review.currencyCode}</dd>
-            </div>
-          </dl>
+        <div className="tx-card tx-card--form">
+          <h3 className="tx-card__title">Confirmá la transferencia</h3>
+          <div className="tx-review">
+            <dl className="tx-review__rows">
+              <div className="tx-review__row">
+                <dt className="tx-review__label">Destinatario</dt>
+                <dd className="tx-review__value">{review.recipient}</dd>
+              </div>
+              <div className="tx-review__row">
+                <dt className="tx-review__label">Moneda</dt>
+                <dd className="tx-review__value">{review.currencyCode}</dd>
+              </div>
+              <div className="tx-review__row">
+                <dt className="tx-review__label">Monto</dt>
+                <dd className="tx-review__value tx-review__amount">
+                  {review.amount.toLocaleString('es-AR')} {review.currencyCode}
+                </dd>
+              </div>
+            </dl>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setReview(null)}
-              disabled={sending}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Volver
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={sending}
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {sending ? 'Enviando...' : 'Confirmar transferencia'}
-            </button>
+            <div className="tx-review__actions">
+              <button
+                type="button"
+                onClick={() => setReview(null)}
+                disabled={sending}
+                className="tx-button tx-button--secondary"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={sending}
+                className="tx-button tx-button--primary"
+              >
+                {sending ? 'Enviando...' : 'Confirmar transferencia'}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="max-w-md space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-        >
-          <div>
-            <p className="mb-1 block text-sm text-gray-600">Enviar a</p>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-sm">
+        <form onSubmit={handleSubmit} className="tx-card tx-card--form tx-form">
+          <div className="tx-form__field">
+            <p className="tx-form__label">Enviar a</p>
+            <div className="tx-form__options">
+              <label className="tx-form__option">
                 <input
                   type="radio"
                   name="sendMethod"
@@ -177,7 +179,7 @@ export default function Transfers() {
                 />
                 Contacto
               </label>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="tx-form__option">
                 <input
                   type="radio"
                   name="sendMethod"
@@ -191,13 +193,13 @@ export default function Transfers() {
           </div>
 
           {sendMethod === 'contact' ? (
-            <div>
-              <label htmlFor="contact" className="mb-1 block text-sm text-gray-600">Contacto</label>
+            <div className="tx-form__field">
+              <label htmlFor="contact" className="tx-form__label">Contacto</label>
               <select
                 id="contact"
                 value={contactId}
                 onChange={(e) => setContactId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="tx-form__control"
               >
                 <option value="">Elegí un contacto</option>
                 {contacts.map((c) => (
@@ -206,40 +208,40 @@ export default function Transfers() {
               </select>
             </div>
           ) : (
-            <div>
-              <label htmlFor="email" className="mb-1 block text-sm text-gray-600">Correo del destinatario</label>
+            <div className="tx-form__field">
+              <label htmlFor="email" className="tx-form__label">Correo del destinatario</label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="usuario@example.com"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="tx-form__control"
               />
             </div>
           )}
 
-          <div>
-            <label htmlFor="currency" className="mb-1 block text-sm text-gray-600">Moneda</label>
+          <div className="tx-form__field">
+            <label htmlFor="currency" className="tx-form__label">Moneda</label>
             <select
               id="currency"
               value={currencyCode}
               onChange={(e) => setCurrencyCode(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="tx-form__control"
             >
               {balances.map((b) => (
                 <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
               ))}
             </select>
             {selectedBalance && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="tx-form__hint">
                 Saldo disponible: {selectedBalance.amount.toLocaleString('es-AR')} {selectedBalance.currency_code}
               </p>
             )}
           </div>
 
-          <div>
-            <label htmlFor="amount" className="mb-1 block text-sm text-gray-600">Monto</label>
+          <div className="tx-form__field">
+            <label htmlFor="amount" className="tx-form__label">Monto</label>
             <input
               id="amount"
               type="number"
@@ -248,37 +250,32 @@ export default function Transfers() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="tx-form__control"
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
+          <button type="submit" className="tx-button tx-button--primary tx-button--block">
             Continuar
           </button>
         </form>
       )}
 
       {message && (
-        <div className="fixed right-4 top-4 z-50 max-w-xs rounded-lg bg-green-600 px-4 py-3 text-sm text-white shadow-lg">
-          {message}
-        </div>
+        <div className="tx-toast">{message}</div>
       )}
 
       {errorMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg">
-            <h3 className="mb-2 text-lg font-semibold text-gray-800">No se pudo realizar la operación</h3>
-            <p className="mb-4 text-sm text-gray-600">{errorMessage}</p>
+        <div className="tx-modal">
+          <div className="tx-modal__card">
+            <h3 className="tx-modal__title">No se pudo realizar la operación</h3>
+            <p className="tx-modal__message">{errorMessage}</p>
             <button
               type="button"
               onClick={() => {
                 setErrorMessage(null)
                 if (dismissReturns) setReview(null)
               }}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="tx-button tx-button--primary tx-button--block"
             >
               Confirmar
             </button>
@@ -286,8 +283,8 @@ export default function Transfers() {
         </div>
       )}
 
-      <section>
-        <h3 className="mb-3 text-lg font-semibold text-gray-700">Historial de transferencias</h3>
+      <section className="tx-card">
+        <h3 className="tx-section__title">Historial de transferencias</h3>
         <TransactionList transactions={transactions} />
       </section>
     </div>
