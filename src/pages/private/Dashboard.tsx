@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -10,14 +11,30 @@ import {
   Legend,
 } from 'recharts'
 import { dashboardMock } from '../../data/mocks'
+import { getCurrentBalanceSummary, type BalanceSummaryItem } from '../../api/balances'
+import { getRecentTransactions } from '../../api/transactions'
+import type { Transaction } from '../../mocks/data/transactions'
 import '../../styles/pages/private/dashboard.css'
+
+const statusLabel: Record<string, string> = {
+  completed: 'Completada',
+  pending: 'Pendiente',
+  failed: 'Fallida',
+}
 
 const formatAmount = (value: number, currency: string) => {
   return `${currency} ${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export default function Dashboard() {
-  const { metrics, balances, chart, aiSummary } = dashboardMock
+  const { metrics, chart, aiSummary } = dashboardMock
+  const [balances, setBalances] = useState<BalanceSummaryItem[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  useEffect(() => {
+    getCurrentBalanceSummary().then(setBalances)
+    getRecentTransactions(5).then(setTransactions)
+  }, [])
 
   return (
     <div className="dashboard">
@@ -82,13 +99,31 @@ export default function Dashboard() {
         </div>
         <ul className="dashboard-balances__list">
           {balances.map((balance) => (
-            <li key={balance.currency} className="dashboard-balance">
-              <span className="dashboard-balance__currency">{balance.currency}</span>
-              <span className="dashboard-balance__name">{balance.name}</span>
+            <li key={balance.currency_code} className="dashboard-balance">
+              <span className="dashboard-balance__currency">{balance.currency_code}</span>
+              <span className="dashboard-balance__name">{balance.currency_name}</span>
               <span className="dashboard-balance__amount">
-                {balance.amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {balance.currency}
+                {balance.symbol} {balance.amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              <span className="dashboard-balance__usd">≈ {formatAmount(balance.usdValue, 'USD')}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="dashboard-card dashboard-transactions">
+        <div className="dashboard-card__header">
+          <h2 className="dashboard-card__title">Últimas transacciones</h2>
+        </div>
+        <ul className="dashboard-transactions__list">
+          {transactions.map((transaction) => (
+            <li key={transaction.id} className="dashboard-transaction">
+              <div className="dashboard-transaction__info">
+                <p className="dashboard-transaction__description">{transaction.description}</p>
+                <p className="dashboard-transaction__status">{statusLabel[transaction.status] ?? transaction.status}</p>
+              </div>
+              <span className="dashboard-transaction__amount">
+                {transaction.amount.toLocaleString('es-AR')} {transaction.currency_code}
+              </span>
             </li>
           ))}
         </ul>

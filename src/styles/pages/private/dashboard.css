@@ -205,20 +205,44 @@
   font-size: 0.9375rem;
 }
 
-.dashboard-balance__usd {
-  font-size: 0.8125rem;
-  color: var(--muted-foreground);
-  min-width: 6.5rem;
-  text-align: right;
+/* ── Últimas transacciones ───────────────────────────────────────── */
+.dashboard-transactions__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (max-width: 640px) {
-  .dashboard-balance {
-    flex-wrap: wrap;
-  }
+.dashboard-transaction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--border);
+}
 
-  .dashboard-balance__usd {
-    min-width: 100%;
-    text-align: left;
-  }
+.dashboard-transaction:last-child {
+  border-bottom: none;
+}
+
+.dashboard-transaction__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dashboard-transaction__description {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.dashboard-transaction__status {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.dashboard-transaction__amount {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  white-space: nowrap;
 }

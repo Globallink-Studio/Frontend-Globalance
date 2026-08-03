@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   Home,
@@ -12,6 +12,8 @@ import {
   ArrowLeft,
   Menu,
 } from 'lucide-react'
+import { getCurrentUserProfile } from '../../api/users'
+import type { CompanyProfile } from '../../mocks/data/companyProfiles'
 import { ThemeToggle } from '../ThemeToggle'
 import '../../styles/components/dashboard-layout.css'
 
@@ -39,7 +41,19 @@ const pageTitles: Record<string, string> = {
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [displayName, setDisplayName] = useState('')
   const location = useLocation()
+
+  useEffect(() => {
+    getCurrentUserProfile().then((profile) => {
+      if (!profile) return
+      if ('first_name' in profile) {
+        setDisplayName(`${profile.first_name} ${profile.last_name}`)
+      } else {
+        setDisplayName((profile as CompanyProfile).legal_name)
+      }
+    })
+  }, [])
 
   const currentTitle =
     Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
@@ -91,6 +105,7 @@ export default function DashboardLayout() {
             <Menu className="app-topbar__burger-icon" />
           </button>
           <h1 className="app-topbar__title">{currentTitle}</h1>
+          {displayName && <span className="app-topbar__user">Hola, {displayName}</span>}
           <ThemeToggle />
         </header>
 

@@ -167,6 +167,12 @@
   letter-spacing: -0.02em;
 }
 
+.app-topbar__user {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
 .app-shell__content {
   flex: 1;
   padding: 2rem 2.5rem;
