@@ -1,0 +1,294 @@
+/* ── Página y título ─────────────────────────────────────────────── */
+.tx-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tx-page__title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* ── Tarjetas ────────────────────────────────────────────────────── */
+.tx-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+  padding: 1.5rem;
+}
+
+.tx-card--form {
+  max-width: 28rem;
+}
+
+.tx-card__title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ── Formulario ──────────────────────────────────────────────────── */
+.tx-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tx-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.tx-form__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.tx-form__control {
+  width: 100%;
+  border-radius: 9999px;
+  background-color: var(--input);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.8125rem 1.125rem;
+  font-size: 0.9375rem;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.tx-form__control::placeholder {
+  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+}
+
+.tx-form__control:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 22%, transparent);
+}
+
+.tx-form__hint {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.tx-form__result {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* ── Opciones (radio) ────────────────────────────────────────────── */
+.tx-form__options {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.tx-form__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.tx-form__option input {
+  accent-color: var(--accent);
+}
+
+/* ── Botones ─────────────────────────────────────────────────────── */
+.tx-button {
+  border: none;
+  border-radius: 9999px;
+  padding: 0.8125rem 1.375rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    filter 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.tx-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tx-button--primary {
+  color: oklch(0.26 0.02 285);
+  background-image: linear-gradient(120deg, var(--pastel-sky), var(--pastel-mint));
+  box-shadow: var(--shadow-soft);
+}
+
+.tx-button--primary:hover:not(:disabled) {
+  filter: saturate(130%) brightness(1.03);
+  transform: translateY(-1px);
+}
+
+.tx-button--secondary {
+  color: var(--foreground);
+  background-color: transparent;
+  border: 1px solid var(--border);
+}
+
+.tx-button--secondary:hover:not(:disabled) {
+  background-color: var(--muted);
+}
+
+.tx-button--block {
+  width: 100%;
+}
+
+/* ── Confirmación (review) ───────────────────────────────────────── */
+.tx-review {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tx-review__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tx-review__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tx-review__label {
+  color: var(--muted-foreground);
+}
+
+.tx-review__value {
+  font-weight: 600;
+  text-align: right;
+}
+
+.tx-review__amount {
+  font-weight: 700;
+}
+
+.tx-review__actions {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.tx-review__actions .tx-button {
+  flex: 1;
+}
+
+/* ── Toast (éxito) ───────────────────────────────────────────────── */
+.tx-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  max-width: 20rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: oklch(0.99 0 0);
+  background-color: var(--success);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ── Modal (error) ───────────────────────────────────────────────── */
+.tx-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: oklch(0.22 0.012 285 / 40%);
+}
+
+.tx-modal__card {
+  width: 100%;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  background-color: var(--popover);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.tx-modal__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.tx-modal__message {
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+}
+
+/* ── Historial ───────────────────────────────────────────────────── */
+.tx-section__title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+
+.tx-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-list__empty {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.tx-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tx-list__item:last-child {
+  border-bottom: none;
+}
+
+.tx-list__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tx-list__description {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.tx-list__status {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.tx-list__amount {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

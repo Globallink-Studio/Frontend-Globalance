@@ -30,7 +30,7 @@ export default function PersonalData() {
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="mb-2 text-lg font-semibold text-gray-700">Cuenta</h2>
           <InfoRow label="Email" value={user.email} />
-          <InfoRow label="Tipo de usuario" value={user.user_type} />
+          <InfoRow label="Tipo de usuario" value={user.user_type ?? 'Sin definir'} />
           <InfoRow label="Moneda de visualización" value={user.display_currency} />
           <InfoRow label="Estado" value={user.status} />
         </div>

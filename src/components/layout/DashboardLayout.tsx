@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home,
   Wallet,
@@ -13,6 +13,7 @@ import {
   Menu,
 } from 'lucide-react'
 import { getCurrentUserProfile } from '../../api/users'
+import { useAuth } from '../../providers/authentication/AuthContext'
 import type { CompanyProfile } from '../../mocks/data/companyProfiles'
 import { ThemeToggle } from '../ThemeToggle'
 import '../../styles/components/dashboard-layout.css'
@@ -42,6 +43,8 @@ const pageTitles: Record<string, string> = {
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [displayName, setDisplayName] = useState('')
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
@@ -54,6 +57,11 @@ export default function DashboardLayout() {
       }
     })
   }, [])
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   const currentTitle =
     Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
@@ -107,6 +115,13 @@ export default function DashboardLayout() {
           <h1 className="app-topbar__title">{currentTitle}</h1>
           {displayName && <span className="app-topbar__user">Hola, {displayName}</span>}
           <ThemeToggle />
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Cerrar sesión
+          </button>
         </header>
 
         <main className="app-shell__content">

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Building2 } from "lucide-react";
 import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
+import { useAuth } from "../../providers/authentication/AuthContext";
 import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
 import "../../styles/pages/public/auth-common.css";
 import "../../styles/pages/public/signup.css";
@@ -33,6 +34,7 @@ const accountOptions = [
 
 export default function SignupAuth() {
     const navigate = useNavigate();
+    const { register } = useAuth();
     const [formData, setFormData] = useState<SignupFormState>({
         accountType: 'personal',
         fullName: '',
@@ -41,6 +43,7 @@ export default function SignupAuth() {
         confirmPassword: '',
     });
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
@@ -51,7 +54,7 @@ export default function SignupAuth() {
         setFormData((prev) => ({ ...prev, accountType }));
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
         if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
             setErrorMessage('Por favor, completa todos los campos');
@@ -66,8 +69,15 @@ export default function SignupAuth() {
             return;
         }
         setErrorMessage('');
-        console.log("Registro:", formData);
-        navigate('/signin');
+        setLoading(true);
+        try {
+            await register({ fullName: formData.fullName, email: formData.email, password: formData.password });
+            navigate('/dashboard');
+        } catch (err) {
+            setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -130,7 +140,9 @@ export default function SignupAuth() {
                     required
                 />
 
-                <button className="auth-button" type="submit">Registrarme</button>
+                <button className="auth-button" type="submit" disabled={loading}>
+                    {loading ? 'Registrando...' : 'Registrarme'}
+                </button>
             </form>
 
             <div className="auth-links">

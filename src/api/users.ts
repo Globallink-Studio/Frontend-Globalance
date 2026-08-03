@@ -1,20 +1,24 @@
 import { getUsers, getUserById, getUserByEmail } from '../mocks/handlers/users'
-import { personProfiles } from '../mocks/data/personProfiles'
+import { getMockPersonProfiles } from '../mocks/storage'
 import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
 import type { CompanyProfile } from '../mocks/data/companyProfiles'
-import { getCurrentUserId } from './auth'
+import { getCachedUser, getCurrentUserId } from './auth'
 
 export async function getCurrentUser(): Promise<User | undefined> {
-  return getUserById(getCurrentUserId())
+  const cached = getCachedUser()
+  if (cached) return cached
+  const id = getCurrentUserId()
+  if (!id) return undefined
+  return getUserById(id)
 }
 
 export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyProfile | undefined> {
   const user = await getCurrentUser()
   if (!user) return undefined
   if (user.user_type === 'person') {
-    return personProfiles.find((p) => p.user_id === user.id)
+    return getMockPersonProfiles().find((p) => p.user_id === user.id)
   }
   return companyProfiles.find((c) => c.user_id === user.id)
 }

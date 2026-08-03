@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { GoogleButton } from "../../components/register/GoogleButton";
+import { useAuth } from "../../providers/authentication/AuthContext";
 import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
 import "../../styles/pages/public/auth-common.css";
 import "../../styles/pages/public/signin.css";
@@ -20,12 +21,14 @@ const accountOptions = [
 
 export default function SigninAuth() {
     const navigate = useNavigate()
+    const { login, loginWithGoogle } = useAuth()
     const [formData, setFormData] = useState<SigninAuthState>({
         accountType: 'personal',
         email: '',
         password: '',
     });
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [loading, setLoading] = useState(false);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -42,8 +45,28 @@ export default function SigninAuth() {
             return;
         }
         setErrorMessage('');
-        console.log("signin:", formData);
-        navigate('/dashboard');
+        setLoading(true);
+        try {
+            await login(formData.email, formData.password);
+            navigate('/dashboard');
+        } catch (err) {
+            setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setErrorMessage('');
+        setLoading(true);
+        try {
+            await loginWithGoogle();
+            navigate('/dashboard');
+        } catch (err) {
+            setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión con Google');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -81,14 +104,14 @@ export default function SigninAuth() {
                     required
                     onChange={handleChange}
                 />
-                <button className="auth-button" type="submit">
-                    Ingresar
+                <button className="auth-button" type="submit" disabled={loading}>
+                    {loading ? 'Ingresando...' : 'Ingresar'}
                 </button>
                 <div className="auth-divider">
                     <span>o continúa con</span>
                 </div>
 
-                <GoogleButton text="Continuar con Google" onClick={() => { }} />
+                <GoogleButton text="Continuar con Google" onClick={handleGoogleLogin} />
 
                 <div className="auth-links">
                     <p>¿Aún no tienes cuenta? <Link to="/signup">Regístrate aquí</Link></p>

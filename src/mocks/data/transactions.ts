@@ -1,5 +1,5 @@
 export type TransactionType = 'transfer' | 'deposit' | 'conversion' | 'request'
-export type TransactionStatus = 'completed' | 'pending' | 'failed'
+export type TransactionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'reversed'
 
 export interface Transaction {
   id: string

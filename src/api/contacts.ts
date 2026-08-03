@@ -3,5 +3,7 @@ import { getCurrentUserId } from './auth'
 import type { Contact } from '../mocks/data/contacts'
 
 export async function getCurrentContacts(): Promise<Contact[]> {
-  return getContactsByUserId(getCurrentUserId())
+  const id = getCurrentUserId()
+  if (!id) return []
+  return getContactsByUserId(id)
 }

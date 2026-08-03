@@ -3,7 +3,9 @@ import { getCurrentUserId } from './auth'
 import type { Wallet } from '../mocks/data/wallets'
 
 export async function getCurrentWallet(): Promise<Wallet | undefined> {
-  return getWalletByUserId(getCurrentUserId())
+  const id = getCurrentUserId()
+  if (!id) return undefined
+  return getWalletByUserId(id)
 }
 
 export { getWallets, getWalletById, getWalletByUserId }
