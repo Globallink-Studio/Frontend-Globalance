@@ -1,7 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { AuthContext, type AuthContextValue } from './AuthContext'
-import { login as apiLogin, logout as apiLogout, register as apiRegister } from '../../api/auth'
-import { getCurrentUser } from '../../api/users'
+import {
+  login as apiLogin,
+  loginWithGoogle as apiLoginWithGoogle,
+  logout as apiLogout,
+  register as apiRegister,
+  subscribeToAuth,
+} from '../../api/auth'
 import type { User } from '../../mocks/data/users'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -9,17 +14,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initializing, setInitializing] = useState(true)
 
   useEffect(() => {
-    getCurrentUser()
-      .then((u) => setUser(u ?? null))
-      .finally(() => setInitializing(false))
+    const unsubscribe = subscribeToAuth((u) => {
+      setUser(u)
+      setInitializing(false)
+    })
+    return unsubscribe
   }, [])
 
-  const login = async (email: string) => {
-    const u = await apiLogin(email)
+  const login = async (email: string, password: string) => {
+    const u = await apiLogin(email, password)
     setUser(u)
   }
 
-  const register = async (input: { fullName: string; email: string }) => {
+  const loginWithGoogle = async () => {
+    const u = await apiLoginWithGoogle()
+    setUser(u)
+  }
+
+  const register = async (input: { fullName: string; email: string; password: string }) => {
     const u = await apiRegister(input)
     setUser(u)
   }
@@ -29,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
-  const value: AuthContextValue = { user, initializing, isAuthenticated: !!user, login, register, logout }
+  const value: AuthContextValue = { user, initializing, isAuthenticated: !!user, login, loginWithGoogle, register, logout }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

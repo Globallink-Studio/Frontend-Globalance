@@ -43,6 +43,7 @@ export default function SignupAuth() {
         confirmPassword: '',
     });
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
@@ -68,11 +69,14 @@ export default function SignupAuth() {
             return;
         }
         setErrorMessage('');
+        setLoading(true);
         try {
-            await register({ fullName: formData.fullName, email: formData.email });
+            await register({ fullName: formData.fullName, email: formData.email, password: formData.password });
             navigate('/dashboard');
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -136,7 +140,9 @@ export default function SignupAuth() {
                     required
                 />
 
-                <button className="auth-button" type="submit">Registrarme</button>
+                <button className="auth-button" type="submit" disabled={loading}>
+                    {loading ? 'Registrando...' : 'Registrarme'}
+                </button>
             </form>
 
             <div className="auth-links">

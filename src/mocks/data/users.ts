@@ -2,7 +2,7 @@ export interface User {
   id: string
   firebase_uid: string
   email: string
-  user_type: 'person' | 'company'
+  user_type: 'person' | 'company' | null
   display_currency: string
   status: 'active' | 'inactive' | 'blocked'
   created_at: string

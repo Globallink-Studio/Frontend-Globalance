@@ -4,9 +4,11 @@ import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
 import type { CompanyProfile } from '../mocks/data/companyProfiles'
-import { getCurrentUserId } from './auth'
+import { getCachedUser, getCurrentUserId } from './auth'
 
 export async function getCurrentUser(): Promise<User | undefined> {
+  const cached = getCachedUser()
+  if (cached) return cached
   const id = getCurrentUserId()
   if (!id) return undefined
   return getUserById(id)

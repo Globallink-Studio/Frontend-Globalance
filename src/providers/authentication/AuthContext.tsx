@@ -5,8 +5,9 @@ export interface AuthContextValue {
   user: User | null
   initializing: boolean
   isAuthenticated: boolean
-  login: (email: string) => Promise<void>
-  register: (input: { fullName: string; email: string }) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: () => Promise<void>
+  register: (input: { fullName: string; email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
 }
 

@@ -25,6 +25,7 @@ dist-ssr
 
 # Local config
 AGENTS.md
+.env
 
 # Referencias de diseño (imagenes locales)
 referencias/
