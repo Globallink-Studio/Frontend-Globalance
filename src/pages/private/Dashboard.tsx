@@ -1,8 +1,16 @@
 import { Sparkles } from 'lucide-react'
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts'
 import { dashboardMock } from '../../data/mocks'
 import '../../styles/pages/private/dashboard.css'
-
-const barGradients = ['bar--lilac', 'bar--sky', 'bar--mint', 'bar--peach']
 
 const formatAmount = (value: number, currency: string) => {
   return `${currency} ${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -28,22 +36,29 @@ export default function Dashboard() {
       <div className="dashboard__grid">
         <section className="dashboard-card dashboard-chart">
           <div className="dashboard-card__header">
-            <h2 className="dashboard-card__title">Flujo de ingresos</h2>
+            <h2 className="dashboard-card__title">Evolución financiera</h2>
             <span className="dashboard-card__period">Últimos 7 meses</span>
           </div>
           <div className="dashboard-chart__plot">
-            {chart.map((bar, index) => (
-              <div key={bar.month} className="dashboard-chart__col">
-                <div className="dashboard-chart__track">
-                  <div
-                    className={`dashboard-chart__bar ${barGradients[index % barGradients.length]}`}
-                    style={{ height: `${(bar.income / 5000) * 100}%` }}
-                    title={`${bar.month}: ${formatAmount(bar.income, 'USD')}`}
-                  />
-                </div>
-                <span className="dashboard-chart__label">{bar.month}</span>
-              </div>
-            ))}
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.75rem',
+                    color: 'var(--foreground)',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '0.875rem', color: 'var(--muted-foreground)' }} />
+                <Area type="monotone" dataKey="ingresos" name="Ingresos" stroke="var(--pastel-lilac)" fill="var(--pastel-lilac)" fillOpacity={0.3} strokeWidth={2.5} />
+                <Area type="monotone" dataKey="gastos" name="Gastos" stroke="var(--pastel-sky)" fill="var(--pastel-sky)" fillOpacity={0.3} strokeWidth={2.5} />
+                <Area type="monotone" dataKey="saldo" name="Saldo" stroke="var(--pastel-mint)" fill="var(--pastel-mint)" fillOpacity={0.3} strokeWidth={2.5} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </section>
 

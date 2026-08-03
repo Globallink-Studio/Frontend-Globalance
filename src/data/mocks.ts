@@ -17,10 +17,17 @@ export interface ChartBar {
   income: number;
 }
 
+export interface ChartPoint {
+  month: string;
+  ingresos: number;
+  gastos: number;
+  saldo: number;
+}
+
 export interface DashboardMock {
   metrics: Metric[];
   balances: WalletBalance[];
-  chart: ChartBar[];
+  chart: ChartPoint[];
   aiSummary: string;
 }
 
@@ -88,13 +95,13 @@ export const dashboardMock: DashboardMock = {
     { currency: "ARS", name: "Peso argentino", amount: 185000, usdValue: 151 },
   ],
   chart: [
-    { month: "Ene", income: 2800 },
-    { month: "Feb", income: 3200 },
-    { month: "Mar", income: 2900 },
-    { month: "Abr", income: 4100 },
-    { month: "May", income: 3600 },
-    { month: "Jun", income: 4700 },
-    { month: "Jul", income: 3840 },
+    { month: "Ene", ingresos: 2800, gastos: 1900, saldo: 10500 },
+    { month: "Feb", ingresos: 3200, gastos: 2100, saldo: 11600 },
+    { month: "Mar", ingresos: 2900, gastos: 2300, saldo: 12200 },
+    { month: "Abr", ingresos: 4100, gastos: 2500, saldo: 13800 },
+    { month: "May", ingresos: 3600, gastos: 2600, saldo: 14800 },
+    { month: "Jun", ingresos: 4700, gastos: 2800, saldo: 16700 },
+    { month: "Jul", ingresos: 3840, gastos: 3000, saldo: 17540 },
   ],
   aiSummary:
     "Tu saldo creció un 12% este mes. Estás gastando 18% menos en transferencias y el ahorro en BTC va bien encaminado.",

@@ -98,58 +98,10 @@
   }
 }
 
-/* ── Gráfico de barras ───────────────────────────────────────────── */
+/* ── Gráfico de líneas ───────────────────────────────────────────── */
 .dashboard-chart__plot {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.75rem;
-  height: 14rem;
-}
-
-.dashboard-chart__col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  height: 100%;
-}
-
-.dashboard-chart__track {
-  flex: 1;
+  height: 18rem;
   width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.dashboard-chart__bar {
-  width: 70%;
-  min-height: 0.25rem;
-  border-radius: 0.5rem 0.5rem 0.125rem 0.125rem;
-  transition: height 0.5s ease;
-}
-
-.dashboard-chart__bar.bar--lilac {
-  background-image: linear-gradient(to top, var(--pastel-sky), var(--pastel-lilac));
-}
-
-.dashboard-chart__bar.bar--sky {
-  background-image: linear-gradient(to top, var(--pastel-mint), var(--pastel-sky));
-}
-
-.dashboard-chart__bar.bar--mint {
-  background-image: linear-gradient(to top, var(--pastel-peach), var(--pastel-mint));
-}
-
-.dashboard-chart__bar.bar--peach {
-  background-image: linear-gradient(to top, var(--pastel-blush), var(--pastel-peach));
-}
-
-.dashboard-chart__label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted-foreground);
 }
 
 /* ── Copiloto IA ─────────────────────────────────────────────────── */
