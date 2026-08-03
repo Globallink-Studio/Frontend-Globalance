@@ -1,0 +1,32 @@
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  border-radius: 9999px;
+  background-color: var(--secondary);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.8125rem 1.125rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.google-button__icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.google-button:hover {
+  background-color: var(--muted);
+  border-color: var(--ring);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}

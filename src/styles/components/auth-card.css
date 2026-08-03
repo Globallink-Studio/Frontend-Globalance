@@ -1,0 +1,84 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  border-radius: var(--radius-2xl);
+  padding: 2rem 2rem 2.5rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  animation: fade-in-up 0.35s ease both;
+}
+
+.auth-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.auth-card__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.auth-card__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.75rem;
+  color: oklch(0.26 0.02 285);
+  background-image: var(--gradient-iridescent);
+}
+
+.auth-card__logo-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.auth-card__name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth-card__title {
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.375rem;
+}
+
+.auth-card__subtitle {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-card__error {
+  color: var(--destructive);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-md);
+  background-color: color-mix(in oklab, var(--destructive) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--destructive) 30%, transparent);
+}
+
+.auth-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}

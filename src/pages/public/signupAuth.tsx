@@ -1,21 +1,42 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { User, Building2 } from "lucide-react";
 import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { useAuth } from "../../providers/authentication/AuthContext";
+import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
+import "../../styles/pages/public/auth-common.css";
+import "../../styles/pages/public/signup.css";
 
 
 interface SignupFormState {
+    accountType: AccountType;
     fullName: string;
     email: string;
     password: string;
     confirmPassword: string;
-
 }
+
+const accountOptions = [
+    {
+        value: "personal" as AccountType,
+        label: "Personal",
+        description: "Gestiona tus finanzas",
+        icon: <User className="account-type-toggle__icon" />,
+    },
+    {
+        value: "business" as AccountType,
+        label: "Empresa",
+        description: "Operá como organización",
+        icon: <Building2 className="account-type-toggle__icon" />,
+    },
+];
+
 export default function SignupAuth() {
     const navigate = useNavigate();
     const { register } = useAuth();
     const [formData, setFormData] = useState<SignupFormState>({
+        accountType: 'personal',
         fullName: '',
         email: '',
         password: '',
@@ -26,6 +47,10 @@ export default function SignupAuth() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleAccountTypeChange = (accountType: AccountType): void => {
+        setFormData((prev) => ({ ...prev, accountType }));
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
@@ -57,7 +82,16 @@ export default function SignupAuth() {
             subtitle="Únete y gestiona tus monedas en un solo lugar"
             errorMessage={errorMessage}
         >
-            <form onSubmit={handleSubmit}>
+            <form className="auth-form" onSubmit={handleSubmit}>
+                <div className="auth-form__toggle">
+                    <span className="auth-form__toggle-label">Tipo de cuenta</span>
+                    <AccountTypeToggle
+                        value={formData.accountType}
+                        onChange={handleAccountTypeChange}
+                        options={accountOptions}
+                    />
+                </div>
+
                 <InputField
                     label="Nombre Completo:"
                     type="text"
@@ -102,14 +136,13 @@ export default function SignupAuth() {
                     required
                 />
 
-                <button type="submit">Registrarme</button>
+                <button className="auth-button" type="submit">Registrarme</button>
             </form>
 
-            <div>
+            <div className="auth-links">
                 <p>¿Ya tienes cuenta? <Link to="/signin">Inicia sesión aquí</Link></p>
                 <p><Link to="/">← Volver al inicio</Link></p>
             </div>
         </AuthCard>
     );
 };
-

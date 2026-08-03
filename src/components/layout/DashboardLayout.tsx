@@ -1,24 +1,51 @@
 import { useEffect, useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Home,
+  Wallet,
+  ArrowLeftRight,
+  Users,
+  LineChart,
+  User,
+  Search,
+  Sparkles,
+  ArrowLeft,
+  Menu,
+} from 'lucide-react'
 import { getCurrentUserProfile } from '../../api/users'
 import { useAuth } from '../../providers/authentication/AuthContext'
 import type { CompanyProfile } from '../../mocks/data/companyProfiles'
+import { ThemeToggle } from '../ThemeToggle'
+import '../../styles/components/dashboard-layout.css'
 
 const menuItems = [
-  { label: 'Dashboard', to: '/dashboard' },
-  { label: 'Wallet', to: '/dashboard/wallet' },
-  { label: 'Transacciones', to: '/dashboard/transactions' },
-  { label: 'Wallet Grupal', to: '/dashboard/groups' },
-  { label: 'Cotizaciones', to: '/dashboard/exchange' },
-  { label: 'Perfil', to: '/dashboard/profile' },
-  { label: 'Buscar', to: '/dashboard/search' },
-  { label: 'Asistente IA', to: '/dashboard/assistant' },
+  { label: 'Dashboard', to: '/dashboard', icon: Home },
+  { label: 'Wallet', to: '/dashboard/wallet', icon: Wallet },
+  { label: 'Transacciones', to: '/dashboard/transactions', icon: ArrowLeftRight },
+  { label: 'Wallet Grupal', to: '/dashboard/groups', icon: Users },
+  { label: 'Cotizaciones', to: '/dashboard/exchange', icon: LineChart },
+  { label: 'Perfil', to: '/dashboard/profile', icon: User },
+  { label: 'Buscar', to: '/dashboard/search', icon: Search },
+  { label: 'Asistente IA', to: '/dashboard/assistant', icon: Sparkles },
 ]
 
+const pageTitles: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/dashboard/wallet': 'Wallet',
+  '/dashboard/transactions': 'Transacciones',
+  '/dashboard/groups': 'Wallet Grupal',
+  '/dashboard/exchange': 'Cotizaciones',
+  '/dashboard/profile': 'Perfil',
+  '/dashboard/search': 'Buscar',
+  '/dashboard/assistant': 'Asistente IA',
+}
+
 export default function DashboardLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     getCurrentUserProfile().then((profile) => {
@@ -36,46 +63,68 @@ export default function DashboardLayout() {
     navigate('/')
   }
 
+  const currentTitle =
+    Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
+
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-48 border-r border-gray-300 p-4">
-        <div className="mb-6">
-          <NavLink to="/" className="text-sm">
-            ← Home
-          </NavLink>
+    <div className="app-shell">
+      <div className={`app-shell__backdrop${sidebarOpen ? ' app-shell__backdrop--visible' : ''}`} onClick={() => setSidebarOpen(false)} />
+
+      <aside className={`app-sidebar${sidebarOpen ? ' app-sidebar--open' : ''}`}>
+        <div className="app-sidebar__brand">
+          <span className="app-sidebar__logo" aria-hidden="true">
+            <Wallet className="app-sidebar__logo-icon" />
+          </span>
+          <span className="app-sidebar__name">Globalance</span>
         </div>
-        <nav className="flex flex-col gap-1">
+
+        <nav className="app-sidebar__nav">
           {menuItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/dashboard'}
               className={({ isActive }) =>
-                `block px-2 py-1.5 text-sm ${isActive ? 'bg-gray-200 font-semibold' : ''}`
+                `app-sidebar__link${isActive ? ' app-sidebar__link--active' : ''}`
               }
             >
+              <item.icon className="app-sidebar__icon" />
               {item.label}
             </NavLink>
           ))}
         </nav>
+
+        <div className="app-sidebar__footer">
+          <NavLink to="/" className="app-sidebar__link app-sidebar__link--back">
+            <ArrowLeft className="app-sidebar__icon" />
+            Volver al inicio
+          </NavLink>
+        </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <header className="flex h-12 items-center justify-between border-b border-gray-300 px-4">
-          <span className="text-sm">Globalance</span>
-          <div className="flex items-center gap-3">
-            {displayName && <span className="text-sm">Hola, {displayName}</span>}
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-            >
-              Cerrar sesión
-            </button>
-          </div>
+      <div className="app-shell__main">
+        <header className="app-topbar">
+          <button
+            type="button"
+            className="app-topbar__burger"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label="Abrir menú"
+          >
+            <Menu className="app-topbar__burger-icon" />
+          </button>
+          <h1 className="app-topbar__title">{currentTitle}</h1>
+          {displayName && <span className="app-topbar__user">Hola, {displayName}</span>}
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Cerrar sesión
+          </button>
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="app-shell__content">
           <Outlet />
         </main>
       </div>

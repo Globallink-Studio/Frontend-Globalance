@@ -4,16 +4,26 @@ import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { GoogleButton } from "../../components/register/GoogleButton";
 import { useAuth } from "../../providers/authentication/AuthContext";
+import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
+import "../../styles/pages/public/auth-common.css";
+import "../../styles/pages/public/signin.css";
 
 interface SigninAuthState {
+    accountType: AccountType;
     email: string;
     password: string;
 }
+
+const accountOptions = [
+    { value: "personal" as AccountType, label: "Personal", description: "Cuenta individual" },
+    { value: "business" as AccountType, label: "Empresa", description: "Cuenta organizacional" },
+];
 
 export default function SigninAuth() {
     const navigate = useNavigate()
     const { login } = useAuth()
     const [formData, setFormData] = useState<SigninAuthState>({
+        accountType: 'personal',
         email: '',
         password: '',
     });
@@ -21,6 +31,10 @@ export default function SigninAuth() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    const handleAccountTypeChange = (accountType: AccountType) => {
+        setFormData((prev) => ({ ...prev, accountType }));
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,7 +58,15 @@ export default function SigninAuth() {
             subtitle="Bienvenido, ingresa tus datos para acceder a tu cuenta"
             errorMessage={errorMessage}
         >
-            <form onSubmit={handleSubmit}>
+            <form className="auth-form" onSubmit={handleSubmit}>
+                <div className="auth-form__toggle">
+                    <span className="auth-form__toggle-label">Tipo de cuenta</span>
+                    <AccountTypeToggle
+                        value={formData.accountType}
+                        onChange={handleAccountTypeChange}
+                        options={accountOptions}
+                    />
+                </div>
                 <InputField
                     label="Correo electrónico"
                     type="email"
@@ -65,14 +87,16 @@ export default function SigninAuth() {
                     required
                     onChange={handleChange}
                 />
-                <button type="submit">
+                <button className="auth-button" type="submit">
                     Ingresar
                 </button>
-                <hr />
+                <div className="auth-divider">
+                    <span>o continúa con</span>
+                </div>
 
                 <GoogleButton text="Continuar con Google" onClick={() => { }} />
 
-                <div>
+                <div className="auth-links">
                     <p>¿Aún no tienes cuenta? <Link to="/signup">Regístrate aquí</Link></p>
                     <p><Link to="/">← Volver al inicio</Link></p>
                 </div>
