@@ -2,21 +2,20 @@ export interface User {
   id: string
   firebase_uid: string
   email: string
-  user_type: 'person' | 'company'
+  user_type: 'person' | 'company' | null
   display_currency: string
   status: 'active' | 'inactive' | 'blocked'
   created_at: string
   last_access_at: string | null
 }
 
-// Cambio de usuario mock (sin login): abrir consola (F12) y ejecutar:
-// localStorage.setItem('globalance.currentUserId', '<id>') y luego location.reload()
-// 11111111-1111-4111-8111-111111111111  Sofía Martínez       (person, activa)
-// 22222222-2222-4222-8222-222222222222  Juan Pérez           (person, activo)
-// 33333333-3333-4333-8333-333333333333  Camila Gómez         (person, activa)
-// 44444444-4444-4444-8444-444444444444  Martín Rodríguez     (person, inactivo)
-// 55555555-5555-4555-8555-555555555555  Globallink Studio    (company, activa)
-// 66666666-6666-4666-8666-666666666666  Estudio Crea         (company, inactiva)
+// Usuarios mock para probar el login (cualquier contraseña):
+// sofia.martinez@example.com     Sofía Martínez       (person, activa)
+// juan.perez@example.com         Juan Pérez           (person, activo)
+// camila.gomez@example.com       Camila Gómez         (person, activa)
+// martin.rodriguez@example.com   Martín Rodríguez     (person, inactivo)
+// contacto@globallinkstudio.com  Globallink Studio    (company, activa)
+// info@estudiocrea.com           Estudio Crea         (company, inactiva)
 
 export const users: User[] = [
   {

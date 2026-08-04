@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import ProtectedRoute from './ProtectedRoute'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import Home from '../pages/public/Home'
 import Dashboard from '../pages/private/Dashboard'
@@ -45,8 +46,9 @@ export default function AppRouter() {
         <Route path="/signup" element={<SignupAuth />} />
 
         {/* Private */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
+        <Route path="/dashboard" element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
 
           {/* Wallet */}
           <Route path="wallet" element={<WalletLayout />}>
@@ -95,6 +97,7 @@ export default function AppRouter() {
           {/* Search & Assistant */}
           <Route path="search" element={<Search />} />
           <Route path="assistant" element={<Assistant />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

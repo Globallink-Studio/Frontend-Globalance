@@ -3,5 +3,7 @@ import { getCurrentUserId } from './auth'
 import type { Card } from '../mocks/data/cards'
 
 export async function getCurrentCards(): Promise<Card[]> {
-  return getCardsByUserId(getCurrentUserId())
+  const id = getCurrentUserId()
+  if (!id) return []
+  return getCardsByUserId(id)
 }
