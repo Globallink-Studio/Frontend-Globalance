@@ -1,20 +1,21 @@
 import { delay } from '../delay'
-import { balances } from '../data/balances'
+import { getMockBalances, saveMockBalances } from '../storage'
 import type { Balance } from '../data/balances'
 
 export async function getBalances(): Promise<Balance[]> {
   await delay()
-  return balances
+  return getMockBalances()
 }
 
 export async function getBalancesByWallet(walletId: string): Promise<Balance[]> {
   await delay()
-  return balances.filter((b) => b.wallet_id === walletId)
+  return getMockBalances().filter((b) => b.wallet_id === walletId)
 }
 
 export async function adjustBalance(walletId: string, currencyCode: string, delta: number): Promise<Balance | undefined> {
   await delay()
-  const balance = balances.find((b) => b.wallet_id === walletId && b.currency_code === currencyCode)
+  const all = getMockBalances()
+  const balance = all.find((b) => b.wallet_id === walletId && b.currency_code === currencyCode)
   if (!balance) {
     if (delta <= 0) return undefined
     const created: Balance = {
@@ -24,10 +25,11 @@ export async function adjustBalance(walletId: string, currencyCode: string, delt
       amount: delta,
       updated_at: new Date().toISOString(),
     }
-    balances.push(created)
+    saveMockBalances([...all, created])
     return created
   }
   balance.amount = balance.amount + delta
   balance.updated_at = new Date().toISOString()
+  saveMockBalances(all)
   return balance
 }

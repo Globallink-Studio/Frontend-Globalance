@@ -143,6 +143,7 @@ export default function SignupAuth() {
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 placeholder="Juan"
+                                autoComplete="given-name"
                                 required
                             />
                             <InputField
@@ -153,6 +154,7 @@ export default function SignupAuth() {
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 placeholder="Pérez"
+                                autoComplete="family-name"
                                 required
                             />
                             <InputField
@@ -163,6 +165,7 @@ export default function SignupAuth() {
                                 value={formData.document}
                                 onChange={handleChange}
                                 placeholder="DNI 30123456"
+                                autoComplete="off"
                                 required
                             />
                             <InputField
@@ -173,6 +176,7 @@ export default function SignupAuth() {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 placeholder="+54 11 5555-0101"
+                                autoComplete="tel"
                             />
                         </>
                     ) : (
@@ -185,6 +189,7 @@ export default function SignupAuth() {
                                 value={formData.legalName}
                                 onChange={handleChange}
                                 placeholder="Globallink Studio S.R.L."
+                                autoComplete="organization"
                                 required
                             />
                             <InputField
@@ -195,6 +200,7 @@ export default function SignupAuth() {
                                 value={formData.document}
                                 onChange={handleChange}
                                 placeholder="30-71234567-8"
+                                autoComplete="off"
                                 required
                             />
                             <InputField
@@ -205,6 +211,7 @@ export default function SignupAuth() {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 placeholder="+54 11 5555-0201"
+                                autoComplete="tel"
                             />
                         </>
                     )}
@@ -217,6 +224,7 @@ export default function SignupAuth() {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="tuemail@ejemplo.com"
+                        autoComplete="email"
                         required
                     />
 
@@ -228,6 +236,7 @@ export default function SignupAuth() {
                         value={formData.password}
                         onChange={handleChange}
                         placeholder="Mínimo 6 caracteres"
+                        autoComplete="new-password"
                         required
                     />
 
@@ -239,6 +248,7 @@ export default function SignupAuth() {
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         placeholder="Mínimo 6 caracteres"
+                        autoComplete="new-password"
                         required
                     />
 

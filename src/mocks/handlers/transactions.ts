@@ -1,20 +1,20 @@
 import { delay } from '../delay'
-import { transactions } from '../data/transactions'
+import { getMockTransactions, saveMockTransactions } from '../storage'
 import type { Transaction, TransactionStatus } from '../data/transactions'
 
 export async function getTransactions(): Promise<Transaction[]> {
   await delay()
-  return transactions
+  return getMockTransactions()
 }
 
 export async function getTransactionsByWallet(walletId: string): Promise<Transaction[]> {
   await delay()
-  return transactions.filter((t) => t.wallet_id === walletId)
+  return getMockTransactions().filter((t) => t.wallet_id === walletId)
 }
 
 export async function getRecentTransactions(limit = 5): Promise<Transaction[]> {
   await delay()
-  return [...transactions]
+  return [...getMockTransactions()]
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, limit)
 }
@@ -38,13 +38,17 @@ export async function createTransaction(input: {
     status: input.status ?? 'completed',
     created_at: new Date().toISOString(),
   }
-  transactions.unshift(tx)
+  saveMockTransactions([tx, ...getMockTransactions()])
   return tx
 }
 
 export async function setTransactionStatus(id: string, status: TransactionStatus): Promise<Transaction | undefined> {
   await delay(300)
-  const tx = transactions.find((t) => t.id === id)
-  if (tx) tx.status = status
+  const all = getMockTransactions()
+  const tx = all.find((t) => t.id === id)
+  if (tx) {
+    tx.status = status
+    saveMockTransactions(all)
+  }
   return tx
 }
