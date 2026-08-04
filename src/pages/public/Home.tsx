@@ -53,8 +53,8 @@ export default function Home() {
             </p>
 
             <div className="home-hero__actions">
-              <Link to="/dashboard" className="home-hero__primary">
-                Ver el dashboard
+              <Link to="/signin" className="home-hero__primary">
+                Ver tu Wallet
                 <ArrowRight className="home-hero__primary-icon" />
               </Link>
               <Link to="/dashboard/assistant" className="home-hero__secondary">
