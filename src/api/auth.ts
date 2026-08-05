@@ -13,6 +13,7 @@ import { login as mockLogin, logout as mockLogout, register as mockRegister } fr
 import { getUserById } from '../mocks/handlers/users'
 import { provisionDemoData } from '../mocks/provision'
 import { fetchApi } from './fetchApi'
+import { getFriendlyErrorMessage } from './errors'
 import { auth } from '../firebase/firebase'
 import type { User } from '../mocks/data/users'
 
@@ -114,6 +115,16 @@ function getFirebaseErrorMessage(error: unknown): string {
   }
 }
 
+function isFirebaseAuthError(error: unknown): boolean {
+  const code = (error as { code?: unknown }).code
+  return typeof code === 'string' && code.startsWith('auth/')
+}
+
+function getAuthErrorMessage(error: unknown): string {
+  if (isFirebaseAuthError(error)) return getFirebaseErrorMessage(error)
+  return getFriendlyErrorMessage(error)
+}
+
 function applySession(user: User): void {
   cachedUser = user
   setCurrentUser(user.id)
@@ -139,7 +150,7 @@ export async function login(email: string, password: string): Promise<User> {
     const credential = await signInWithEmailAndPassword(fb, email, password)
     return await signInWithToken(credential.user)
   } catch (error) {
-    throw new Error(getFirebaseErrorMessage(error))
+    throw new Error(getAuthErrorMessage(error))
   }
 }
 
@@ -152,7 +163,7 @@ export async function loginWithGoogle(): Promise<User> {
     const credential = await signInWithPopup(fb, new GoogleAuthProvider())
     return await signInWithToken(credential.user)
   } catch (error) {
-    throw new Error(getFirebaseErrorMessage(error))
+    throw new Error(getAuthErrorMessage(error))
   }
 }
 
@@ -170,7 +181,7 @@ export async function register(input: { fullName: string; email: string; passwor
     }
     return await signInWithToken(credential.user)
   } catch (error) {
-    throw new Error(getFirebaseErrorMessage(error))
+    throw new Error(getAuthErrorMessage(error))
   }
 }
 

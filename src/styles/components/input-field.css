@@ -71,3 +71,32 @@
   color: var(--foreground);
   background-color: color-mix(in oklab, var(--muted) 60%, transparent);
 }
+
+.input-field__required {
+  margin-left: 0.25rem;
+  color: var(--destructive);
+}
+
+.input-field__control--error {
+  border-color: color-mix(in oklab, var(--destructive) 70%, transparent);
+}
+
+.input-field__control--error:focus {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--destructive) 22%, transparent);
+}
+
+.input-field__control--valid {
+  border-color: color-mix(in oklab, var(--success) 70%, transparent);
+}
+
+.input-field__control--valid:focus {
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--success) 22%, transparent);
+}
+
+.input-field__error {
+  color: var(--destructive);
+  font-size: 0.8125rem;
+  margin-top: 0.125rem;
+}

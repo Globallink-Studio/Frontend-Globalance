@@ -7,20 +7,14 @@ import { AccountTypeCards } from "../../components/register/AccountTypeCards";
 import { AuthModal } from "../../components/register/AuthModal";
 import type { AccountType } from "../../components/register/AccountTypeToggle";
 import { useAuth } from "../../providers/authentication/AuthContext";
+import { useAuthForm } from "../../hooks/useAuthForm";
+import {
+    validateSignupField,
+    validateSignupForm,
+    type SignupFormValues,
+} from "../../utils/authValidation";
 import "../../styles/pages/public/auth-common.css";
 import "../../styles/pages/public/signup.css";
-
-interface SignupFormState {
-    accountType: AccountType | null;
-    firstName: string;
-    lastName: string;
-    legalName: string;
-    document: string;
-    phone: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-}
 
 const accountOptions = [
     {
@@ -39,8 +33,7 @@ const accountOptions = [
     },
 ];
 
-const initialState: SignupFormState = {
-    accountType: null,
+const initialFormValues: SignupFormValues = {
     firstName: '',
     lastName: '',
     legalName: '',
@@ -55,55 +48,45 @@ export default function SignupAuth() {
     const navigate = useNavigate();
     const { register } = useAuth();
     const [selectedType, setSelectedType] = useState<AccountType | null>(null);
-    const [formData, setFormData] = useState<SignupFormState>(initialState);
     const [errorMessage, setErrorMessage] = useState<string>('');
-    const [loading, setLoading] = useState(false);
 
     const isPersonal = selectedType === "personal";
 
+    const handleRegister = async (values: SignupFormValues) => {
+        setErrorMessage('');
+        const fullName = isPersonal ? `${values.firstName} ${values.lastName}`.trim() : values.legalName.trim();
+        try {
+            await register({ fullName, email: values.email, password: values.password });
+            navigate('/dashboard');
+        } catch (err) {
+            setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
+        }
+    };
+
+    const form = useAuthForm<SignupFormValues>({
+        initialValues: initialFormValues,
+        validateField: (field, values) => validateSignupField(field, values, selectedType),
+        validateForm: (values) => validateSignupForm(values, selectedType),
+        onSubmit: handleRegister,
+        liveFields: ['password', 'confirmPassword'],
+    });
+
+    const { values, errors, isSubmitting, isChecked, handleChange: formChange, handleBlur, handleSubmit, reset } = form;
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        if (errorMessage) setErrorMessage('');
+        formChange(e);
     };
 
     const openModal = (accountType: AccountType): void => {
-        setFormData((prev) => ({ ...prev, accountType }));
         setErrorMessage('');
         setSelectedType(accountType);
+        reset();
     };
 
     const closeModal = (): void => {
         setSelectedType(null);
         setErrorMessage('');
-    };
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-        e.preventDefault();
-        const { firstName, lastName, legalName, document: doc, email, password, confirmPassword } = formData;
-        const fullName = isPersonal ? `${firstName} ${lastName}`.trim() : legalName.trim();
-
-        if (!fullName || !doc.trim() || !email || !password || !confirmPassword) {
-            setErrorMessage('Por favor, completa todos los campos');
-            return;
-        }
-        if (password !== confirmPassword) {
-            setErrorMessage('Las contraseñas no coinciden');
-            return;
-        }
-        if (password.length < 6) {
-            setErrorMessage('La contraseña debe tener al menos 6 caracteres');
-            return;
-        }
-        setErrorMessage('');
-        setLoading(true);
-        try {
-            await register({ fullName, email, password });
-            navigate('/dashboard');
-        } catch (err) {
-            setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
-        } finally {
-            setLoading(false);
-        }
     };
 
     return (
@@ -140,41 +123,51 @@ export default function SignupAuth() {
                                 type="text"
                                 id="firstName"
                                 name="firstName"
-                                value={formData.firstName}
+                                value={values.firstName}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="Juan"
                                 autoComplete="given-name"
                                 required
+                                error={errors.firstName}
+                                valid={isChecked('firstName') && !errors.firstName}
                             />
                             <InputField
                                 label="Apellido:"
                                 type="text"
                                 id="lastName"
                                 name="lastName"
-                                value={formData.lastName}
+                                value={values.lastName}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="Pérez"
                                 autoComplete="family-name"
                                 required
+                                error={errors.lastName}
+                                valid={isChecked('lastName') && !errors.lastName}
                             />
                             <InputField
                                 label="Documento:"
                                 type="text"
                                 id="document"
                                 name="document"
-                                value={formData.document}
+                                value={values.document}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="DNI 30123456"
                                 autoComplete="off"
                                 required
+                                error={errors.document}
+                                valid={isChecked('document') && !errors.document}
                             />
                             <InputField
                                 label="Teléfono:"
                                 type="text"
                                 id="phone"
                                 name="phone"
-                                value={formData.phone}
+                                value={values.phone}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="+54 11 5555-0101"
                                 autoComplete="tel"
                             />
@@ -186,30 +179,37 @@ export default function SignupAuth() {
                                 type="text"
                                 id="legalName"
                                 name="legalName"
-                                value={formData.legalName}
+                                value={values.legalName}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="Globallink Studio S.R.L."
                                 autoComplete="organization"
                                 required
+                                error={errors.legalName}
+                                valid={isChecked('legalName') && !errors.legalName}
                             />
                             <InputField
                                 label="Documento:"
                                 type="text"
                                 id="document"
                                 name="document"
-                                value={formData.document}
+                                value={values.document}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="30-71234567-8"
                                 autoComplete="off"
                                 required
+                                error={errors.document}
+                                valid={isChecked('document') && !errors.document}
                             />
                             <InputField
                                 label="Teléfono:"
                                 type="text"
                                 id="phone"
                                 name="phone"
-                                value={formData.phone}
+                                value={values.phone}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="+54 11 5555-0201"
                                 autoComplete="tel"
                             />
@@ -221,11 +221,14 @@ export default function SignupAuth() {
                         type="email"
                         id="email"
                         name="email"
-                        value={formData.email}
+                        value={values.email}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="tuemail@ejemplo.com"
                         autoComplete="email"
                         required
+                        error={errors.email}
+                        valid={isChecked('email') && !errors.email}
                     />
 
                     <InputField
@@ -233,11 +236,14 @@ export default function SignupAuth() {
                         type="password"
                         id="password"
                         name="password"
-                        value={formData.password}
+                        value={values.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Mínimo 6 caracteres"
                         autoComplete="new-password"
                         required
+                        error={errors.password}
+                        valid={isChecked('password') && !errors.password}
                     />
 
                     <InputField
@@ -245,17 +251,20 @@ export default function SignupAuth() {
                         type="password"
                         id="confirmPassword"
                         name="confirmPassword"
-                        value={formData.confirmPassword}
+                        value={values.confirmPassword}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Mínimo 6 caracteres"
                         autoComplete="new-password"
                         required
+                        error={errors.confirmPassword}
+                        valid={isChecked('confirmPassword') && !errors.confirmPassword}
                     />
 
                     {errorMessage && <p className="auth-modal__error" role="alert">{errorMessage}</p>}
 
-                    <button className="auth-button" type="submit" disabled={loading}>
-                        {loading ? 'Registrando...' : 'Crear cuenta'}
+                    <button className="auth-button" type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? 'Registrando...' : 'Crear cuenta'}
                     </button>
                 </form>
             </AuthModal>
