@@ -3,6 +3,7 @@ import { createTransfer, getTransactionsByType } from '../../../api/transactions
 import { getCurrentBalances } from '../../../api/balances'
 import { getCurrentContacts } from '../../../api/contacts'
 import { getUserByEmail } from '../../../api/users'
+import { getWalletByAlias } from '../../../api/wallets'
 import TransactionList from '../../../components/TransactionList'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Contact } from '../../../mocks/data/contacts'
@@ -14,17 +15,20 @@ interface ReviewData {
   recipientUserId: string
   currencyCode: string
   amount: number
+  concept?: string
 }
 
 export default function Transfers() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
-  const [sendMethod, setSendMethod] = useState<'contact' | 'email'>('contact')
+  const [sendMethod, setSendMethod] = useState<'alias' | 'contact' | 'email'>('alias')
+  const [alias, setAlias] = useState('')
   const [contactId, setContactId] = useState('')
   const [email, setEmail] = useState('')
   const [currencyCode, setCurrencyCode] = useState('ARS')
   const [amount, setAmount] = useState('')
+  const [concept, setConcept] = useState('')
   const [review, setReview] = useState<ReviewData | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -70,7 +74,7 @@ export default function Transfers() {
       }
       recipient = contact.alias
       recipientUserId = contact.recipient_user_id
-    } else {
+    } else if (sendMethod === 'email') {
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
         setDismissReturns(false)
         setErrorMessage('Ingresá un correo electrónico válido')
@@ -84,6 +88,20 @@ export default function Transfers() {
       }
       recipient = user.email
       recipientUserId = user.id
+    } else {
+      if (!alias.trim()) {
+        setDismissReturns(false)
+        setErrorMessage('Ingresá el alias del destinatario')
+        return
+      }
+      const wallet = await getWalletByAlias(alias)
+      if (!wallet || wallet.status !== 'active') {
+        setDismissReturns(false)
+        setErrorMessage('No se encontró ninguna wallet activa con ese alias')
+        return
+      }
+      recipient = wallet.alias
+      recipientUserId = wallet.user_id
     }
 
     if (!value || value <= 0) {
@@ -92,7 +110,13 @@ export default function Transfers() {
       return
     }
 
-    setReview({ recipient, recipientUserId, currencyCode, amount: value })
+    setReview({
+      recipient,
+      recipientUserId,
+      currencyCode,
+      amount: value,
+      concept: concept.trim() || undefined,
+    })
   }
 
   const handleConfirm = async () => {
@@ -106,6 +130,7 @@ export default function Transfers() {
         recipientUserId: review.recipientUserId,
         currencyCode: review.currencyCode,
         amount: review.amount,
+        concept: review.concept,
       })
       setMessage(`Transferencia a ${review.recipient} enviada`)
       setReview(null)
@@ -123,142 +148,191 @@ export default function Transfers() {
     <div className="tx-page">
       <h2 className="tx-page__title">Nueva transferencia</h2>
 
-      {review ? (
-        <div className="tx-card tx-card--form">
-          <h3 className="tx-card__title">Confirmá la transferencia</h3>
-          <div className="tx-review">
-            <dl className="tx-review__rows">
-              <div className="tx-review__row">
-                <dt className="tx-review__label">Destinatario</dt>
-                <dd className="tx-review__value">{review.recipient}</dd>
-              </div>
-              <div className="tx-review__row">
-                <dt className="tx-review__label">Moneda</dt>
-                <dd className="tx-review__value">{review.currencyCode}</dd>
-              </div>
-              <div className="tx-review__row">
-                <dt className="tx-review__label">Monto</dt>
-                <dd className="tx-review__value tx-review__amount">
-                  {review.amount.toLocaleString('es-AR')} {review.currencyCode}
-                </dd>
-              </div>
-            </dl>
+      <div className="tx-grid">
+        {review ? (
+          <div className="tx-card">
+            <h3 className="tx-card__title">Confirmá la transferencia</h3>
+            <div className="tx-review">
+              <dl className="tx-review__rows">
+                <div className="tx-review__row">
+                  <dt className="tx-review__label">Destinatario</dt>
+                  <dd className="tx-review__value">{review.recipient}</dd>
+                </div>
+                <div className="tx-review__row">
+                  <dt className="tx-review__label">Moneda</dt>
+                  <dd className="tx-review__value">{review.currencyCode}</dd>
+                </div>
+                <div className="tx-review__row">
+                  <dt className="tx-review__label">Monto</dt>
+                  <dd className="tx-review__value tx-review__amount">
+                    {review.amount.toLocaleString('es-AR')} {review.currencyCode}
+                  </dd>
+                </div>
+                {review.concept && (
+                  <div className="tx-review__row">
+                    <dt className="tx-review__label">Concepto</dt>
+                    <dd className="tx-review__value">{review.concept}</dd>
+                  </div>
+                )}
+              </dl>
 
-            <div className="tx-review__actions">
-              <button
-                type="button"
-                onClick={() => setReview(null)}
-                disabled={sending}
-                className="tx-button tx-button--secondary"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={sending}
-                className="tx-button tx-button--primary"
-              >
-                {sending ? 'Enviando...' : 'Confirmar transferencia'}
-              </button>
+              <div className="tx-review__actions">
+                <button
+                  type="button"
+                  onClick={() => setReview(null)}
+                  disabled={sending}
+                  className="tx-button tx-button--secondary"
+                >
+                  Volver
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={sending}
+                  className="tx-button tx-button--primary"
+                >
+                  {sending ? 'Enviando...' : 'Confirmar transferencia'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="tx-card tx-card--form tx-form">
-          <div className="tx-form__field">
-            <p className="tx-form__label">Enviar a</p>
-            <div className="tx-form__options">
-              <label className="tx-form__option">
-                <input
-                  type="radio"
-                  name="sendMethod"
-                  value="contact"
-                  checked={sendMethod === 'contact'}
-                  onChange={() => setSendMethod('contact')}
-                />
-                Contacto
-              </label>
-              <label className="tx-form__option">
-                <input
-                  type="radio"
-                  name="sendMethod"
-                  value="email"
-                  checked={sendMethod === 'email'}
-                  onChange={() => setSendMethod('email')}
-                />
-                Correo electrónico
-              </label>
+        ) : (
+          <form onSubmit={handleSubmit} className="tx-card tx-form">
+            <div className="tx-form__field">
+              <p className="tx-form__label">Enviar a</p>
+              <div className="tx-form__options">
+                <label className="tx-form__option">
+                  <input
+                    type="radio"
+                    name="sendMethod"
+                    value="alias"
+                    checked={sendMethod === 'alias'}
+                    onChange={() => setSendMethod('alias')}
+                  />
+                  Alias
+                </label>
+                <label className="tx-form__option">
+                  <input
+                    type="radio"
+                    name="sendMethod"
+                    value="contact"
+                    checked={sendMethod === 'contact'}
+                    onChange={() => setSendMethod('contact')}
+                  />
+                  Contacto
+                </label>
+                <label className="tx-form__option">
+                  <input
+                    type="radio"
+                    name="sendMethod"
+                    value="email"
+                    checked={sendMethod === 'email'}
+                    onChange={() => setSendMethod('email')}
+                  />
+                  Correo electrónico
+                </label>
+              </div>
             </div>
-          </div>
 
-          {sendMethod === 'contact' ? (
-            <div className="tx-form__field">
-              <label htmlFor="contact" className="tx-form__label">Contacto</label>
-              <select
-                id="contact"
-                value={contactId}
-                onChange={(e) => setContactId(e.target.value)}
-                className="tx-form__control"
-              >
-                <option value="">Elegí un contacto</option>
-                {contacts.map((c) => (
-                  <option key={c.id} value={c.id}>{c.alias}</option>
-                ))}
-              </select>
+            {sendMethod === 'contact' ? (
+              <div className="tx-form__field">
+                <label htmlFor="contact" className="tx-form__label">Contacto</label>
+                <select
+                  id="contact"
+                  value={contactId}
+                  onChange={(e) => setContactId(e.target.value)}
+                  className="tx-form__control"
+                >
+                  <option value="">Elegí un contacto</option>
+                  {contacts.map((c) => (
+                    <option key={c.id} value={c.id}>{c.alias}</option>
+                  ))}
+                </select>
+              </div>
+            ) : sendMethod === 'email' ? (
+              <div className="tx-form__field">
+                <label htmlFor="email" className="tx-form__label">Correo del destinatario</label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="usuario@example.com"
+                  className="tx-form__control"
+                />
+              </div>
+            ) : (
+              <div className="tx-form__field">
+                <label htmlFor="alias" className="tx-form__label">Alias del destinatario</label>
+                <input
+                  id="alias"
+                  type="text"
+                  value={alias}
+                  onChange={(e) => setAlias(e.target.value)}
+                  placeholder="juan.cash"
+                  className="tx-form__control"
+                />
+              </div>
+            )}
+
+            <div className="tx-form__grid">
+              <div className="tx-form__field">
+                <label htmlFor="currency" className="tx-form__label">Moneda</label>
+                <select
+                  id="currency"
+                  value={currencyCode}
+                  onChange={(e) => setCurrencyCode(e.target.value)}
+                  className="tx-form__control"
+                >
+                  {balances.map((b) => (
+                    <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
+                  ))}
+                </select>
+                {selectedBalance && (
+                  <p className="tx-form__hint">
+                    Saldo: {selectedBalance.amount.toLocaleString('es-AR')} {selectedBalance.currency_code}
+                  </p>
+                )}
+              </div>
+
+              <div className="tx-form__field">
+                <label htmlFor="amount" className="tx-form__label">Monto</label>
+                <input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  className="tx-form__control"
+                />
+              </div>
             </div>
-          ) : (
+
             <div className="tx-form__field">
-              <label htmlFor="email" className="tx-form__label">Correo del destinatario</label>
+              <label htmlFor="concept" className="tx-form__label">Concepto</label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@example.com"
+                id="concept"
+                type="text"
+                value={concept}
+                onChange={(e) => setConcept(e.target.value)}
+                placeholder="¿Para qué es esta transferencia?"
                 className="tx-form__control"
               />
             </div>
-          )}
 
-          <div className="tx-form__field">
-            <label htmlFor="currency" className="tx-form__label">Moneda</label>
-            <select
-              id="currency"
-              value={currencyCode}
-              onChange={(e) => setCurrencyCode(e.target.value)}
-              className="tx-form__control"
-            >
-              {balances.map((b) => (
-                <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
-              ))}
-            </select>
-            {selectedBalance && (
-              <p className="tx-form__hint">
-                Saldo disponible: {selectedBalance.amount.toLocaleString('es-AR')} {selectedBalance.currency_code}
-              </p>
-            )}
-          </div>
+            <button type="submit" className="tx-button tx-button--primary tx-button--block">
+              Continuar
+            </button>
+          </form>
+        )}
 
-          <div className="tx-form__field">
-            <label htmlFor="amount" className="tx-form__label">Monto</label>
-            <input
-              id="amount"
-              type="number"
-              min="0"
-              step="any"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="tx-form__control"
-            />
-          </div>
-
-          <button type="submit" className="tx-button tx-button--primary tx-button--block">
-            Continuar
-          </button>
-        </form>
-      )}
+        <section className="tx-card">
+          <h3 className="tx-section__title">Historial de transferencias</h3>
+          <TransactionList transactions={transactions} compact />
+        </section>
+      </div>
 
       {message && (
         <div className="tx-toast">{message}</div>
@@ -282,11 +356,6 @@ export default function Transfers() {
           </div>
         </div>
       )}
-
-      <section className="tx-card">
-        <h3 className="tx-section__title">Historial de transferencias</h3>
-        <TransactionList transactions={transactions} />
-      </section>
     </div>
   )
 }

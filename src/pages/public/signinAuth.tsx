@@ -4,27 +4,15 @@ import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { GoogleButton } from "../../components/register/GoogleButton";
 import { useAuth } from "../../providers/authentication/AuthContext";
-import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
 import { useAuthForm } from "../../hooks/useAuthForm";
 import { validateSigninField, validateSigninForm, type SigninFormValues } from "../../utils/authValidation";
 import "../../styles/pages/public/auth-common.css";
-import "../../styles/pages/public/signin.css";
-
-const accountOptions = [
-    { value: "personal" as AccountType, label: "Personal", description: "Cuenta individual" },
-    { value: "business" as AccountType, label: "Empresa", description: "Cuenta organizacional" },
-];
 
 export default function SigninAuth() {
     const navigate = useNavigate()
     const { login, loginWithGoogle } = useAuth()
-    const [accountType, setAccountType] = useState<AccountType>('personal');
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [googleLoading, setGoogleLoading] = useState(false);
-
-    const handleAccountTypeChange = (accountType: AccountType) => {
-        setAccountType(accountType);
-    }
 
     const handleSubmitLogin = async (values: SigninFormValues) => {
         setErrorMessage('');
@@ -70,14 +58,6 @@ export default function SigninAuth() {
             errorMessage={errorMessage}
         >
             <form className="auth-form" onSubmit={handleSubmit}>
-                <div className="auth-form__toggle">
-                    <span className="auth-form__toggle-label">Tipo de cuenta</span>
-                    <AccountTypeToggle
-                        value={accountType}
-                        onChange={handleAccountTypeChange}
-                        options={accountOptions}
-                    />
-                </div>
                 <InputField
                     label="Correo electrónico"
                     type="email"

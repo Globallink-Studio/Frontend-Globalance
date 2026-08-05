@@ -74,15 +74,26 @@
 }
 
 .home-nav__login {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.625rem 1.375rem;
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--foreground);
+  background-color: transparent;
+  border: 1px solid var(--border);
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .home-nav__login:hover {
-  color: var(--ring);
+  border-color: var(--ring);
+  background-color: var(--muted);
+  transform: translateY(-1px);
 }
 
 .home-nav__cta {
@@ -107,6 +118,34 @@
   transform: translateY(-1px);
 }
 
+.home-nav__user {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  color: var(--foreground);
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.home-nav__user:hover {
+  border-color: var(--ring);
+  background-color: color-mix(in oklab, var(--muted-foreground) 20%, transparent);
+  transform: translateY(-1px);
+}
+
+.home-nav__user-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 /* ── Hero ────────────────────────────────────────────────────────── */
 .home-hero {
   display: grid;
@@ -128,15 +167,18 @@
 }
 
 .home-hero__highlight {
-  background-image: var(--gradient-iridescent);
+  background-image: linear-gradient(135deg,
+      oklch(0.8 0.12 300) 0%,
+      oklch(0.82 0.1 250) 35%,
+      oklch(0.84 0.09 180) 65%,
+      oklch(0.85 0.11 100) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 8px color-mix(in oklab, var(--pastel-lilac) 30%, transparent);
 }
 
 .dark .home-hero__highlight {
-  text-shadow: none;
+  background-image: var(--gradient-iridescent);
 }
 
 .home-hero__subtitle {
@@ -412,6 +454,25 @@
   color: var(--muted-foreground);
 }
 
+/* ── Footer ──────────────────────────────────────────────────────── */
+.home-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  padding: 1.5rem 2.5rem;
+  border-top: 1px solid var(--border);
+  background-color: color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+}
+
+.home-footer__copyright {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .home-hero {
@@ -435,12 +496,26 @@
     display: none;
   }
 
-  .home-nav__login {
+  .home-nav__actions {
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .home-nav__login,
+  .home-nav__cta {
     display: none;
+  }
+
+  .home-nav__user {
+    display: inline-flex;
   }
 
   .home-hero__stats {
     gap: 1.5rem;
     flex-wrap: wrap;
+  }
+
+  .home-footer {
+    padding: 1.5rem 1.25rem;
   }
 }

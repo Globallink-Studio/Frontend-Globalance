@@ -1,4 +1,4 @@
-import { getWalletById, getWalletByUserId, getWallets, updateWallet } from '../mocks/handlers/wallets'
+import { getWalletById, getWalletByUserId, getWalletByAlias, getWallets, updateWallet } from '../mocks/handlers/wallets'
 import { getCurrentUserId } from './auth'
 import type { Wallet } from '../mocks/data/wallets'
 
@@ -16,4 +16,4 @@ export async function updateCurrentWallet(patch: Partial<Wallet>): Promise<Walle
   return updateWallet(wallet.id, patch)
 }
 
-export { getWallets, getWalletById, getWalletByUserId }
+export { getWallets, getWalletById, getWalletByUserId, getWalletByAlias }
