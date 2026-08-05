@@ -39,6 +39,10 @@ export function addMockUser(user: User): void {
   saveAll(USERS_KEY, [...getMockUsers(), user])
 }
 
+export function updateMockUser(id: string, patch: Partial<User>): void {
+  saveAll(USERS_KEY, getMockUsers().map((u) => (u.id === id ? { ...u, ...patch } : u)))
+}
+
 export function getMockPersonProfiles(): PersonProfile[] {
   return readAll<PersonProfile>(PERSON_PROFILES_KEY)
 }
@@ -47,12 +51,20 @@ export function addMockPersonProfile(profile: PersonProfile): void {
   saveAll(PERSON_PROFILES_KEY, [...getMockPersonProfiles(), profile])
 }
 
+export function updateMockPersonProfile(userId: string, patch: Partial<PersonProfile>): void {
+  saveAll(PERSON_PROFILES_KEY, getMockPersonProfiles().map((p) => (p.user_id === userId ? { ...p, ...patch } : p)))
+}
+
 export function getMockWallets(): Wallet[] {
   return readAll<Wallet>(WALLETS_KEY)
 }
 
 export function addMockWallet(wallet: Wallet): void {
   saveAll(WALLETS_KEY, [...getMockWallets(), wallet])
+}
+
+export function updateMockWallet(id: string, patch: Partial<Wallet>): void {
+  saveAll(WALLETS_KEY, getMockWallets().map((w) => (w.id === id ? { ...w, ...patch } : w)))
 }
 
 export function getMockBalances(): Balance[] {

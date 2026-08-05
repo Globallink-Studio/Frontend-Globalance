@@ -32,6 +32,10 @@ export function getCachedUser(): User | null {
   return cachedUser
 }
 
+export function refreshCachedUser(user: User): void {
+  cachedUser = user
+}
+
 export function getCurrentUserId(): string | null {
   return localStorage.getItem(STORAGE_KEY)
 }

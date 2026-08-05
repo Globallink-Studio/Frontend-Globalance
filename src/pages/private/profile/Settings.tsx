@@ -6,13 +6,13 @@ export default function Settings() {
       <div className="space-y-3">
         <button
           type="button"
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-left text-sm font-medium hover:bg-gray-50"
+          className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-left text-sm font-medium transition-colors hover:bg-muted"
         >
           Cambiar contraseña
         </button>
         <button
           type="button"
-          className="w-full rounded-lg border border-red-200 bg-white px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+          className="w-full rounded-2xl border border-destructive/30 bg-card px-4 py-3 text-left text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
         >
           Eliminar cuenta
         </button>

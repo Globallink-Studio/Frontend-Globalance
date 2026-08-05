@@ -44,7 +44,7 @@ export default function Home() {
         <section className="home-hero">
           <div className="home-hero__left">
             <h1 className="home-hero__title">
-              Tu dinero en un solo lugar, en <span className="home-hero__highlight">todas las monedas</span>
+              Tu dinero en un solo lugar, y <span className="home-hero__highlight">sin fronteras</span>
             </h1>
             <p className="home-hero__subtitle">
               Simplifica tus cobros internacionales, maximiza tus ingresos con

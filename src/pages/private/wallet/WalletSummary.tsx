@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, ChevronLeft, ChevronRight, Download, Send, Repeat } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Download, Plus, Send, Repeat } from 'lucide-react'
 import { getCurrentBalanceSummary } from '../../../api/balances'
 import { getRecentTransactions } from '../../../api/transactions'
 import { getCurrentCards } from '../../../api/cards'
@@ -63,6 +63,10 @@ export default function WalletSummary() {
               <p className="wallet-banner__amount">US$ {totalBalanceUSD.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div className="wallet-banner__actions">
+              <button type="button" className="wallet-banner__btn wallet-banner__btn--primary">
+                <Plus className="wallet-banner__btn-icon" />
+                Agregar dinero
+              </button>
               <button type="button" className="wallet-banner__btn wallet-banner__btn--primary">
                 <Download className="wallet-banner__btn-icon" />
                 Cobrar
