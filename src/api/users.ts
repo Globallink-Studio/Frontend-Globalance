@@ -38,18 +38,30 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
   const resp = await fetchApi<{ data: ApiUserProfile }>('/users/profile')
   const p = resp.data
   if (!p) return undefined
-  if (p.user_type === 'person') {
+
+  const firstName = p.first_name ?? ''
+  const lastName = p.last_name ?? ''
+  const legalName = p.legal_name ?? ''
+  const nameHint = Boolean(firstName || lastName)
+
+  let isPerson: boolean
+  if (p.user_type === 'company') isPerson = false
+  else if (p.user_type === 'person') isPerson = true
+  else if (nameHint) isPerson = true
+  else isPerson = getCachedUser()?.user_type === 'person'
+
+  if (isPerson) {
     return {
       user_id: p.id,
-      first_name: p.first_name ?? '',
-      last_name: p.last_name ?? '',
+      first_name: firstName,
+      last_name: lastName,
       document: '',
       phone: null,
     }
   }
   return {
     user_id: p.id,
-    legal_name: p.legal_name ?? '',
+    legal_name: legalName || `${firstName} ${lastName}`.trim(),
     document: '',
     phone: null,
   }

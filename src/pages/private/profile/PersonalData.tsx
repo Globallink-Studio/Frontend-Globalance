@@ -36,12 +36,7 @@ function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'success' | 
 }
 
 function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('')
+  return name.trim().charAt(0).toUpperCase()
 }
 
 export default function PersonalData() {
@@ -67,9 +62,9 @@ export default function PersonalData() {
   const displayName = profile
     ? isPerson
       ? `${(profile as PersonProfile).first_name} ${(profile as PersonProfile).last_name}`.trim()
-      : (profile as CompanyProfile).legal_name
+      : ((profile as CompanyProfile).legal_name ?? '')
     : ''
-  const accountType = user?.user_type === 'company' ? 'Empresa' : 'Personal'
+  const accountType = isPerson ? 'Personal' : 'Empresa'
   const subtitle = `${user?.email ?? ''} · Cuenta ${accountType}`
 
   return (
