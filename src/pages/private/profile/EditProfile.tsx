@@ -58,22 +58,26 @@ export default function EditProfile() {
       return
     }
 
-    if (wallet) {
-      await updateCurrentWallet({ alias: normalizedAlias })
+    try {
+      if (wallet) {
+        await updateCurrentWallet({ alias: normalizedAlias })
+      }
+      if (profile && isPerson) {
+        await updateCurrentPersonProfile({
+          first_name: firstName.trim() || 'Usuario',
+          last_name: lastName.trim(),
+          phone: phone.trim() || null,
+        })
+      }
+      if (user) {
+        await updateCurrentUser({ display_currency: displayCurrency })
+      }
+      navigate('/dashboard/profile')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ocurrió un error al guardar los cambios.')
+    } finally {
+      setSaving(false)
     }
-    if (profile && isPerson) {
-      await updateCurrentPersonProfile({
-        first_name: firstName.trim() || 'Usuario',
-        last_name: lastName.trim(),
-        phone: phone.trim() || null,
-      })
-    }
-    if (user) {
-      await updateCurrentUser({ display_currency: displayCurrency })
-    }
-
-    setSaving(false)
-    navigate('/dashboard/profile')
   }
 
   return (

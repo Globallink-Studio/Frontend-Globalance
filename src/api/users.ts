@@ -4,39 +4,77 @@ import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
 import type { CompanyProfile } from '../mocks/data/companyProfiles'
-import { getCachedUser, getCurrentUserId, refreshCachedUser } from './auth'
+import { getAuthMode, getCachedUser, getCurrentUserId, refreshCachedUser } from './auth'
+import { fetchApi } from './fetchApi'
 
 export async function getCurrentUser(): Promise<User | undefined> {
-  const cached = getCachedUser()
-  if (cached) return cached
-  const id = getCurrentUserId()
-  if (!id) return undefined
-  return getUserById(id)
+  if (getAuthMode() === 'mock') {
+    const cached = getCachedUser()
+    if (cached) return cached
+    const id = getCurrentUserId()
+    if (!id) return undefined
+    return getUserById(id)
+  }
+  return getCachedUser() ?? undefined
+}
+
+interface ApiUserProfile {
+  id: string
+  user_type: 'person' | 'company' | null
+  first_name?: string | null
+  last_name?: string | null
+  legal_name?: string | null
 }
 
 export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyProfile | undefined> {
-  const user = await getCurrentUser()
-  if (!user) return undefined
-  if (user.user_type === 'person') {
-    return getMockPersonProfiles().find((p) => p.user_id === user.id)
+  if (getAuthMode() === 'mock') {
+    const user = await getCurrentUser()
+    if (!user) return undefined
+    if (user.user_type === 'person') {
+      return getMockPersonProfiles().find((p) => p.user_id === user.id)
+    }
+    return companyProfiles.find((c) => c.user_id === user.id)
   }
-  return companyProfiles.find((c) => c.user_id === user.id)
+  const resp = await fetchApi<{ data: ApiUserProfile }>('/users/profile')
+  const p = resp.data
+  if (!p) return undefined
+  if (p.user_type === 'person') {
+    return {
+      user_id: p.id,
+      first_name: p.first_name ?? '',
+      last_name: p.last_name ?? '',
+      document: '',
+      phone: null,
+    }
+  }
+  return {
+    user_id: p.id,
+    legal_name: p.legal_name ?? '',
+    document: '',
+    phone: null,
+  }
 }
 
 export async function updateCurrentPersonProfile(
   patch: Partial<PersonProfile>,
 ): Promise<PersonProfile | undefined> {
-  const user = await getCurrentUser()
-  if (!user || user.user_type !== 'person') return undefined
-  return updatePersonProfile(user.id, patch)
+  if (getAuthMode() === 'mock') {
+    const user = await getCurrentUser()
+    if (!user || user.user_type !== 'person') return undefined
+    return updatePersonProfile(user.id, patch)
+  }
+  throw new Error('La edición del perfil todavía no está disponible en el backend')
 }
 
 export async function updateCurrentUser(patch: Partial<User>): Promise<User | undefined> {
-  const user = await getCurrentUser()
-  if (!user) return undefined
-  const updated = await updateUser(user.id, patch)
-  if (updated) refreshCachedUser(updated)
-  return updated
+  if (getAuthMode() === 'mock') {
+    const user = await getCurrentUser()
+    if (!user) return undefined
+    const updated = await updateUser(user.id, patch)
+    if (updated) refreshCachedUser(updated)
+    return updated
+  }
+  throw new Error('Actualizar los datos del usuario todavía no está disponible en el backend')
 }
 
 export { getUsers, getUserById, getUserByEmail }
