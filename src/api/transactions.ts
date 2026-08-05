@@ -43,6 +43,7 @@ export async function createTransfer(input: {
   recipientUserId: string
   currencyCode: string
   amount: number
+  concept?: string
 }): Promise<Transaction> {
   const wallet = await getCurrentWallet()
   if (!wallet) throw new Error('No hay wallet activa')
@@ -60,6 +61,7 @@ export async function createTransfer(input: {
     amount: input.amount,
     description: `Transferencia a ${input.recipient}`,
     status: 'pending',
+    concept: input.concept,
   })
   await adjustBalance(wallet.id, input.currencyCode, -input.amount)
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Wallet, ArrowRight, Sparkles, Coins, TrendingUp, RefreshCw } from 'lucide-react'
+import { Wallet, User, ArrowRight, Sparkles, Coins, TrendingUp, RefreshCw } from 'lucide-react'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import LogoutButton from '../../components/LogoutButton'
 import { useAuth } from '../../providers/authentication/AuthContext'
@@ -38,6 +38,13 @@ export default function Home() {
 
         <div className="home-nav__actions">
           <ThemeToggle />
+          <Link
+            to={isAuthenticated ? '/dashboard' : '/signin'}
+            className="home-nav__user"
+            aria-label={isAuthenticated ? 'Ir a tu panel' : 'Iniciar sesión'}
+          >
+            <User className="home-nav__user-icon" />
+          </Link>
           {initializing ? null : isAuthenticated ? (
             <LogoutButton />
           ) : (
@@ -53,7 +60,7 @@ export default function Home() {
         <section className="home-hero">
           <div className="home-hero__left">
             <h1 className="home-hero__title">
-              Tu dinero en un solo lugar, y <span className="home-hero__highlight">sin fronteras</span>
+              Tu dinero en un solo lugar,  <span className="home-hero__highlight">y sin fronteras</span>
             </h1>
             <p className="home-hero__subtitle">
               Simplifica tus cobros internacionales, maximiza tus ingresos con
@@ -66,9 +73,9 @@ export default function Home() {
                 Ver tu Wallet
                 <ArrowRight className="home-hero__primary-icon" />
               </Link>
-              <Link to="/dashboard/assistant" className="home-hero__secondary">
+              <Link to="/signin" className="home-hero__secondary">
                 <Sparkles className="home-hero__secondary-icon" />
-                Probar el copiloto IA
+                Probar el agente IA
               </Link>
             </div>
 
@@ -124,6 +131,12 @@ export default function Home() {
           })}
         </section>
       </main>
+
+      <footer className="home-footer">
+        <p className="home-footer__copyright">
+          © {new Date().getFullYear()} Globalance. Todos los derechos reservados.
+        </p>
+      </footer>
     </div>
   )
 }
