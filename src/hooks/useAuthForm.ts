@@ -28,8 +28,10 @@ export function useAuthForm<T extends Record<string, string>>({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
 
-  const isChecked = (field: keyof T): boolean =>
-    Boolean(touched[field]) || submitAttempted || liveFields.includes(field)
+  const isChecked = (field: keyof T): boolean => {
+    if (touched[field] || submitAttempted) return true
+    return liveFields.includes(field) && Boolean(values[field])
+  }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const name = e.target.name as keyof T
@@ -43,6 +45,12 @@ export function useAuthForm<T extends Record<string, string>>({
         const updated = { ...prev }
         if (error) updated[name] = error
         else delete updated[name]
+        return updated
+      })
+    } else if (liveFields.includes(name) && !value) {
+      setErrors((prev) => {
+        const updated = { ...prev }
+        delete updated[name]
         return updated
       })
     }

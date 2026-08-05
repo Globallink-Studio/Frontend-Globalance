@@ -61,10 +61,10 @@
 
 .account-type-cards__card:hover {
   transform: translateY(-2px);
-  border-color: var(--ring);
+  border-color: color-mix(in oklab, var(--foreground) 30%, transparent);
   box-shadow:
     0 2px 4px oklch(0.22 0.012 285 / 6%),
-    0 22px 44px -20px oklch(0.5 0.14 295 / 30%);
+    0 22px 44px -20px oklch(0.22 0.012 285 / 24%);
 }
 
 .account-type-cards__card:hover::before {
@@ -73,6 +73,22 @@
 
 .account-type-cards__card:active {
   transform: translateY(0);
+}
+
+.account-type-cards__card--selected {
+  border-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--foreground) 14%, transparent),
+    var(--shadow-soft);
+}
+
+.account-type-cards__card--selected::before {
+  opacity: 1;
+}
+
+.account-type-cards__card--selected .account-type-cards__arrow {
+  background-color: color-mix(in oklab, var(--pastel-sky) 60%, transparent);
+  color: oklch(0.26 0.02 285);
 }
 
 .account-type-cards__icon {

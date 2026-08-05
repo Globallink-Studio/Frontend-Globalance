@@ -4,9 +4,10 @@ import { ThemeToggle } from "../ThemeToggle";
 import "../../styles/components/auth-card.css";
 
 interface authCardProps {
-    title: string;
-    subtitle: string;
+    title?: string;
+    subtitle?: string;
     errorMessage?: string;
+    className?: string;
     children: React.ReactNode;
 }
 
@@ -14,11 +15,12 @@ export const AuthCard: React.FC<authCardProps> = ({
     title,
     subtitle,
     errorMessage,
+    className,
     children,
 }) => {
     return (
         <main className="auth-page">
-            <section className="auth-card">
+            <section className={`auth-card${className ? ` ${className}` : ""}`}>
                 <header className="auth-card__header">
                     <div className="auth-card__brand">
                         <span className="auth-card__logo" aria-hidden="true">
@@ -29,8 +31,8 @@ export const AuthCard: React.FC<authCardProps> = ({
                     <ThemeToggle />
                 </header>
 
-                <h1 className="auth-card__title">{title}</h1>
-                <p className="auth-card__subtitle">{subtitle}</p>
+                {title && <h1 className="auth-card__title">{title}</h1>}
+                {subtitle && <p className="auth-card__subtitle">{subtitle}</p>}
 
                 {errorMessage && <p className="auth-card__error" role="alert">{errorMessage}</p>}
 
