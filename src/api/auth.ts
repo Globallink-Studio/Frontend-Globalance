@@ -58,6 +58,11 @@ export async function getAuthToken(): Promise<string | null> {
 
 setAuthTokenGetter(getAuthToken)
 
+export function getFirebaseDisplayName(): string | null {
+  if (getAuthMode() === 'mock') return null
+  return auth?.currentUser?.displayName ?? null
+}
+
 // --- Firebase + API -----------------------------------------------------
 
 interface ApiUser {

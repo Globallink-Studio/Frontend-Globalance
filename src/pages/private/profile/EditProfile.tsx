@@ -122,9 +122,7 @@ export default function EditProfile() {
         </div>
 
         <div className="profile-card">
-          <h2 className="profile-card__title">
-            {isPerson ? 'Información personal' : 'Información de la empresa'}
-          </h2>
+          <h2 className="profile-card__title">Información personal</h2>
           <div className="profile-edit__fields">
             {isPerson ? (
               <>
@@ -147,7 +145,7 @@ export default function EditProfile() {
               </>
             ) : (
               <p className="profile-edit__readonly">
-                <span>Razón social</span>
+                <span>Nombre</span>
                 <strong>{profile ? (profile as CompanyProfile).legal_name : '—'}</strong>
               </p>
             )}

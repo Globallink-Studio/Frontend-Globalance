@@ -4,7 +4,7 @@ import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
 import type { CompanyProfile } from '../mocks/data/companyProfiles'
-import { getAuthMode, getCachedUser, getCurrentUserId, refreshCachedUser } from './auth'
+import { getAuthMode, getCachedUser, getCurrentUserId, getFirebaseDisplayName, refreshCachedUser } from './auth'
 import { fetchApi } from './fetchApi'
 
 export async function getCurrentUser(): Promise<User | undefined> {
@@ -42,18 +42,19 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
   const firstName = p.first_name ?? ''
   const lastName = p.last_name ?? ''
   const legalName = p.legal_name ?? ''
-  const nameHint = Boolean(firstName || lastName)
+  const firebaseName = getFirebaseDisplayName() ?? ''
+  const personName = `${firstName} ${lastName}`.trim() || firebaseName
 
   let isPerson: boolean
   if (p.user_type === 'company') isPerson = false
   else if (p.user_type === 'person') isPerson = true
-  else if (nameHint) isPerson = true
-  else isPerson = getCachedUser()?.user_type === 'person'
+  else if (legalName && !firstName && !lastName) isPerson = false
+  else isPerson = true
 
   if (isPerson) {
     return {
       user_id: p.id,
-      first_name: firstName,
+      first_name: firstName || firebaseName,
       last_name: lastName,
       document: '',
       phone: null,
@@ -61,7 +62,7 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
   }
   return {
     user_id: p.id,
-    legal_name: legalName || `${firstName} ${lastName}`.trim(),
+    legal_name: legalName || personName,
     document: '',
     phone: null,
   }
