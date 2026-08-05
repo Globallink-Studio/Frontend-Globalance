@@ -12,7 +12,7 @@ import {
 import { login as mockLogin, logout as mockLogout, register as mockRegister } from '../mocks/handlers/auth'
 import { getUserById } from '../mocks/handlers/users'
 import { provisionDemoData } from '../mocks/provision'
-import { fetchApi } from './fetchApi'
+import { fetchApi, setAuthTokenGetter } from './fetchApi'
 import { getFriendlyErrorMessage } from './errors'
 import { auth } from '../firebase/firebase'
 import type { User } from '../mocks/data/users'
@@ -48,6 +48,15 @@ export function setCurrentUser(userId: string): void {
 export function clearCurrentUser(): void {
   localStorage.removeItem(STORAGE_KEY)
 }
+
+export async function getAuthToken(): Promise<string | null> {
+  if (getAuthMode() === 'mock') return null
+  const fb = auth
+  if (!fb?.currentUser) return null
+  return await getIdToken(fb.currentUser)
+}
+
+setAuthTokenGetter(getAuthToken)
 
 // --- Firebase + API -----------------------------------------------------
 
