@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth'
 import { login as mockLogin, logout as mockLogout, register as mockRegister } from '../mocks/handlers/auth'
 import { getUserById } from '../mocks/handlers/users'
+import { provisionDemoData } from '../mocks/provision'
 import { fetchApi } from './fetchApi'
 import { auth } from '../firebase/firebase'
 import type { User } from '../mocks/data/users'
@@ -29,6 +30,10 @@ let cachedUser: User | null = null
 
 export function getCachedUser(): User | null {
   return cachedUser
+}
+
+export function refreshCachedUser(user: User): void {
+  cachedUser = user
 }
 
 export function getCurrentUserId(): string | null {
@@ -188,6 +193,9 @@ export function subscribeToAuth(listener: AuthSessionListener): () => void {
     void (async () => {
       const id = getCurrentUserId()
       const user = id ? await getUserById(id) : undefined
+      if (user) {
+        provisionDemoData(user.id, user.email.split('@')[0].replace(/[._-]+/g, ' ').trim())
+      }
       listener(user ?? null)
     })()
     return () => {}

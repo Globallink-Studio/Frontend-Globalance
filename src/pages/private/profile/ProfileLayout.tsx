@@ -1,5 +1,6 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Tabs } from '../../../components/layout/Tabs'
+import '../../../styles/pages/private/profile.css'
 
 const tabs = [
   { label: 'Datos personales', to: '/dashboard/profile', end: true },
@@ -10,9 +11,12 @@ const tabs = [
 ]
 
 export default function ProfileLayout() {
+  const location = useLocation()
+  const isEdit = location.pathname.endsWith('/edit')
+
   return (
     <div>
-      <Tabs items={tabs} />
+      {!isEdit && <Tabs items={tabs} />}
       <Outlet />
     </div>
   )

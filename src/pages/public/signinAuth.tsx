@@ -12,6 +12,7 @@ interface SigninAuthState {
     accountType: AccountType;
     email: string;
     password: string;
+    autoComplete: 'email' | 'current-password';
 }
 
 const accountOptions = [
@@ -26,6 +27,7 @@ export default function SigninAuth() {
         accountType: 'personal',
         email: '',
         password: '',
+        autoComplete: 'email',
     });
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -89,6 +91,7 @@ export default function SigninAuth() {
                     type="email"
                     id="email"
                     name="email"
+                    autoComplete="email"
                     value={formData.email}
                     placeholder="Correo electrónico"
                     required
@@ -99,6 +102,7 @@ export default function SigninAuth() {
                     type="password"
                     id="password"
                     name="password"
+                    autoComplete="current-password"
                     value={formData.password}
                     placeholder="Contraseña"
                     required

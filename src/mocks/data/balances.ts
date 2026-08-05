@@ -22,6 +22,13 @@ export const balances: Balance[] = [
     updated_at: '2026-07-28T14:10:00.000Z',
   },
   {
+    id: '10000000-0000-4000-8000-000000000002b',
+    wallet_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    currency_code: 'EUR',
+    amount: 5120.4,
+    updated_at: '2026-07-29T12:00:00.000Z',
+  },
+  {
     id: '10000000-0000-4000-8000-000000000003',
     wallet_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     currency_code: 'USD',

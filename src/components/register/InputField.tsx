@@ -10,6 +10,7 @@ interface InputFieldProps {
     value: string;
     placeholder?: string;
     required?: boolean;
+    autoComplete?: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -21,6 +22,7 @@ export const InputField: React.FC<InputFieldProps> = ({
     value,
     placeholder,
     required,
+    autoComplete,
     onChange,
 }) => {
     const [showPassword, setShowPassword] = useState(false);
@@ -39,6 +41,7 @@ export const InputField: React.FC<InputFieldProps> = ({
                     value={value}
                     placeholder={placeholder}
                     required={required}
+                    autoComplete={autoComplete}
                     onChange={onChange}
                 />
                 {isPassword && (

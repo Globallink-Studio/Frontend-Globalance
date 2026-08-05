@@ -1,61 +1,163 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { getCurrentUser, getCurrentUserProfile } from '../../../api/users'
+import { getCurrentWallet } from '../../../api/wallets'
 import type { User } from '../../../mocks/data/users'
 import type { PersonProfile } from '../../../mocks/data/personProfiles'
 import type { CompanyProfile } from '../../../mocks/data/companyProfiles'
+import type { Wallet } from '../../../mocks/data/wallets'
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+const statusLabel: Record<string, string> = {
+  active: 'Activa',
+  inactive: 'Inactiva',
+  blocked: 'Bloqueada',
+}
+
+const prefItems = [
+  { key: 'notifications', label: 'Notificaciones' },
+  { key: 'receivedPayments', label: 'Cobros recibidos' },
+  { key: 'currencyUpdates', label: 'Actualizaciones de monedas' },
+  { key: 'weeklySummary', label: 'Resumen semanal' },
+] as const
+
+type PrefKey = (typeof prefItems)[number]['key']
+
+function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-gray-100 py-2 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
+    <div className="profile-info-row">
+      <span className="profile-info-row__label">{label}</span>
+      <span className="profile-info-row__value">{children}</span>
     </div>
   )
+}
+
+function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'success' | 'warning'; children: ReactNode }) {
+  return <span className={`profile-badge profile-badge--${tone}`}>{children}</span>
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('')
 }
 
 export default function PersonalData() {
   const [user, setUser] = useState<User | undefined>()
   const [profile, setProfile] = useState<PersonProfile | CompanyProfile | undefined>()
+  const [wallet, setWallet] = useState<Wallet | undefined>()
+  const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
+    notifications: true,
+    receivedPayments: true,
+    currencyUpdates: true,
+    weeklySummary: false,
+  })
 
   useEffect(() => {
     getCurrentUser().then(setUser)
     getCurrentUserProfile().then(setProfile)
+    getCurrentWallet().then(setWallet)
   }, [])
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Datos personales</h1>
+  const togglePref = (key: PrefKey) => setPrefs((prev) => ({ ...prev, [key]: !prev[key] }))
 
-      {user && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 text-lg font-semibold text-gray-700">Cuenta</h2>
-          <InfoRow label="Email" value={user.email} />
-          <InfoRow label="Tipo de usuario" value={user.user_type ?? 'Sin definir'} />
-          <InfoRow label="Moneda de visualización" value={user.display_currency} />
-          <InfoRow label="Estado" value={user.status} />
-        </div>
+  const isPerson = !!profile && 'first_name' in profile
+  const displayName = profile
+    ? isPerson
+      ? `${(profile as PersonProfile).first_name} ${(profile as PersonProfile).last_name}`.trim()
+      : (profile as CompanyProfile).legal_name
+    : ''
+  const accountType = user?.user_type === 'company' ? 'Empresa' : 'Personal'
+  const subtitle = `${user?.email ?? ''} · Cuenta ${accountType}`
+
+  return (
+    <div className="profile-page">
+      {profile && (
+        <section className="profile-identity">
+          <span className="profile-identity__avatar">{getInitials(displayName)}</span>
+          <div className="profile-identity__info">
+            <p className="profile-identity__name">{displayName}</p>
+            <p className="profile-identity__subtitle">{subtitle}</p>
+          </div>
+          <Link to="/dashboard/profile/edit" className="profile-identity__edit">
+            Editar perfil
+          </Link>
+        </section>
       )}
 
-      {profile && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 text-lg font-semibold text-gray-700">
-            {user?.user_type === 'company' ? 'Empresa' : 'Información personal'}
-          </h2>
-          {'first_name' in profile ? (
-            <>
-              <InfoRow label="Nombre" value={`${profile.first_name} ${profile.last_name}`} />
-              <InfoRow label="Documento" value={profile.document} />
-              <InfoRow label="Teléfono" value={profile.phone ?? '-'} />
-            </>
-          ) : (
-            <>
-              <InfoRow label="Razón social" value={profile.legal_name} />
-              <InfoRow label="CUIT" value={profile.document} />
-              <InfoRow label="Teléfono" value={profile.phone ?? '-'} />
-            </>
+      <div className="profile-body">
+        <div className="profile-main">
+          {user && (
+            <section className="profile-card">
+              <h2 className="profile-card__title">Datos de Cuenta</h2>
+              <InfoRow label="Alias">
+                <span className="profile-info-row__alias">{wallet?.alias ?? '—'}</span>
+              </InfoRow>
+              <InfoRow label="CVU">{wallet?.account_number ?? '—'}</InfoRow>
+              <InfoRow label="Documento">
+                {isPerson ? 'DNI' : 'CUIT'}
+              </InfoRow>
+              <InfoRow label="Tipo de usuario">{accountType}</InfoRow>
+              <InfoRow label="Moneda de visualización">
+                <Badge>{user.display_currency}</Badge>
+              </InfoRow>
+              <InfoRow label="Estado">
+                <Badge tone={user.status === 'active' ? 'success' : user.status === 'blocked' ? 'warning' : 'neutral'}>
+                  ● {statusLabel[user.status] ?? user.status}
+                </Badge>
+              </InfoRow>
+            </section>
+          )}
+
+          {profile && (
+            <section className="profile-card">
+              <h2 className="profile-card__title">
+                {isPerson ? 'Información personal' : 'Información de la empresa'}
+              </h2>
+              {isPerson ? (
+                <InfoRow label="Nombre completo">
+                  {(profile as PersonProfile).first_name} {(profile as PersonProfile).last_name}
+                </InfoRow>
+              ) : (
+                <InfoRow label="Razón social">{(profile as CompanyProfile).legal_name}</InfoRow>
+              )}
+              <InfoRow label="Email">{user?.email ?? '—'}</InfoRow>
+              <InfoRow label="Teléfono">
+                {profile.phone ? (
+                  profile.phone
+                ) : (
+                  <span className="profile-info-row__empty">
+                    Sin registrar{' '}
+                    <Link to="/dashboard/profile/edit" className="profile-info-row__action">
+                      + Agregar teléfono
+                    </Link>
+                  </span>
+                )}
+              </InfoRow>
+            </section>
           )}
         </div>
-      )}
+
+        <aside className="profile-sidebar">
+          <section className="profile-card">
+            <h2 className="profile-card__title">Preferencias de usuario</h2>
+            <ul className="profile-prefs__list">
+              {prefItems.map((pref) => (
+                <li key={pref.key}>
+                  <button type="button" className="profile-prefs__row" onClick={() => togglePref(pref.key)}>
+                    <span className="profile-prefs__label">{pref.label}</span>
+                    <span className={`profile-switch${prefs[pref.key] ? ' profile-switch--on' : ''}`} aria-hidden="true">
+                      <span className="profile-switch__thumb" />
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }

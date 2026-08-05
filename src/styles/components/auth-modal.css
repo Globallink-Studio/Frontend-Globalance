@@ -1,0 +1,122 @@
+@keyframes auth-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: oklch(0.16 0.012 285 / 55%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: auth-modal-backdrop-in 0.25s ease both;
+}
+
+.auth-modal {
+  width: 100%;
+  max-width: 28rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  border-radius: var(--radius-2xl);
+  padding: 1.75rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  animation: auth-modal-in 0.3s ease both;
+}
+
+.auth-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-modal__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.875rem;
+  color: oklch(0.26 0.02 285);
+  background-image: var(--gradient-iridescent);
+}
+
+.auth-modal__icon-svg {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.auth-modal__heading {
+  flex: 1;
+}
+
+.auth-modal__title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.auth-modal__subtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.auth-modal__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: none;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.auth-modal__close:hover {
+  color: var(--foreground);
+  background-color: color-mix(in oklab, var(--muted-foreground) 20%, transparent);
+}
+
+.auth-modal__close-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.auth-modal__error {
+  color: var(--destructive);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-md);
+  background-color: color-mix(in oklab, var(--destructive) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--destructive) 30%, transparent);
+}

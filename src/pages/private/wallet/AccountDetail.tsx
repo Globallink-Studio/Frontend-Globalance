@@ -22,8 +22,8 @@ export default function AccountDetail() {
       <h1 className="text-2xl font-bold">Cuenta {code}</h1>
 
       {balance && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-gray-500">Saldo disponible</p>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+          <p className="text-sm text-muted-foreground">Saldo disponible</p>
           <p className="text-2xl font-semibold">
             {balance.amount.toLocaleString('es-AR')} {balance.currency_code}
           </p>
@@ -31,7 +31,7 @@ export default function AccountDetail() {
       )}
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-gray-700">Historial de la cuenta</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Historial de la cuenta</h2>
         <TransactionList transactions={transactions} />
       </section>
     </div>

@@ -27,6 +27,7 @@ import GroupSettings from '../pages/private/groups/group/GroupSettings'
 import Exchange from '../pages/private/Exchange'
 import ProfileLayout from '../pages/private/profile/ProfileLayout'
 import PersonalData from '../pages/private/profile/PersonalData'
+import EditProfile from '../pages/private/profile/EditProfile'
 import Cards from '../pages/private/profile/Cards'
 import ProfileContacts from '../pages/private/profile/Contacts'
 import NotificationsSettings from '../pages/private/profile/NotificationsSettings'
@@ -88,6 +89,7 @@ export default function AppRouter() {
           {/* Profile */}
           <Route path="profile" element={<ProfileLayout />}>
             <Route index element={<PersonalData />} />
+            <Route path="edit" element={<EditProfile />} />
             <Route path="cards" element={<Cards />} />
             <Route path="contacts" element={<ProfileContacts />} />
             <Route path="notifications" element={<NotificationsSettings />} />
