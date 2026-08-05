@@ -10,8 +10,9 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { dashboardMock } from '../../data/mocks'
+import { dashboardMock, type Metric, type ChartPoint } from '../../data/mocks'
 import { getCurrentBalanceSummary, type BalanceSummaryItem } from '../../api/balances'
+import { getDashboardMetrics, getDashboardChart } from '../../api/dashboard'
 import { getRecentTransactions } from '../../api/transactions'
 import type { Transaction } from '../../mocks/data/transactions'
 import '../../styles/pages/private/dashboard.css'
@@ -27,11 +28,15 @@ const formatAmount = (value: number, currency: string) => {
 }
 
 export default function Dashboard() {
-  const { metrics, chart, aiSummary } = dashboardMock
+  const { aiSummary } = dashboardMock
+  const [metrics, setMetrics] = useState<Metric[]>([])
+  const [chart, setChart] = useState<ChartPoint[]>([])
   const [balances, setBalances] = useState<BalanceSummaryItem[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
 
   useEffect(() => {
+    getDashboardMetrics().then(setMetrics)
+    getDashboardChart().then(setChart)
     getCurrentBalanceSummary().then(setBalances)
     getRecentTransactions(5).then(setTransactions)
   }, [])

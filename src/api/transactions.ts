@@ -1,5 +1,6 @@
 import { createTransaction, setTransactionStatus, getTransactions } from '../mocks/handlers/transactions'
 import { adjustBalance } from '../mocks/handlers/balances'
+import { getAuthMode } from './auth'
 import { getCurrentWallet, getWalletByUserId } from './wallets'
 import { getCurrentBalances } from './balances'
 import { convertCurrency } from './exchangeRates'
@@ -15,6 +16,7 @@ export const transactionStatusLabels: Record<TransactionStatus, string> = {
 }
 
 async function getCurrentWalletTransactions(): Promise<Transaction[]> {
+  if (getAuthMode() !== 'mock') return []
   const wallet = await getCurrentWallet()
   if (!wallet) return []
   const all = await getTransactions()
