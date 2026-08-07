@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { getCurrentUser, getCurrentUserProfile } from '../../../api/users'
+import { getFirebaseDisplayName } from '../../../api/auth'
 import { getCurrentWallet } from '../../../api/wallets'
 import type { User } from '../../../mocks/data/users'
 import type { PersonProfile } from '../../../mocks/data/personProfiles'
@@ -36,12 +37,7 @@ function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'success' | 
 }
 
 function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('')
+  return name.trim().charAt(0).toUpperCase()
 }
 
 export default function PersonalData() {
@@ -64,12 +60,16 @@ export default function PersonalData() {
   const togglePref = (key: PrefKey) => setPrefs((prev) => ({ ...prev, [key]: !prev[key] }))
 
   const isPerson = !!profile && 'first_name' in profile
-  const displayName = profile
-    ? isPerson
-      ? `${(profile as PersonProfile).first_name} ${(profile as PersonProfile).last_name}`.trim()
-      : (profile as CompanyProfile).legal_name
-    : ''
-  const accountType = user?.user_type === 'company' ? 'Empresa' : 'Personal'
+  const displayName = (() => {
+    if (profile) {
+      if (isPerson) {
+        return `${(profile as PersonProfile).first_name} ${(profile as PersonProfile).last_name}`.trim()
+      }
+      return ((profile as CompanyProfile).legal_name ?? '').trim()
+    }
+    return ''
+  })() || getFirebaseDisplayName() || ''
+  const accountType = isPerson ? 'Personal' : 'Empresa'
   const subtitle = `${user?.email ?? ''} · Cuenta ${accountType}`
 
   return (
@@ -113,16 +113,8 @@ export default function PersonalData() {
 
           {profile && (
             <section className="profile-card">
-              <h2 className="profile-card__title">
-                {isPerson ? 'Información personal' : 'Información de la empresa'}
-              </h2>
-              {isPerson ? (
-                <InfoRow label="Nombre completo">
-                  {(profile as PersonProfile).first_name} {(profile as PersonProfile).last_name}
-                </InfoRow>
-              ) : (
-                <InfoRow label="Razón social">{(profile as CompanyProfile).legal_name}</InfoRow>
-              )}
+              <h2 className="profile-card__title">Información personal</h2>
+              <InfoRow label="Nombre">{displayName || '—'}</InfoRow>
               <InfoRow label="Email">{user?.email ?? '—'}</InfoRow>
               <InfoRow label="Teléfono">
                 {profile.phone ? (

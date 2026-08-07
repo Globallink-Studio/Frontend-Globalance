@@ -4,70 +4,50 @@ import { AuthCard } from "../../components/register/AuthCard";
 import { InputField } from "../../components/register/InputField";
 import { GoogleButton } from "../../components/register/GoogleButton";
 import { useAuth } from "../../providers/authentication/AuthContext";
-import { AccountTypeToggle, type AccountType } from "../../components/register/AccountTypeToggle";
+import { useAuthForm } from "../../hooks/useAuthForm";
+import { validateSigninField, validateSigninForm, type SigninFormValues } from "../../utils/authValidation";
 import "../../styles/pages/public/auth-common.css";
-import "../../styles/pages/public/signin.css";
-
-interface SigninAuthState {
-    accountType: AccountType;
-    email: string;
-    password: string;
-    autoComplete: 'email' | 'current-password';
-}
-
-const accountOptions = [
-    { value: "personal" as AccountType, label: "Personal", description: "Cuenta individual" },
-    { value: "business" as AccountType, label: "Empresa", description: "Cuenta organizacional" },
-];
 
 export default function SigninAuth() {
     const navigate = useNavigate()
     const { login, loginWithGoogle } = useAuth()
-    const [formData, setFormData] = useState<SigninAuthState>({
-        accountType: 'personal',
-        email: '',
-        password: '',
-        autoComplete: 'email',
-    });
     const [errorMessage, setErrorMessage] = useState<string>('');
-    const [loading, setLoading] = useState(false);
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    const [googleLoading, setGoogleLoading] = useState(false);
 
-    const handleAccountTypeChange = (accountType: AccountType) => {
-        setFormData((prev) => ({ ...prev, accountType }));
-    }
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!formData.email || !formData.password) {
-            setErrorMessage('Por favor, completa todos los campos');
-            return;
-        }
+    const handleSubmitLogin = async (values: SigninFormValues) => {
         setErrorMessage('');
-        setLoading(true);
         try {
-            await login(formData.email, formData.password);
+            await login(values.email, values.password);
             navigate('/dashboard');
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión');
-        } finally {
-            setLoading(false);
         }
+    };
+
+    const form = useAuthForm<SigninFormValues>({
+        initialValues: { email: '', password: '' },
+        validateField: validateSigninField,
+        validateForm: validateSigninForm,
+        onSubmit: handleSubmitLogin,
+    });
+
+    const { values, errors, isSubmitting, isChecked, handleChange: formChange, handleBlur, handleSubmit } = form;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (errorMessage) setErrorMessage('');
+        formChange(e);
     };
 
     const handleGoogleLogin = async () => {
         setErrorMessage('');
-        setLoading(true);
+        setGoogleLoading(true);
         try {
             await loginWithGoogle();
             navigate('/dashboard');
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión con Google');
         } finally {
-            setLoading(false);
+            setGoogleLoading(false);
         }
     };
 
@@ -78,24 +58,19 @@ export default function SigninAuth() {
             errorMessage={errorMessage}
         >
             <form className="auth-form" onSubmit={handleSubmit}>
-                <div className="auth-form__toggle">
-                    <span className="auth-form__toggle-label">Tipo de cuenta</span>
-                    <AccountTypeToggle
-                        value={formData.accountType}
-                        onChange={handleAccountTypeChange}
-                        options={accountOptions}
-                    />
-                </div>
                 <InputField
                     label="Correo electrónico"
                     type="email"
                     id="email"
                     name="email"
                     autoComplete="email"
-                    value={formData.email}
+                    value={values.email}
                     placeholder="Correo electrónico"
                     required
+                    error={errors.email}
+                    valid={isChecked('email') && !errors.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                 />
                 <InputField
                     label="Contraseña"
@@ -103,13 +78,16 @@ export default function SigninAuth() {
                     id="password"
                     name="password"
                     autoComplete="current-password"
-                    value={formData.password}
+                    value={values.password}
                     placeholder="Contraseña"
                     required
+                    error={errors.password}
+                    valid={isChecked('password') && !errors.password}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                 />
-                <button className="auth-button" type="submit" disabled={loading}>
-                    {loading ? 'Ingresando...' : 'Ingresar'}
+                <button className="auth-button" type="submit" disabled={isSubmitting || googleLoading}>
+                    {isSubmitting ? 'Ingresando...' : 'Ingresar'}
                 </button>
                 <div className="auth-divider">
                     <span>o continúa con</span>

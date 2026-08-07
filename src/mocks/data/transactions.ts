@@ -10,6 +10,7 @@ export interface Transaction {
   description: string
   status: TransactionStatus
   created_at: string
+  concept?: string
 }
 
 export const transactions: Transaction[] = [
@@ -32,6 +33,7 @@ export const transactions: Transaction[] = [
     description: 'Pago de alquiler',
     status: 'completed',
     created_at: '2026-07-25T15:30:00.000Z',
+    concept: 'Alquiler de julio',
   },
   {
     id: '20000000-0000-4000-8000-000000000003',
@@ -92,6 +94,7 @@ export const transactions: Transaction[] = [
     description: 'Pago de servicio de hosting',
     status: 'completed',
     created_at: '2026-07-24T14:05:00.000Z',
+    concept: 'Hosting anual',
   },
   {
     id: '20000000-0000-4000-8000-000000000007',

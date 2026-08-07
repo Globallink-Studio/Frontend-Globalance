@@ -78,65 +78,74 @@ export default function Conversions() {
     <div className="tx-page">
       <h2 className="tx-page__title">Nueva conversión</h2>
 
-      <form onSubmit={handleSubmit} className="tx-card tx-card--form tx-form">
-        <div className="tx-form__field">
-          <label htmlFor="from" className="tx-form__label">Desde</label>
-          <select
-            id="from"
-            value={fromCurrency}
-            onChange={(e) => setFromCurrency(e.target.value)}
-            className="tx-form__control"
-          >
-            {balances.map((b) => (
-              <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
-            ))}
-          </select>
-          {fromBalance && (
-            <p className="tx-form__hint">
-              Saldo disponible: {fromBalance.amount.toLocaleString('es-AR')} {fromBalance.currency_code}
-            </p>
-          )}
-        </div>
+      <div className="tx-grid">
+        <form onSubmit={handleSubmit} className="tx-card tx-form">
+          <div className="tx-form__grid">
+            <div className="tx-form__field">
+              <label htmlFor="from" className="tx-form__label">Desde</label>
+              <select
+                id="from"
+                value={fromCurrency}
+                onChange={(e) => setFromCurrency(e.target.value)}
+                className="tx-form__control"
+              >
+                {balances.map((b) => (
+                  <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
+                ))}
+              </select>
+              {fromBalance && (
+                <p className="tx-form__hint">
+                  Saldo: {fromBalance.amount.toLocaleString('es-AR')} {fromBalance.currency_code}
+                </p>
+              )}
+            </div>
 
-        <div className="tx-form__field">
-          <label htmlFor="to" className="tx-form__label">Hacia</label>
-          <select
-            id="to"
-            value={toCurrency}
-            onChange={(e) => setToCurrency(e.target.value)}
-            className="tx-form__control"
-          >
-            {quotes
-              .filter((q) => q.currency_code !== fromCurrency)
-              .map((q) => (
-                <option key={q.currency_code} value={q.currency_code}>{q.currency_code}</option>
-              ))}
-          </select>
-        </div>
+            <div className="tx-form__field">
+              <label htmlFor="to" className="tx-form__label">Hacia</label>
+              <select
+                id="to"
+                value={toCurrency}
+                onChange={(e) => setToCurrency(e.target.value)}
+                className="tx-form__control"
+              >
+                {quotes
+                  .filter((q) => q.currency_code !== fromCurrency)
+                  .map((q) => (
+                    <option key={q.currency_code} value={q.currency_code}>{q.currency_code}</option>
+                  ))}
+              </select>
+            </div>
+          </div>
 
-        <div className="tx-form__field">
-          <label htmlFor="amount" className="tx-form__label">Monto</label>
-          <input
-            id="amount"
-            type="number"
-            min="0"
-            step="any"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-            className="tx-form__control"
-          />
-          {result !== null && (
-            <p className="tx-form__result">
-              Recibís ≈ {result.toLocaleString('es-AR')} {toCurrency}
-            </p>
-          )}
-        </div>
+          <div className="tx-form__field">
+            <label htmlFor="amount" className="tx-form__label">Monto</label>
+            <input
+              id="amount"
+              type="number"
+              min="0"
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className="tx-form__control"
+            />
+            {result !== null && (
+              <p className="tx-form__result">
+                Recibís ≈ {result.toLocaleString('es-AR')} {toCurrency}
+              </p>
+            )}
+          </div>
 
-        <button type="submit" disabled={sending} className="tx-button tx-button--primary tx-button--block">
-          {sending ? 'Convirtiendo...' : 'Convertir'}
-        </button>
-      </form>
+          <button type="submit" disabled={sending} className="tx-button tx-button--primary tx-button--block">
+            {sending ? 'Convirtiendo...' : 'Convertir'}
+          </button>
+        </form>
+
+        <section className="tx-card">
+          <h3 className="tx-section__title">Historial de conversiones</h3>
+          <TransactionList transactions={transactions} compact />
+        </section>
+      </div>
 
       {message && (
         <div className="tx-toast">{message}</div>
@@ -157,11 +166,6 @@ export default function Conversions() {
           </div>
         </div>
       )}
-
-      <section className="tx-card">
-        <h3 className="tx-section__title">Historial de conversiones</h3>
-        <TransactionList transactions={transactions} />
-      </section>
     </div>
   )
 }
