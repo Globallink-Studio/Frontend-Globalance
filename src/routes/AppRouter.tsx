@@ -13,7 +13,6 @@ import TransactionsSummary from '../pages/private/transactions/TransactionsSumma
 import History from '../pages/private/History'
 import Transfers from '../pages/private/transactions/Transfers'
 import Deposits from '../pages/private/transactions/Deposits'
-import Conversions from '../pages/private/transactions/Conversions'
 import MoneyRequests from '../pages/private/transactions/MoneyRequests'
 import GroupsLayout from '../pages/private/groups/GroupsLayout'
 import MyGroups from '../pages/private/groups/MyGroups'
@@ -56,19 +55,19 @@ export default function AppRouter() {
             <Route index element={<WalletSummary />} />
             <Route path="accounts" element={<WalletAccounts />} />
             <Route path="accounts/:currency" element={<AccountDetail />} />
-            <Route path="history" element={<History />} />
             <Route path="contacts" element={<WalletContacts />} />
           </Route>
 
           {/* Transactions */}
           <Route path="transactions" element={<TransactionsLayout />}>
             <Route index element={<TransactionsSummary />} />
-            <Route path="history" element={<History />} />
             <Route path="transfers" element={<Transfers />} />
             <Route path="deposits" element={<Deposits />} />
-            <Route path="conversions" element={<Conversions />} />
             <Route path="requests" element={<MoneyRequests />} />
           </Route>
+
+          {/* History */}
+          <Route path="history" element={<History />} />
 
           {/* Groups */}
           <Route path="groups" element={<GroupsLayout />}>

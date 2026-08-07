@@ -90,6 +90,50 @@ export async function createTransfer(input: {
   return tx
 }
 
+export async function createDeposit(input: {
+  currencyCode: string
+  amount: number
+  methodName?: string
+}): Promise<Transaction> {
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  const tx = await createTransaction({
+    wallet_id: wallet.id,
+    currency_code: input.currencyCode,
+    type: 'deposit',
+    amount: input.amount,
+    description: input.methodName ? `Depósito desde ${input.methodName}` : 'Depósito de dinero',
+    status: 'completed',
+  })
+  await adjustBalance(wallet.id, input.currencyCode, input.amount)
+  return tx
+}
+
+export async function createMoneyRequest(input: {
+  recipient: string
+  recipientUserId: string
+  currencyCode: string
+  amount: number
+  concept?: string
+}): Promise<Transaction> {
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
+  if (!input.recipient) throw new Error('Indicá a quién querés cobrarle')
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  return createTransaction({
+    wallet_id: wallet.id,
+    currency_code: input.currencyCode,
+    type: 'request',
+    amount: input.amount,
+    description: `Solicitud de cobro a ${input.recipient}`,
+    status: 'pending',
+    concept: input.concept,
+  })
+}
+
 export async function createConversion(input: {
   fromCurrency: string
   toCurrency: string
