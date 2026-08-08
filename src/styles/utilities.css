@@ -114,6 +114,23 @@
   }
 }
 
+/* Hover para botones secundarios de edición (celeste/ring) */
+@utility btn-hover-edit {
+  &:hover {
+    background-color: color-mix(in oklab, var(--ring) 14%, transparent) !important;
+    border-color: color-mix(in oklab, var(--ring) 45%, transparent) !important;
+  }
+}
+
+/* Hover para botones secundarios de eliminación (rojo/destructive) */
+@utility btn-hover-danger {
+  &:hover {
+    background-color: color-mix(in oklab, var(--destructive) 14%, transparent) !important;
+    border-color: color-mix(in oklab, var(--destructive) 45%, transparent) !important;
+    color: var(--destructive) !important;
+  }
+}
+
 @utility bar-lilac {
   background-image: linear-gradient(to top, var(--pastel-sky), var(--pastel-lilac));
 }

@@ -7,7 +7,6 @@ import WalletLayout from '../pages/private/wallet/WalletLayout'
 import WalletSummary from '../pages/private/wallet/WalletSummary'
 import WalletAccounts from '../pages/private/wallet/WalletAccounts'
 import AccountDetail from '../pages/private/wallet/AccountDetail'
-import WalletContacts from '../pages/private/wallet/WalletContacts'
 import TransactionsLayout from '../pages/private/transactions/TransactionsLayout'
 import TransactionsSummary from '../pages/private/transactions/TransactionsSummary'
 import History from '../pages/private/History'
@@ -55,7 +54,6 @@ export default function AppRouter() {
             <Route index element={<WalletSummary />} />
             <Route path="accounts" element={<WalletAccounts />} />
             <Route path="accounts/:currency" element={<AccountDetail />} />
-            <Route path="contacts" element={<WalletContacts />} />
           </Route>
 
           {/* Transactions */}
