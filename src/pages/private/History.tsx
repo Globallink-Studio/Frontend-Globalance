@@ -8,6 +8,7 @@ import TransactionDetailModal from '../../components/TransactionDetailModal'
 import type { Transaction, TransactionStatus } from '../../mocks/data/transactions'
 import '../../styles/pages/private/transactions.css'
 import '../../styles/pages/private/profile.css'
+import '../../styles/pages/private/contacts.css'
 
 const TRANSACTIONS_PER_PAGE = 10
 
@@ -140,11 +141,7 @@ export default function History() {
                 key={chip.value}
                 type="button"
                 onClick={() => setType(chip.value)}
-                className={`shrink-0 rounded-xl px-4 py-2 text-sm transition-colors ${
-                  type === chip.value
-                    ? 'iridescent on-iridescent font-medium shadow-soft'
-                    : 'border border-border bg-surface text-muted-foreground hover:text-foreground'
-                }`}
+                className={`contacts-chip${type === chip.value ? ' contacts-chip--active' : ''}`}
               >
                 {chip.label}
               </button>
