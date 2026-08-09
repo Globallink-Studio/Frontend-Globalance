@@ -9,6 +9,7 @@ const typeLabels: Record<string, string> = {
   deposit: 'Depósito',
   conversion: 'Conversión',
   request: 'Solicitud',
+  withdrawal: 'Retiro',
 }
 
 interface TransactionDetailModalProps {

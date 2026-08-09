@@ -10,6 +10,7 @@ const typeIcon: Record<NotificationType, typeof Info> = {
   deposit: Banknote,
   request: HandCoins,
   conversion: RefreshCw,
+  withdrawal: Banknote,
   info: Info,
 }
 

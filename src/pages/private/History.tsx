@@ -17,6 +17,7 @@ const typeLabels: Record<string, string> = {
   deposit: 'Depósitos',
   conversion: 'Conversiones',
   request: 'Solicitudes',
+  withdrawal: 'Retiros',
 }
 
 const categoryLabels: Record<string, string> = {
@@ -24,6 +25,7 @@ const categoryLabels: Record<string, string> = {
   deposit: 'Ingreso',
   conversion: 'Cambio',
   request: 'Solicitud',
+  withdrawal: 'Retiro',
 }
 
 const currencies = ['USD', 'EUR', 'ARS']
@@ -211,7 +213,8 @@ export default function History() {
                     <tbody>
                       {paged.map((t) => {
                         const isIncome = t.type === 'deposit' || t.type === 'request'
-                        const sign = t.type === 'transfer' ? '-' : isIncome ? '+' : ''
+                        const isExpense = t.type === 'transfer' || t.type === 'withdrawal'
+                        const sign = isExpense ? '-' : isIncome ? '+' : ''
                         return (
                           <tr key={t.id} className="tx-table__row" onClick={() => setSelected(t)}>
                             <td className="tx-table__date">

@@ -36,6 +36,7 @@ const transactionTypeLabels: Record<Transaction['type'], string> = {
   deposit: 'Depósito',
   conversion: 'Conversión',
   request: 'Solicitud',
+  withdrawal: 'Retiro',
 }
 
 const normalize = (value: string): string =>

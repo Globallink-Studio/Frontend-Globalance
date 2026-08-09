@@ -1,4 +1,4 @@
-import { createTransfer } from '../../src/api/transactions'
+import { createTransfer, createWithdrawal } from '../../src/api/transactions'
 import { getCurrentWallet, getWalletByUserId } from '../../src/api/wallets'
 import { getBalancesByWallet } from '../../src/mocks/handlers/balances'
 import { getTransactionsByWallet } from '../../src/mocks/handlers/transactions'
@@ -86,6 +86,72 @@ describe('createTransfer', () => {
       createTransfer({
         recipient: 'Juan Pérez',
         recipientUserId: JUAN_USER_ID,
+        currencyCode: 'ARS',
+        amount: 0,
+      }),
+    ).rejects.toThrow('El monto debe ser mayor a 0')
+  })
+})
+
+describe('createWithdrawal', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test('resta el saldo, crea una transacción de retiro y la registra como pendiente', async () => {
+    await seedDemoUser()
+    const wallet = await getCurrentWallet()
+    expect(wallet).toBeDefined()
+
+    const before = await getBalancesByWallet(wallet!.id)
+    const arsBefore = balanceOf(before, 'ARS')
+
+    const tx = await createWithdrawal({
+      currencyCode: 'ARS',
+      amount: 200,
+      methodName: 'Mercado Pago',
+    })
+
+    expect(tx.type).toBe('withdrawal')
+    expect(tx.amount).toBe(200)
+    expect(tx.currency_code).toBe('ARS')
+    expect(tx.description).toBe('Retiro hacia Mercado Pago')
+    expect(tx.status).toBe('pending')
+
+    const after = await getBalancesByWallet(wallet!.id)
+    expect(balanceOf(after, 'ARS')).toBe(arsBefore - 200)
+
+    const txs = await getTransactionsByWallet(wallet!.id)
+    const withdrawal = txs.find((t) => t.id === tx.id)
+    expect(withdrawal).toBeDefined()
+    expect(withdrawal!.type).toBe('withdrawal')
+  })
+
+  test('no resta saldo ni crea transacción si el monto supera el disponible', async () => {
+    await seedDemoUser()
+    const wallet = await getCurrentWallet()
+    expect(wallet).toBeDefined()
+    const before = await getBalancesByWallet(wallet!.id)
+
+    await expect(
+      createWithdrawal({
+        currencyCode: 'ARS',
+        amount: 999999999,
+        methodName: 'Mercado Pago',
+      }),
+    ).rejects.toThrow('Saldo insuficiente')
+
+    const after = await getBalancesByWallet(wallet!.id)
+    expect(after).toEqual(before)
+
+    const txs = await getTransactionsByWallet(wallet!.id)
+    expect(txs.some((t) => t.type === 'withdrawal')).toBe(false)
+  })
+
+  test('rechaza montos menores o iguales a cero', async () => {
+    await seedDemoUser()
+    await expect(
+      createWithdrawal({
         currencyCode: 'ARS',
         amount: 0,
       }),

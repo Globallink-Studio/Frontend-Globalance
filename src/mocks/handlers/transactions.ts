@@ -27,6 +27,8 @@ export async function createTransaction(input: {
   description: string
   status?: TransactionStatus
   concept?: string
+  from_currency?: string
+  to_currency?: string
 }): Promise<Transaction> {
   await delay()
   const tx: Transaction = {
@@ -39,6 +41,8 @@ export async function createTransaction(input: {
     status: input.status ?? 'completed',
     created_at: new Date().toISOString(),
     concept: input.concept,
+    from_currency: input.from_currency,
+    to_currency: input.to_currency,
   }
   saveMockTransactions([tx, ...getMockTransactions()])
   return tx

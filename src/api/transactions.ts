@@ -165,6 +165,41 @@ export async function createMoneyRequest(input: {
   return tx
 }
 
+export async function createWithdrawal(input: {
+  currencyCode: string
+  amount: number
+  methodName?: string
+}): Promise<Transaction> {
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  const balances = await getCurrentBalances()
+  const current = balances.find((b) => b.currency_code === input.currencyCode)
+  if (!current) throw new Error('La moneda no tiene saldo')
+  if (input.amount > current.amount) throw new Error('Saldo insuficiente')
+
+  const tx = await createTransaction({
+    wallet_id: wallet.id,
+    currency_code: input.currencyCode,
+    type: 'withdrawal',
+    amount: input.amount,
+    description: input.methodName ? `Retiro hacia ${input.methodName}` : 'Retiro de dinero',
+    status: 'pending',
+  })
+  await adjustBalance(wallet.id, input.currencyCode, -input.amount)
+  await notifyCurrentUser(
+    'Retiro en proceso',
+    `Estás retirando ${input.amount} ${input.currencyCode}${input.methodName ? ` hacia ${input.methodName}` : ''}.`,
+    'withdrawal',
+    '/dashboard/history',
+  )
+  setTimeout(async () => {
+    await setTransactionStatus(tx.id, 'completed')
+  }, 1500)
+  return tx
+}
+
 export async function createConversion(input: {
   fromCurrency: string
   toCurrency: string
@@ -190,6 +225,8 @@ export async function createConversion(input: {
     amount: result,
     description: `Conversión desde ${input.fromCurrency}`,
     status: 'processing',
+    from_currency: input.fromCurrency,
+    to_currency: input.toCurrency,
   })
   await adjustBalance(wallet.id, input.fromCurrency, -input.amount)
   await adjustBalance(wallet.id, input.toCurrency, result)

@@ -1,4 +1,4 @@
-export type NotificationType = 'transfer' | 'deposit' | 'request' | 'conversion' | 'info'
+export type NotificationType = 'transfer' | 'deposit' | 'request' | 'conversion' | 'withdrawal' | 'info'
 
 export interface AppNotification {
   id: string
