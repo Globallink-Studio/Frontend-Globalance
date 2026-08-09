@@ -6,6 +6,7 @@ import type { Card } from './data/cards'
 import type { Transaction } from './data/transactions'
 import type { Contact } from './data/contacts'
 import type { AppNotification } from './data/notifications'
+import type { PaymentMethod } from './data/paymentMethods'
 
 const USERS_KEY = 'globalance.mock.users'
 const PERSON_PROFILES_KEY = 'globalance.mock.personProfiles'
@@ -16,6 +17,7 @@ const TRANSACTIONS_KEY = 'globalance.mock.transactions'
 const CONTACTS_KEY = 'globalance.mock.contacts'
 const CONTACT_CATEGORIES_KEY = 'globalance.mock.contactCategories'
 const NOTIFICATIONS_KEY = 'globalance.mock.notifications'
+const PAYMENT_METHODS_KEY = 'globalance.mock.paymentMethods'
 
 function readAll<T>(key: string): T[] {
   try {
@@ -188,4 +190,31 @@ export function saveMockNotifications(items: AppNotification[]): void {
 
 export function deleteMockNotification(id: string): void {
   saveAll(NOTIFICATIONS_KEY, getMockNotifications().filter((n) => n.id !== id))
+}
+
+export function getMockPaymentMethods(): PaymentMethod[] {
+  return readAll<PaymentMethod>(PAYMENT_METHODS_KEY).map((p) => ({
+    ...p,
+    ...(p.type === undefined ? { type: 'bank' as const } : {}),
+    ...(p.last_four === undefined ? { last_four: '' } : {}),
+    ...(p.currency_code === undefined ? { currency_code: 'ARS' } : {}),
+    ...(p.currency_name === undefined ? { currency_name: '' } : {}),
+    ...(p.created_at === undefined ? { created_at: new Date().toISOString() } : {}),
+  }))
+}
+
+export function addMockPaymentMethod(method: PaymentMethod): void {
+  saveAll(PAYMENT_METHODS_KEY, [...getMockPaymentMethods(), method])
+}
+
+export function updateMockPaymentMethod(id: string, patch: Partial<PaymentMethod>): void {
+  saveAll(PAYMENT_METHODS_KEY, getMockPaymentMethods().map((p) => (p.id === id ? { ...p, ...patch } : p)))
+}
+
+export function saveMockPaymentMethods(items: PaymentMethod[]): void {
+  saveAll(PAYMENT_METHODS_KEY, items)
+}
+
+export function deleteMockPaymentMethod(id: string): void {
+  saveAll(PAYMENT_METHODS_KEY, getMockPaymentMethods().filter((p) => p.id !== id))
 }

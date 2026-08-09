@@ -6,6 +6,7 @@ import {
   addMockTransactions,
   addMockContact,
   addMockNotification,
+  addMockPaymentMethod,
   getMockUsers,
   getMockWallets,
   getMockBalances,
@@ -13,6 +14,7 @@ import {
   getMockContacts,
   getMockContactCategories,
   getMockNotifications,
+  getMockPaymentMethods,
   addMockContactCategory,
 } from './storage'
 import { users as demoUsers } from './data/users'
@@ -23,6 +25,7 @@ import { transactions as demoTransactions } from './data/transactions'
 import { contacts as demoContacts } from './data/contacts'
 import { contactCategories as demoContactCategories } from './data/contactCategories'
 import { notifications as demoNotifications } from './data/notifications'
+import { paymentMethods as demoPaymentMethods } from './data/paymentMethods'
 
 const DEMO_WALLET_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const DEMO_USER_ID = '11111111-1111-4111-8111-111111111111'
@@ -77,10 +80,19 @@ function provisionDemoNotifications(userId: string): void {
     .forEach((n) => addMockNotification({ ...n, id: crypto.randomUUID(), user_id: userId }))
 }
 
+function provisionDemoPaymentMethods(userId: string): void {
+  if (getMockPaymentMethods().some((p) => p.user_id === userId)) return
+
+  demoPaymentMethods
+    .filter((p) => p.user_id === DEMO_USER_ID)
+    .forEach((p) => addMockPaymentMethod({ ...p, id: crypto.randomUUID(), user_id: userId }))
+}
+
 export function provisionDemoData(userId: string, nameHint = ''): void {
   provisionDemoDirectory()
   provisionDemoContacts(userId)
   provisionDemoNotifications(userId)
+  provisionDemoPaymentMethods(userId)
   if (getMockWallets().some((w) => w.user_id === userId)) return
 
   const walletId = crypto.randomUUID()
