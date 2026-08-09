@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import {
   Home,
@@ -6,17 +7,23 @@ import {
   ArrowLeftRight,
   History,
   Users,
+  BookUser,
+  CreditCard,
   LineChart,
-  User,
   Search,
   Sparkles,
   ArrowLeft,
   Menu,
+  Bell,
 } from 'lucide-react'
 import { getCurrentUserProfile } from '../../api/users'
 import type { CompanyProfile } from '../../mocks/data/companyProfiles'
 import { ThemeToggle } from '../ThemeToggle'
-import LogoutButton from '../LogoutButton'
+import ProfileMenu from './ProfileMenu'
+import { useNotifications } from '../../hooks/useNotifications'
+import { useGlobalSearch } from '../../hooks/useGlobalSearch'
+import NotificationsList from '../notifications/NotificationsList'
+import SearchModal from '../search/SearchModal'
 import '../../styles/components/dashboard-layout.css'
 
 const menuItems = [
@@ -26,27 +33,44 @@ const menuItems = [
   { label: 'Historial', to: '/dashboard/history', icon: History },
   { label: 'Wallet Grupal', to: '/dashboard/groups', icon: Users },
   { label: 'Cotizaciones', to: '/dashboard/exchange', icon: LineChart },
-  { label: 'Perfil', to: '/dashboard/profile', icon: User },
-  { label: 'Buscar', to: '/dashboard/search', icon: Search },
+  { label: 'Contactos', to: '/dashboard/contacts', icon: BookUser },
+  { label: 'Notificaciones', to: '/dashboard/notifications', icon: Bell },
+  { label: 'Tarjetas', to: '/dashboard/cards', icon: CreditCard },
   { label: 'Asistente IA', to: '/dashboard/assistant', icon: Sparkles },
 ]
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/dashboard/wallet': 'Wallet',
+  '/dashboard/wallet/accounts': 'Cuentas',
   '/dashboard/transactions': 'Transacciones',
+  '/dashboard/transactions/transfers': 'Nueva transferencia',
+  '/dashboard/transactions/deposits': 'Depósitos',
+  '/dashboard/transactions/requests': 'Solicitudes',
   '/dashboard/history': 'Historial',
   '/dashboard/groups': 'Wallet Grupal',
   '/dashboard/exchange': 'Cotizaciones',
+  '/dashboard/contacts': 'Contactos',
+  '/dashboard/notifications': 'Notificaciones',
+  '/dashboard/settings': 'Ajustes',
+  '/dashboard/cards': 'Tarjetas',
   '/dashboard/profile': 'Perfil',
-  '/dashboard/search': 'Buscar',
+  '/dashboard/profile/edit': 'Editar perfil',
   '/dashboard/assistant': 'Asistente IA',
 }
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [displayName, setDisplayName] = useState('')
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
   const location = useLocation()
+  const notifRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [notifPos, setNotifPos] = useState<{ top: number; right: number } | null>(null)
+  const { unreadCount } = useNotifications()
+  const searchData = useGlobalSearch()
 
   useEffect(() => {
     getCurrentUserProfile().then((profile) => {
@@ -59,8 +83,51 @@ export default function DashboardLayout() {
     })
   }, [])
 
-  const currentTitle =
-    Object.entries(pageTitles).find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (notifRef.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setNotifOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  useEffect(() => {
+    setNotifOpen(false)
+    setSearchOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!notifOpen) return
+    const onResize = () => {
+      if (!notifRef.current) return
+      const r = notifRef.current.getBoundingClientRect()
+      setNotifPos({ top: r.bottom + 8, right: window.innerWidth - r.right })
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [notifOpen])
+
+  const toggleNotif = () => {
+    if (!notifOpen && notifRef.current) {
+      const r = notifRef.current.getBoundingClientRect()
+      setNotifPos({ top: r.bottom + 8, right: window.innerWidth - r.right })
+    }
+    setNotifOpen((o) => !o)
+  }
+
+  const closeSearch = () => {
+    setSearchOpen(false)
+  }
+
+  const accountMatch = location.pathname.match(/^\/dashboard\/wallet\/accounts\/([^/]+)/)
+  const currentTitle = accountMatch
+    ? `Cuenta ${accountMatch[1].toUpperCase()}`
+    : Object.entries(pageTitles)
+        .sort(([a], [b]) => b.length - a.length)
+        .find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
 
   return (
     <div className="app-shell">
@@ -109,9 +176,48 @@ export default function DashboardLayout() {
             <Menu className="app-topbar__burger-icon" />
           </button>
           <h1 className="app-topbar__title">{currentTitle}</h1>
-          {displayName && <span className="app-topbar__user">Hola, {displayName}</span>}
+          <button
+            type="button"
+            className="app-topbar__search"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Buscar"
+          >
+            <Search className="app-topbar__search-icon" />
+            <span className="app-topbar__search-placeholder">Buscar...</span>
+          </button>
+          <SearchModal
+            open={searchOpen}
+            data={searchData}
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+            onClose={closeSearch}
+          />
+          <div className="app-topbar__notif" ref={notifRef}>
+            <button
+              type="button"
+              className="app-topbar__bell"
+              onClick={toggleNotif}
+              aria-label="Notificaciones"
+              aria-expanded={notifOpen}
+            >
+              <Bell className="app-topbar__bell-icon" />
+              {unreadCount > 0 && <span className="app-topbar__badge">{unreadCount}</span>}
+            </button>
+            {notifOpen &&
+              createPortal(
+                <div
+                  className="notifications-panel"
+                  role="menu"
+                  ref={panelRef}
+                  style={notifPos ? { top: notifPos.top, right: notifPos.right } : undefined}
+                >
+                  <NotificationsList fromBell />
+                </div>,
+                document.body,
+              )}
+          </div>
           <ThemeToggle />
-          <LogoutButton />
+          <ProfileMenu name={displayName} />
         </header>
 
         <main className="app-shell__content">

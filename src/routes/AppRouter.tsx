@@ -30,7 +30,6 @@ import Cards from '../pages/private/profile/Cards'
 import ProfileContacts from '../pages/private/profile/Contacts'
 import NotificationsSettings from '../pages/private/profile/NotificationsSettings'
 import Settings from '../pages/private/profile/Settings'
-import Search from '../pages/private/Search'
 import Assistant from '../pages/private/Assistant'
 import SigninAuth from '../pages/public/signinAuth'
 import SignupAuth from '../pages/public/signupAuth'
@@ -83,18 +82,21 @@ export default function AppRouter() {
           {/* Exchange */}
           <Route path="exchange" element={<Exchange />} />
 
+          {/* Contacts & Notifications */}
+          <Route path="contacts" element={<ProfileContacts />} />
+          <Route path="notifications" element={<NotificationsSettings />} />
+
+          {/* Cards & Settings */}
+          <Route path="cards" element={<Cards />} />
+          <Route path="settings" element={<Settings />} />
+
           {/* Profile */}
           <Route path="profile" element={<ProfileLayout />}>
             <Route index element={<PersonalData />} />
             <Route path="edit" element={<EditProfile />} />
-            <Route path="cards" element={<Cards />} />
-            <Route path="contacts" element={<ProfileContacts />} />
-            <Route path="notifications" element={<NotificationsSettings />} />
-            <Route path="settings" element={<Settings />} />
           </Route>
 
-          {/* Search & Assistant */}
-          <Route path="search" element={<Search />} />
+          {/* Assistant */}
           <Route path="assistant" element={<Assistant />} />
           </Route>
         </Route>
