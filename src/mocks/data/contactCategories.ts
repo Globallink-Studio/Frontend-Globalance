@@ -1,1 +1,1 @@
-export const contactCategories: string[] = ['clientes', 'servicios']
+export const contactCategories: string[] = ['Clientes', 'Servicios']

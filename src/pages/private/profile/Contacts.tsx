@@ -16,6 +16,7 @@ import {
 import { getCurrentContacts, createContact, updateContact, deleteContact } from '../../../api/contacts'
 import { getCategories, addCategory, deleteCategory, renameCategory } from '../../../api/contactCategories'
 import type { Contact } from '../../../mocks/data/contacts'
+import '../../../styles/pages/private/profile.css'
 import '../../../styles/pages/private/transactions.css'
 import '../../../styles/pages/private/contacts.css'
 
@@ -207,8 +208,9 @@ export default function Contacts() {
   const categoryCount = (name: string) => contacts.filter((c) => c.category === name).length
 
   const openEditCategory = () => {
-    setEditCategoryValue(categories[0] ?? '')
-    setEditCategoryName('')
+    const first = categories[0] ?? ''
+    setEditCategoryValue(first)
+    setEditCategoryName(first)
     setEditCatMenuOpen(false)
     setErrorMessage(null)
     setEditCategoryModalOpen(true)
@@ -845,6 +847,7 @@ export default function Contacts() {
                             type="button"
                             onClick={() => {
                               setEditCategoryValue(cat)
+                              setEditCategoryName(cat)
                               setEditCatMenuOpen(false)
                             }}
                             className="contacts-menu__btn"
@@ -858,13 +861,13 @@ export default function Contacts() {
                 </div>
               </div>
               <div className="tx-form__field">
-                <label htmlFor="edit-category-name" className="tx-form__label">Nuevo nombre</label>
+                <label htmlFor="edit-category-name" className="tx-form__label">Nombre de la categoría</label>
                 <input
                   id="edit-category-name"
                   type="text"
                   value={editCategoryName}
                   onChange={(e) => setEditCategoryName(e.target.value)}
-                  placeholder="alquiler"
+                  placeholder="clientes"
                   className="tx-form__control"
                   required
                 />
@@ -883,7 +886,7 @@ export default function Contacts() {
                   Cancelar
                 </button>
                 <button type="submit" className="profile-edit__btn profile-edit__btn--primary">
-                  Renombrar categoría
+                  Guardar cambios
                 </button>
               </div>
             </form>

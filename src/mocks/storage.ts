@@ -157,7 +157,7 @@ export function renameMockContactCategory(oldName: string, newName: string): voi
     getMockContactCategories().map((c) => (c === oldName ? newName : c)),
   )
   getMockContacts()
-    .filter((c) => c.category === oldName)
+    .filter((c) => (c.category ?? '').toLowerCase() === oldName.toLowerCase())
     .forEach((c) => updateMockContact(c.id, { category: newName }))
 }
 

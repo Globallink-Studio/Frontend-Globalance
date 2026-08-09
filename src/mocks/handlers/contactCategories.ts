@@ -8,8 +8,11 @@ export async function getContactCategories(): Promise<string[]> {
 
 export async function addContactCategory(name: string): Promise<string> {
   await delay()
-  const trimmed = name.trim().toLowerCase()
+  const trimmed = name.trim()
   if (!trimmed) throw new Error('Indicá el nombre de la categoría')
+  if (getMockContactCategories().some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+    throw new Error('Ya existe una categoría con ese nombre')
+  }
   addMockContactCategory(trimmed)
   return trimmed
 }
@@ -21,9 +24,15 @@ export async function deleteContactCategory(name: string): Promise<void> {
 
 export async function renameContactCategory(oldName: string, newName: string): Promise<string> {
   await delay()
-  const trimmed = newName.trim().toLowerCase()
+  const trimmed = newName.trim()
   if (!trimmed) throw new Error('Indicá el nombre de la categoría')
-  if (getMockContactCategories().includes(trimmed)) throw new Error('Ya existe una categoría con ese nombre')
+  if (
+    getMockContactCategories().some(
+      (c) => c !== oldName && c.toLowerCase() === trimmed.toLowerCase(),
+    )
+  ) {
+    throw new Error('Ya existe una categoría con ese nombre')
+  }
   renameMockContactCategory(oldName, trimmed)
   return trimmed
 }
