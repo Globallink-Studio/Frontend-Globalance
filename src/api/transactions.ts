@@ -86,7 +86,7 @@ export async function createTransfer(input: {
       currency_code: input.currencyCode,
       type: 'transfer',
       amount: input.amount,
-      description: 'Transferencia recibida',
+      description: `Transferencia recibida de ${wallet.alias}`,
       status: 'pending',
     })
     await notifyUser(
