@@ -94,6 +94,14 @@ export function addMockCards(items: Card[]): void {
   saveAll(CARDS_KEY, [...getMockCards(), ...items])
 }
 
+export function updateMockCard(id: string, patch: Partial<Card>): void {
+  saveAll(CARDS_KEY, getMockCards().map((c) => (c.id === id ? { ...c, ...patch } : c)))
+}
+
+export function deleteMockCard(id: string): void {
+  saveAll(CARDS_KEY, getMockCards().filter((c) => c.id !== id))
+}
+
 function migrateConversionPair(t: Transaction): Transaction {
   if (t.type !== 'conversion' || (t.from_currency !== undefined && t.to_currency !== undefined)) return t
   const fromMatch = /Conversión desde\s+([A-Z]{3})/.exec(t.description)

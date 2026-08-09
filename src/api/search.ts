@@ -117,7 +117,7 @@ export function searchGlobal(data: SearchData, query: string, maxHitsPerSection 
   }
 
   const cardHits = data.cards
-    .filter((c) => includes(q, c.holder, c.brand, c.last_four, c.masked_number, c.kind))
+    .filter((c) => includes(q, c.holder, c.brand, c.last_four, c.masked_number))
     .map<SearchHit>((c) => ({
       id: c.id,
       title: c.holder,
