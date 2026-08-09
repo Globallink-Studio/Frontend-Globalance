@@ -1,0 +1,183 @@
+/* ── DatePicker custom (calendario con estética del proyecto) ────── */
+.dp {
+  position: relative;
+}
+
+.dp__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dp__trigger:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 22%, transparent);
+}
+
+.dp__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dp__value--empty {
+  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+}
+
+.dp__icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+}
+
+.dp__popover {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.375rem);
+  z-index: 40;
+  min-width: 19rem;
+  padding: 0.75rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--border);
+  background-color: var(--popover);
+  box-shadow: var(--shadow-soft);
+}
+
+.dp__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.dp__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.dp__nav:hover {
+  color: var(--foreground);
+  background-color: var(--surface);
+}
+
+.dp__nav-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.dp__title {
+  flex: 1;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--foreground);
+}
+
+.dp__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+  margin-bottom: 0.25rem;
+}
+
+.dp__weekday {
+  text-align: center;
+  padding: 0.25rem 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.dp__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.125rem;
+}
+
+.dp__day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.125rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.dp__day:hover {
+  background-color: var(--surface);
+}
+
+.dp__day--empty {
+  visibility: hidden;
+}
+
+.dp__day--today {
+  color: var(--ring);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ring) 45%, transparent);
+}
+
+.dp__day--selected {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+
+.dp__day--selected:hover {
+  background-color: var(--primary);
+}
+
+.dp__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.dp__action {
+  border: none;
+  background-color: transparent;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.dp__action:hover {
+  color: var(--ring);
+  background-color: var(--surface);
+}
