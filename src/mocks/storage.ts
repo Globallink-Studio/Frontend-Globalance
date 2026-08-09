@@ -94,8 +94,18 @@ export function addMockCards(items: Card[]): void {
   saveAll(CARDS_KEY, [...getMockCards(), ...items])
 }
 
+function migrateConversionPair(t: Transaction): Transaction {
+  if (t.type !== 'conversion' || (t.from_currency !== undefined && t.to_currency !== undefined)) return t
+  const fromMatch = /Conversión desde\s+([A-Z]{3})/.exec(t.description)
+  const toMatch = /Conversión a\s+([A-Z]{3})/.exec(t.description)
+  const from = t.from_currency ?? (fromMatch ? fromMatch[1] : undefined)
+  const to = t.to_currency ?? (toMatch ? toMatch[1] : t.currency_code)
+  if (from === undefined && to === undefined) return t
+  return { ...t, ...(from !== undefined ? { from_currency: from } : {}), ...(to !== undefined ? { to_currency: to } : {}) }
+}
+
 export function getMockTransactions(): Transaction[] {
-  return readAll<Transaction>(TRANSACTIONS_KEY)
+  return readAll<Transaction>(TRANSACTIONS_KEY).map(migrateConversionPair)
 }
 
 export function addMockTransactions(items: Transaction[]): void {

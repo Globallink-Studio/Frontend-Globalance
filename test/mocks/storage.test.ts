@@ -14,6 +14,7 @@ import {
   updateMockNotification,
   saveMockNotifications,
   deleteMockNotification,
+  getMockTransactions,
 } from '../../src/mocks/storage'
 import type { PaymentMethod } from '../../src/mocks/data/paymentMethods'
 import type { Contact } from '../../src/mocks/data/contacts'
@@ -22,6 +23,7 @@ import type { AppNotification } from '../../src/mocks/data/notifications'
 const PAYMENT_METHODS_KEY = 'globalance.mock.paymentMethods'
 const CONTACTS_KEY = 'globalance.mock.contacts'
 const NOTIFICATIONS_KEY = 'globalance.mock.notifications'
+const TRANSACTIONS_KEY = 'globalance.mock.transactions'
 
 function buildMethod(overrides: Partial<PaymentMethod> = {}): PaymentMethod {
   return {
@@ -178,5 +180,40 @@ describe('storage: notifications', () => {
     expect(notification.type).toBe('info')
     expect(notification.read).toBe(false)
     expect(notification.created_at).toBeTruthy()
+  })
+})
+
+describe('storage: transactions', () => {
+  test('normaliza pares de conversión de registros viejos del localStorage', () => {
+    localStorage.setItem(
+      TRANSACTIONS_KEY,
+      JSON.stringify([
+        {
+          id: 't-1',
+          wallet_id: 'w-1',
+          currency_code: 'USD',
+          type: 'conversion',
+          amount: 500,
+          description: 'Conversión desde EUR',
+          status: 'completed',
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 't-2',
+          wallet_id: 'w-1',
+          currency_code: 'EUR',
+          type: 'deposit',
+          amount: 100,
+          description: 'Depósito',
+          status: 'completed',
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
+      ]),
+    )
+    const txns = getMockTransactions()
+    expect(txns[0].from_currency).toBe('EUR')
+    expect(txns[0].to_currency).toBe('USD')
+    expect(txns[1].from_currency).toBeUndefined()
+    expect(txns[1].to_currency).toBeUndefined()
   })
 })
