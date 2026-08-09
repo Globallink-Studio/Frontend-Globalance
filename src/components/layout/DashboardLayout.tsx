@@ -42,7 +42,6 @@ const menuItems = [
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/dashboard/wallet': 'Wallet',
-  '/dashboard/wallet/accounts': 'Cuentas',
   '/dashboard/transactions': 'Transacciones',
   '/dashboard/transactions/transfers': 'Nueva transferencia',
   '/dashboard/transactions/deposits': 'Depósitos',
@@ -122,12 +121,10 @@ export default function DashboardLayout() {
     setSearchOpen(false)
   }
 
-  const accountMatch = location.pathname.match(/^\/dashboard\/wallet\/accounts\/([^/]+)/)
-  const currentTitle = accountMatch
-    ? `Cuenta ${accountMatch[1].toUpperCase()}`
-    : Object.entries(pageTitles)
-        .sort(([a], [b]) => b.length - a.length)
-        .find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
+  const currentTitle =
+    Object.entries(pageTitles)
+      .sort(([a], [b]) => b.length - a.length)
+      .find(([path]) => location.pathname.startsWith(path))?.[1] ?? 'Globalance'
 
   return (
     <div className="app-shell">

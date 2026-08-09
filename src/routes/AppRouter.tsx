@@ -3,9 +3,7 @@ import ProtectedRoute from './ProtectedRoute'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import Home from '../pages/public/Home'
 import Dashboard from '../pages/private/Dashboard'
-import WalletLayout from '../pages/private/wallet/WalletLayout'
 import WalletSummary from '../pages/private/wallet/WalletSummary'
-import WalletAccounts from '../pages/private/wallet/WalletAccounts'
 import TransactionsLayout from '../pages/private/transactions/TransactionsLayout'
 import TransactionsSummary from '../pages/private/transactions/TransactionsSummary'
 import History from '../pages/private/History'
@@ -48,10 +46,7 @@ export default function AppRouter() {
             <Route index element={<Dashboard />} />
 
           {/* Wallet */}
-          <Route path="wallet" element={<WalletLayout />}>
-            <Route index element={<WalletSummary />} />
-            <Route path="accounts" element={<WalletAccounts />} />
-          </Route>
+          <Route path="wallet" element={<WalletSummary />} />
 
           {/* Transactions */}
           <Route path="transactions" element={<TransactionsLayout />}>
