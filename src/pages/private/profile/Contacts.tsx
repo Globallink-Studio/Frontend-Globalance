@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { getCurrentContacts, createContact, updateContact, deleteContact } from '../../../api/contacts'
 import { getCategories, addCategory, deleteCategory, renameCategory } from '../../../api/contactCategories'
+import Pagination from '../../../components/Pagination'
 import type { Contact } from '../../../mocks/data/contacts'
 import '../../../styles/pages/private/profile.css'
 import '../../../styles/pages/private/transactions.css'
@@ -494,22 +495,7 @@ export default function Contacts() {
             </div>
           )}
 
-          {totalPages > 1 && (
-            <nav className="contacts-pagination" aria-label="Paginación de contactos">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setPage(n)}
-                  className={`contacts-pagination__chip${page === n ? ' contacts-pagination__chip--active' : ''}`}
-                  aria-label={`Página ${n}`}
-                  aria-current={page === n ? 'page' : undefined}
-                >
-                  {n}
-                </button>
-              ))}
-            </nav>
-          )}
+          {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
         </div>
 
         <aside className="profile-sidebar">
