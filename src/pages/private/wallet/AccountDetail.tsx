@@ -19,8 +19,6 @@ export default function AccountDetail() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Cuenta {code}</h1>
-
       {balance && (
         <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
           <p className="text-sm text-muted-foreground">Saldo disponible</p>

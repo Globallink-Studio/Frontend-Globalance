@@ -146,7 +146,6 @@ export default function TransactionsSummary() {
   return (
     <div className="tx-page">
       <div className="tx-summary__header">
-        <h2 className="tx-page__title">Resumen de transacciones</h2>
         <div className="tx-period" role="tablist" aria-label="Período">
           <button
             type="button"

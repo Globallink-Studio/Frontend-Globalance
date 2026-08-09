@@ -87,8 +87,6 @@ export default function EditProfile() {
       </Link>
 
       <form className="profile-edit" onSubmit={handleSubmit}>
-        <h1 className="profile-edit__title">Editar perfil</h1>
-
         <div className="profile-card">
           <h2 className="profile-card__title">Datos de Cuenta</h2>
           <div className="profile-edit__fields">

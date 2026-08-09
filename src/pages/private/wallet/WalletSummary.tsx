@@ -15,6 +15,7 @@ import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentContacts } from '../../../api/contacts'
 import Modal from '../../../components/Modal'
+import Select from '../../../components/Select'
 import type { BalanceSummaryItem } from '../../../api/balances'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Card } from '../../../mocks/data/cards'
@@ -398,38 +399,30 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
 
   return (
     <form onSubmit={handleNext} className="tx-form">
-      <div className="tx-form__field">
-        <label htmlFor="deposit-account" className="tx-form__label">A qué cuenta</label>
-        <select
-          id="deposit-account"
-          value={currencyCode}
-          onChange={(e) => setCurrencyCode(e.target.value)}
-          className="tx-form__control"
-        >
-          {summary.map((s) => (
-            <option key={s.currency_code} value={s.currency_code}>
-              {s.currency_name} ({s.currency_code})
-            </option>
-          ))}
-        </select>
-      </div>
+      <Select
+        id="deposit-account"
+        label="A qué cuenta"
+        value={currencyCode}
+        onChange={setCurrencyCode}
+        options={summary.map((s) => ({
+          value: s.currency_code,
+          label: `${s.currency_name} (${s.currency_code})`,
+        }))}
+      />
 
-      <div className="tx-form__field">
-        <label htmlFor="deposit-method" className="tx-form__label">Desde</label>
-        <select
-          id="deposit-method"
-          value={methodId}
-          onChange={(e) => setMethodId(e.target.value)}
-          className="tx-form__control"
-        >
-          <option value="">Elegí un método</option>
-          {paymentMethods.map((pm) => (
-            <option key={pm.id} value={pm.id}>
-              {pm.name}{pm.last_four ? ` ····${pm.last_four}` : ''}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Select
+        id="deposit-method"
+        label="Desde"
+        value={methodId}
+        onChange={setMethodId}
+        options={[
+          { value: '', label: 'Elegí un método' },
+          ...paymentMethods.map((pm) => ({
+            value: pm.id,
+            label: `${pm.name}${pm.last_four ? ` ····${pm.last_four}` : ''}`,
+          })),
+        ]}
+      />
 
       <div className="tx-form__field">
         <label htmlFor="deposit-amount" className="tx-form__label">Monto</label>
@@ -556,34 +549,24 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
 
   return (
     <form onSubmit={handleNext} className="tx-form">
-      <div className="tx-form__field">
-        <label htmlFor="request-contact" className="tx-form__label">Cobrarle a</label>
-        <select
-          id="request-contact"
-          value={contactId}
-          onChange={(e) => setContactId(e.target.value)}
-          className="tx-form__control"
-        >
-          <option value="">Elegí un contacto</option>
-          {contacts.map((c) => (
-            <option key={c.id} value={c.id}>{c.alias}</option>
-          ))}
-        </select>
-      </div>
+      <Select
+        id="request-contact"
+        label="Cobrarle a"
+        value={contactId}
+        onChange={setContactId}
+        options={[
+          { value: '', label: 'Elegí un contacto' },
+          ...contacts.map((c) => ({ value: c.id, label: c.alias })),
+        ]}
+      />
 
-      <div className="tx-form__field">
-        <label htmlFor="request-currency" className="tx-form__label">Moneda</label>
-        <select
-          id="request-currency"
-          value={currencyCode}
-          onChange={(e) => setCurrencyCode(e.target.value)}
-          className="tx-form__control"
-        >
-          {summary.map((s) => (
-            <option key={s.currency_code} value={s.currency_code}>{s.currency_code}</option>
-          ))}
-        </select>
-      </div>
+      <Select
+        id="request-currency"
+        label="Moneda"
+        value={currencyCode}
+        onChange={setCurrencyCode}
+        options={summary.map((s) => ({ value: s.currency_code, label: s.currency_code }))}
+      />
 
       <div className="tx-form__field">
         <label htmlFor="request-amount" className="tx-form__label">Monto</label>

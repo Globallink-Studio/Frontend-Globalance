@@ -12,7 +12,6 @@ export default function MoneyRequests() {
 
   return (
     <div>
-      <h2>Transacciones / Solicitudes</h2>
       <TransactionList transactions={transactions} />
     </div>
   )

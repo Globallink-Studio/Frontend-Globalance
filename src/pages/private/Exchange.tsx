@@ -3,6 +3,7 @@ import { getQuotes, convertCurrency } from '../../api/exchangeRates'
 import { getCurrentBalances } from '../../api/balances'
 import { createConversion, getTransactionsByType } from '../../api/transactions'
 import TransactionList from '../../components/TransactionList'
+import Select from '../../components/Select'
 import type { ExchangeRate } from '../../mocks/data/exchangeRates'
 import type { Balance } from '../../mocks/data/balances'
 import type { Transaction } from '../../mocks/data/transactions'
@@ -76,8 +77,6 @@ export default function Exchange() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Cotizaciones</h1>
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {quotes.map((q) => (
           <div key={q.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
@@ -107,40 +106,28 @@ export default function Exchange() {
         <div className="tx-grid">
           <form onSubmit={handleSubmit} className="tx-card tx-form">
             <div className="tx-form__grid">
-              <div className="tx-form__field">
-                <label htmlFor="from" className="tx-form__label">Desde</label>
-                <select
-                  id="from"
-                  value={fromCurrency}
-                  onChange={(e) => setFromCurrency(e.target.value)}
-                  className="tx-form__control"
-                >
-                  {balances.map((b) => (
-                    <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
-                  ))}
-                </select>
-                {fromBalance && (
-                  <p className="tx-form__hint">
-                    Saldo: {fromBalance.amount.toLocaleString('es-AR')} {fromBalance.currency_code}
-                  </p>
-                )}
-              </div>
+              <Select
+                id="from"
+                label="Desde"
+                value={fromCurrency}
+                onChange={setFromCurrency}
+                options={balances.map((b) => ({ value: b.currency_code, label: b.currency_code }))}
+                hint={
+                  fromBalance
+                    ? `Saldo: ${fromBalance.amount.toLocaleString('es-AR')} ${fromBalance.currency_code}`
+                    : undefined
+                }
+              />
 
-              <div className="tx-form__field">
-                <label htmlFor="to" className="tx-form__label">Hacia</label>
-                <select
-                  id="to"
-                  value={toCurrency}
-                  onChange={(e) => setToCurrency(e.target.value)}
-                  className="tx-form__control"
-                >
-                  {quotes
-                    .filter((q) => q.currency_code !== fromCurrency)
-                    .map((q) => (
-                      <option key={q.currency_code} value={q.currency_code}>{q.currency_code}</option>
-                    ))}
-                </select>
-              </div>
+              <Select
+                id="to"
+                label="Hacia"
+                value={toCurrency}
+                onChange={setToCurrency}
+                options={quotes
+                  .filter((q) => q.currency_code !== fromCurrency)
+                  .map((q) => ({ value: q.currency_code, label: q.currency_code }))}
+              />
             </div>
 
             <div className="tx-form__field">

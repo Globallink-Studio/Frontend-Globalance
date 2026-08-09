@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getRecentTransactions } from '../../api/transactions'
 import { transactionStatusLabels } from '../../api/transactions'
+import Select from '../../components/Select'
 import type { Transaction } from '../../mocks/data/transactions'
 
 const typeLabels: Record<string, string> = {
@@ -60,38 +61,28 @@ export default function History() {
 
   return (
     <div className="tx-page">
-      <h2 className="tx-page__title">Historial</h2>
-
       <div className="tx-form__grid history-filters">
-        <div className="tx-form__field">
-          <label className="tx-form__label" htmlFor="history-type">Tipo</label>
-          <select
-            id="history-type"
-            className="tx-form__control"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
-            <option value="">Todos los tipos</option>
-            {Object.entries(typeLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-        </div>
+        <Select
+          id="history-type"
+          label="Tipo"
+          value={type}
+          onChange={setType}
+          options={[
+            { value: '', label: 'Todos los tipos' },
+            ...Object.entries(typeLabels).map(([value, label]) => ({ value, label })),
+          ]}
+        />
 
-        <div className="tx-form__field">
-          <label className="tx-form__label" htmlFor="history-currency">Moneda</label>
-          <select
-            id="history-currency"
-            className="tx-form__control"
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
-          >
-            <option value="">Todas las monedas</option>
-            {currencies.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
+        <Select
+          id="history-currency"
+          label="Moneda"
+          value={currency}
+          onChange={setCurrency}
+          options={[
+            { value: '', label: 'Todas las monedas' },
+            ...currencies.map((c) => ({ value: c, label: c })),
+          ]}
+        />
 
         <div className="tx-form__field">
           <label className="tx-form__label" htmlFor="history-from">Desde</label>

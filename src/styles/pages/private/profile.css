@@ -269,12 +269,6 @@
   color: var(--foreground);
 }
 
-.profile-edit__title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
 .profile-edit__fields {
   display: flex;
   flex-direction: column;

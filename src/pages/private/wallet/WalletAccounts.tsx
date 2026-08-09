@@ -12,7 +12,6 @@ export default function WalletAccounts() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Cuentas</h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {summary.map((item) => (
           <Link
