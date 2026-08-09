@@ -30,7 +30,7 @@
 .modal__panel {
   position: relative;
   width: 100%;
-  max-width: 27rem;
+  max-width: 34rem;
   max-height: 100%;
   display: flex;
   flex-direction: column;

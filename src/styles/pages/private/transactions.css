@@ -285,12 +285,26 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.875rem 0;
+  padding: 0.625rem 0;
   border-bottom: 1px solid var(--border);
 }
 
 .tx-list__item:last-child {
   border-bottom: none;
+}
+
+.tx-list__item--clickable {
+  cursor: pointer;
+  border-radius: 0.75rem;
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
+  margin-left: -0.625rem;
+  margin-right: -0.625rem;
+  transition: background-color 0.2s ease;
+}
+
+.tx-list__item--clickable:hover {
+  background-color: var(--surface);
 }
 
 .tx-list__info {
@@ -300,17 +314,17 @@
 }
 
 .tx-list__description {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .tx-list__status {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
 }
 
 .tx-list__amount {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -322,9 +336,94 @@
 }
 
 .tx-list__date {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   white-space: nowrap;
+}
+
+/* ── Detalle de transacción (modal) ──────────────────────────────── */
+.tx-detail__amount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tx-detail__value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.tx-status {
+  padding: 0.3125rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tx-status--completed {
+  color: color-mix(in oklab, var(--success) 85%, var(--foreground));
+  background-color: color-mix(in oklab, var(--success) 15%, transparent);
+}
+
+.tx-status--pending {
+  color: color-mix(in oklab, var(--warning) 85%, var(--foreground));
+  background-color: color-mix(in oklab, var(--warning) 15%, transparent);
+}
+
+.tx-status--processing {
+  color: color-mix(in oklab, var(--ring) 85%, var(--foreground));
+  background-color: color-mix(in oklab, var(--ring) 15%, transparent);
+}
+
+.tx-status--failed,
+.tx-status--cancelled,
+.tx-status--reversed {
+  color: color-mix(in oklab, var(--destructive) 85%, var(--foreground));
+  background-color: color-mix(in oklab, var(--destructive) 15%, transparent);
+}
+
+.tx-detail__rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  overflow: hidden;
+}
+
+.tx-detail__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tx-detail__row:last-child {
+  border-bottom: none;
+}
+
+.tx-detail__row dt {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.tx-detail__row dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.tx-detail__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
 }
 
 /* ── Resumen de transacciones ───────────────────────────────────── */
@@ -486,23 +585,103 @@
   background-image: linear-gradient(120deg, var(--pastel-sky), var(--pastel-mint));
 }
 
-/* ── Historial agrupado por mes ──────────────────────────────────── */
-.history-filters {
-  align-items: end;
+/* ── Historial (tabla) ───────────────────────────────────────────── */
+.profile-card.history-toolbar {
+  padding: 1rem;
 }
 
-@media (max-width: 40rem) {
-  .history-filters {
-    grid-template-columns: 1fr;
-  }
+.profile-card.tx-table-card {
+  margin-top: 1.5rem;
+  padding: 0;
+  overflow: hidden;
 }
 
-.history-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.tx-table {
+  width: 100%;
+  min-width: 52rem;
+  border-collapse: collapse;
+  font-size: 1rem;
 }
 
-.history-group__title {
-  text-transform: capitalize;
+.tx-table thead {
+  background-color: var(--muted);
+}
+
+.tx-table th {
+  padding: 1.375rem 1.375rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  text-align: left;
+  white-space: nowrap;
+  border-top: 1px solid var(--border);
+}
+
+.tx-table td {
+  padding: 1.25rem 1.375rem;
+  vertical-align: middle;
+}
+
+.tx-table tbody tr {
+  background-image: linear-gradient(to right, var(--border), var(--border));
+  background-size: calc(100% - 2.75rem) 1px;
+  background-position: 1.375rem bottom;
+  background-repeat: no-repeat;
+}
+
+.tx-table tbody tr:last-child {
+  background-image: none;
+}
+
+.tx-table__row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.tx-table__row:hover {
+  background-color: color-mix(in oklab, var(--muted) 60%, transparent);
+}
+
+.tx-table__row:last-child td {
+  border-bottom: none;
+}
+
+.tx-table__date {
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.tx-table__name {
+  font-weight: 600;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tx-table__detail {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.tx-table__concept {
+  color: var(--muted-foreground);
+}
+
+.tx-table__currency {
+  color: var(--ring);
+}
+
+.tx-table__muted {
+  color: var(--muted-foreground);
+}
+
+.tx-table__amount {
+  white-space: nowrap;
+  color: var(--foreground);
+}
+
+.tx-table__amount--income {
+  color: color-mix(in oklab, var(--success) 85%, var(--foreground));
 }
