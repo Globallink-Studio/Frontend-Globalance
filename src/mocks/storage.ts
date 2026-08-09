@@ -5,6 +5,7 @@ import type { Balance } from './data/balances'
 import type { Card } from './data/cards'
 import type { Transaction } from './data/transactions'
 import type { Contact } from './data/contacts'
+import type { AppNotification } from './data/notifications'
 
 const USERS_KEY = 'globalance.mock.users'
 const PERSON_PROFILES_KEY = 'globalance.mock.personProfiles'
@@ -14,6 +15,7 @@ const CARDS_KEY = 'globalance.mock.cards'
 const TRANSACTIONS_KEY = 'globalance.mock.transactions'
 const CONTACTS_KEY = 'globalance.mock.contacts'
 const CONTACT_CATEGORIES_KEY = 'globalance.mock.contactCategories'
+const NOTIFICATIONS_KEY = 'globalance.mock.notifications'
 
 function readAll<T>(key: string): T[] {
   try {
@@ -157,4 +159,33 @@ export function renameMockContactCategory(oldName: string, newName: string): voi
   getMockContacts()
     .filter((c) => c.category === oldName)
     .forEach((c) => updateMockContact(c.id, { category: newName }))
+}
+
+export function getMockNotifications(): AppNotification[] {
+  return readAll<AppNotification>(NOTIFICATIONS_KEY).map((n) => ({
+    ...n,
+    ...(n.type === undefined ? { type: 'info' } : {}),
+    ...(n.read === undefined ? { read: false } : {}),
+    ...(n.created_at === undefined ? { created_at: new Date().toISOString() } : {}),
+    ...(n.link === undefined ? { link: undefined } : {}),
+  }))
+}
+
+export function addMockNotification(notification: AppNotification): void {
+  saveAll(NOTIFICATIONS_KEY, [...getMockNotifications(), notification])
+}
+
+export function updateMockNotification(id: string, patch: Partial<AppNotification>): void {
+  saveAll(
+    NOTIFICATIONS_KEY,
+    getMockNotifications().map((n) => (n.id === id ? { ...n, ...patch } : n)),
+  )
+}
+
+export function saveMockNotifications(items: AppNotification[]): void {
+  saveAll(NOTIFICATIONS_KEY, items)
+}
+
+export function deleteMockNotification(id: string): void {
+  saveAll(NOTIFICATIONS_KEY, getMockNotifications().filter((n) => n.id !== id))
 }
