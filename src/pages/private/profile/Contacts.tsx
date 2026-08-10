@@ -678,7 +678,7 @@ export default function Contacts() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" disabled={saving} className="profile-edit__btn profile-edit__btn--primary">
+                <button type="submit" disabled={saving || alias.trim() === ''} className="profile-edit__btn profile-edit__btn--primary">
                   {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Añadir contacto'}
                 </button>
               </div>
@@ -717,7 +717,7 @@ export default function Contacts() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="profile-edit__btn profile-edit__btn--primary">
+                <button type="submit" disabled={newCategory.trim() === ''} className="profile-edit__btn profile-edit__btn--primary">
                   Crear categoría
                 </button>
               </div>
@@ -871,7 +871,7 @@ export default function Contacts() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="profile-edit__btn profile-edit__btn--primary">
+                <button type="submit" disabled={editCategoryName.trim() === ''} className="profile-edit__btn profile-edit__btn--primary">
                   Guardar cambios
                 </button>
               </div>

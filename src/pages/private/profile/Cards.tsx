@@ -203,8 +203,11 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
   const [lastFour, setLastFour] = useState('')
   const [agreed, setAgreed] = useState(false)
 
+  const isValid = holder.trim() !== '' && expiry.trim() !== '' && lastFour.length === 4 && agreed
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!isValid) return
     onError('')
     setSending(true)
     try {
@@ -280,7 +283,7 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
 
       <button
         type="submit"
-        disabled={sending || !agreed}
+        disabled={sending || !isValid}
         className="tx-button tx-button--primary tx-button--block"
       >
         {sending ? 'Agregando...' : 'Agregar tarjeta'}

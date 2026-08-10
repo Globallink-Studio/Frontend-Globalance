@@ -45,18 +45,15 @@ export default function EditProfile() {
   }, [])
 
   const isPerson = !!profile && 'first_name' in profile
+  const isValid = alias.trim() !== ''
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!isValid) return
     setError('')
     setSaving(true)
 
     const normalizedAlias = alias.trim()
-    if (!normalizedAlias) {
-      setError('El alias no puede estar vacío.')
-      setSaving(false)
-      return
-    }
 
     try {
       if (wallet) {
@@ -169,7 +166,7 @@ export default function EditProfile() {
           <button type="button" className="profile-edit__btn profile-edit__btn--ghost" onClick={() => navigate('/dashboard/profile')}>
             Cancelar
           </button>
-          <button type="submit" className="profile-edit__btn profile-edit__btn--primary" disabled={saving}>
+          <button type="submit" className="profile-edit__btn profile-edit__btn--primary" disabled={saving || !isValid}>
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
         </div>
