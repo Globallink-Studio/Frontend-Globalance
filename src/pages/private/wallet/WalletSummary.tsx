@@ -8,10 +8,9 @@ import {
   Download,
   Plus,
   Repeat,
-  Send,
 } from 'lucide-react'
 import { getCurrentBalanceSummary } from '../../../api/balances'
-import { getRecentTransactions, createDeposit, createMoneyRequest, createWithdrawal, createConversion } from '../../../api/transactions'
+import { getRecentTransactions, createDeposit, createMoneyRequest, createConversion } from '../../../api/transactions'
 import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
@@ -55,8 +54,6 @@ export default function WalletSummary() {
   const [depositStep, setDepositStep] = useState(1)
   const [requestOpen, setRequestOpen] = useState(false)
   const [requestStep, setRequestStep] = useState(1)
-  const [withdrawOpen, setWithdrawOpen] = useState(false)
-  const [withdrawStep, setWithdrawStep] = useState(1)
   const [convertOpen, setConvertOpen] = useState(false)
   const [convertStep, setConvertStep] = useState(1)
   const [accountDetail, setAccountDetail] = useState<BalanceSummaryItem | null>(null)
@@ -100,10 +97,6 @@ export default function WalletSummary() {
                 <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setDepositOpen(true)}>
                   <Plus className="wallet-banner__btn-icon" />
                   Depositar
-                </button>
-                <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setWithdrawOpen(true)}>
-                  <Send className="wallet-banner__btn-icon" />
-                  Retirar
                 </button>
                 <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => navigate('/dashboard/transactions/transfers')}>
                   <ArrowUpRight className="wallet-banner__btn-icon" />
@@ -304,24 +297,6 @@ export default function WalletSummary() {
         />
       </Modal>
 
-      <Modal open={withdrawOpen} onClose={() => setWithdrawOpen(false)} title="Retirar" step={withdrawStep} totalSteps={2}>
-        <WithdrawWizard
-          summary={summary}
-          paymentMethods={paymentMethods}
-          step={withdrawStep}
-          setStep={setWithdrawStep}
-          onDone={(msg) => {
-            setWithdrawOpen(false)
-            setWithdrawStep(1)
-            setMessage(msg)
-            reload()
-          }}
-          onError={setErrorMessage}
-          sending={sending}
-          setSending={setSending}
-        />
-      </Modal>
-
       <Modal open={convertOpen} onClose={() => setConvertOpen(false)} title="Convertir" step={convertStep} totalSteps={2}>
         <ConvertWizard
           summary={summary}
@@ -495,155 +470,6 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
   )
 }
 
-interface WithdrawWizardProps {
-  summary: BalanceSummaryItem[]
-  paymentMethods: PaymentMethod[]
-  step: number
-  setStep: (v: number) => void
-  onDone: (msg: string) => void
-  onError: (msg: string) => void
-  sending: boolean
-  setSending: (v: boolean) => void
-}
-
-function WithdrawWizard({ summary, paymentMethods, step, setStep, onDone, onError, sending, setSending }: WithdrawWizardProps) {
-  const [currencyCode, setCurrencyCode] = useState('ARS')
-  const [methodId, setMethodId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [confirmed, setConfirmed] = useState(false)
-
-  const value = Number(amount)
-  const method = paymentMethods.find((pm) => pm.id === methodId)
-  const available = summary.find((s) => s.currency_code === currencyCode)?.amount ?? 0
-  const insufficient = value > 0 && value > available
-  const isValid = Boolean(method) && value > 0 && !insufficient
-
-  const handleNext = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!isValid) return
-    setStep(2)
-  }
-
-  const handleConfirm = async () => {
-    onError('')
-    setSending(true)
-    try {
-      await createWithdrawal({ currencyCode, amount: value, methodName: method?.name })
-      onDone(`Retirados ${value.toLocaleString('es-AR')} ${currencyCode} hacia ${method?.name}`)
-    } catch (err) {
-      setMethodId('')
-      setAmount('')
-      setConfirmed(false)
-      setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar el retiro')
-    } finally {
-      setSending(false)
-    }
-  }
-
-  if (step === 2) {
-    return (
-      <div className="tx-review">
-        <dl className="tx-review__rows">
-          <div className="tx-review__row">
-            <dt className="tx-review__label">Desde la cuenta</dt>
-            <dd className="tx-review__value">{currencyCode}</dd>
-          </div>
-          <div className="tx-review__row">
-            <dt className="tx-review__label">Hacia</dt>
-            <dd className="tx-review__value">{method ? `${method.name}${method.last_four ? ` ····${method.last_four}` : ''}` : '—'}</dd>
-          </div>
-          <div className="tx-review__row">
-            <dt className="tx-review__label">Monto</dt>
-            <dd className="tx-review__value tx-review__amount">
-              {value.toLocaleString('es-AR')} {currencyCode}
-            </dd>
-          </div>
-        </dl>
-
-        <label className="tx-form__option">
-          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-          <span>Estoy seguro de realizar este retiro</span>
-        </label>
-
-        <div className="tx-review__actions">
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            disabled={sending}
-            className="tx-button tx-button--secondary"
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={sending || !confirmed}
-            className="tx-button tx-button--primary"
-          >
-            {sending ? 'Retirando...' : 'Confirmar retiro'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <form onSubmit={handleNext} className="tx-form">
-      <Select
-        id="withdraw-account"
-        label="Desde qué cuenta"
-        value={currencyCode}
-        onChange={setCurrencyCode}
-        options={summary.map((s) => ({
-          value: s.currency_code,
-          label: `${s.currency_name} (${s.currency_code})`,
-        }))}
-      />
-
-      <Select
-        id="withdraw-method"
-        label="Hacia dónde"
-        value={methodId}
-        onChange={setMethodId}
-        options={[
-          { value: '', label: 'Elegí un método' },
-          ...paymentMethods.map((pm) => ({
-            value: pm.id,
-            label: `${pm.name}${pm.last_four ? ` ····${pm.last_four}` : ''}`,
-          })),
-        ]}
-      />
-
-      <div className="tx-form__field">
-        <label htmlFor="withdraw-amount" className="tx-form__label">Monto</label>
-        <input
-          id="withdraw-amount"
-          type="number"
-          min="0"
-          step="any"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
-          className="tx-form__control"
-        />
-        <p className="tx-form__hint">Disponible: {available.toLocaleString('es-AR')} {currencyCode}</p>
-        {insufficient && (
-          <p className="tx-form__error">Saldo insuficiente</p>
-        )}
-      </div>
-
-      <button
-        type="submit"
-        disabled={!isValid}
-        className="tx-button tx-button--primary tx-button--block"
-      >
-        Continuar
-      </button>
-    </form>
-  )
-}
-
 interface RequestWizardProps {
   summary: BalanceSummaryItem[]
   contacts: Contact[]
@@ -663,7 +489,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
 
   const value = Number(amount)
   const contact = contacts.find((c) => c.id === contactId)
-  const isValid = Boolean(contact) && value > 0
+  const isValid = Boolean(contact && contact.email) && value > 0
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -673,6 +499,12 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
 
   const handleConfirm = async () => {
     if (!contact) return
+    if (!contact.email) {
+      setContactId('')
+      setStep(1)
+      onError('El contacto no tiene un correo cargado para cobrarle')
+      return
+    }
     onError('')
     setSending(true)
     try {
@@ -682,6 +514,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         currencyCode,
         amount: value,
         concept: concept.trim() || undefined,
+        payerEmail: contact.email,
       })
       onDone(`Solicitud de ${value.toLocaleString('es-AR')} ${currencyCode} enviada a ${contact.alias}`)
     } catch (err) {
