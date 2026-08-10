@@ -4,6 +4,7 @@ import { getAuthMode } from './auth'
 import { getCurrentWallet, getWalletByUserId } from './wallets'
 import { getCurrentBalances } from './balances'
 import { convertCurrency } from './exchangeRates'
+import { fetchApi } from './fetchApi'
 import { notifyCurrentUser, notifyUser } from './notifications'
 import type { Transaction, TransactionStatus, TransactionType } from '../mocks/data/transactions'
 
@@ -200,15 +201,65 @@ export async function createWithdrawal(input: {
   return tx
 }
 
+interface ApiExchangeTransaction {
+  transaction_id: string
+  type: 'purchase' | 'sale' | 'conversion'
+  status: string
+  description: string | null
+  created_at: string
+  completed_at: string | null
+  source_currency: string
+  target_currency: string
+  source_amount: string
+  target_amount: string
+  applied_rate: string
+  rate_provider: string
+  rate_fetched_at: string
+  source_balance_after: string
+  target_balance_after: string
+}
+
+interface ApiExchangeResponse {
+  message: string
+  transaction: ApiExchangeTransaction
+}
+
 export async function createConversion(input: {
   fromCurrency: string
   toCurrency: string
   amount: number
 }): Promise<Transaction> {
-  const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
   if (input.fromCurrency === input.toCurrency) throw new Error('La moneda de origen y destino deben ser distintas')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  if (getAuthMode() === 'firebase') {
+    const resp = await fetchApi<ApiExchangeResponse>('/transactions/exchange', {
+      method: 'POST',
+      body: {
+        sourceCurrency: input.fromCurrency,
+        targetCurrency: input.toCurrency,
+        sourceAmount: String(input.amount),
+      },
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    })
+    const tx = resp.transaction
+    const wallet = await getCurrentWallet()
+    return {
+      id: tx.transaction_id,
+      wallet_id: wallet?.id ?? '',
+      currency_code: tx.target_currency,
+      type: 'conversion',
+      amount: Number(tx.target_amount),
+      description: tx.description ?? `Conversión desde ${tx.source_currency}`,
+      status: tx.status as TransactionStatus,
+      created_at: tx.created_at,
+      from_currency: tx.source_currency,
+      to_currency: tx.target_currency,
+    }
+  }
+
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
 
   const balances = await getCurrentBalances()
   const source = balances.find((b) => b.currency_code === input.fromCurrency)

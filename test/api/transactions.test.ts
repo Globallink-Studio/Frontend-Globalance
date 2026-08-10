@@ -1,8 +1,23 @@
-import { createTransfer, createWithdrawal } from '../../src/api/transactions'
+import { createTransfer, createWithdrawal, createConversion } from '../../src/api/transactions'
 import { getCurrentWallet, getWalletByUserId } from '../../src/api/wallets'
 import { getBalancesByWallet } from '../../src/mocks/handlers/balances'
 import { getTransactionsByWallet } from '../../src/mocks/handlers/transactions'
+import { fetchApi } from '../../src/api/fetchApi'
 import { DEMO_USER_EMAIL, JUAN_USER_ID, seedDemoUser } from '../fixtures/db'
+
+const { getAuthModeMock } = vi.hoisted(() => ({ getAuthModeMock: vi.fn(() => 'mock') }))
+
+vi.mock('../../src/api/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/api/auth')>()
+  return { ...actual, getAuthMode: getAuthModeMock }
+})
+
+vi.mock('../../src/api/fetchApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/api/fetchApi')>()
+  return { ...actual, fetchApi: vi.fn() }
+})
+
+const mockFetch = vi.mocked(fetchApi)
 
 function balanceOf(items: { currency_code: string; amount: number }[], currency: string): number {
   return items.find((b) => b.currency_code === currency)?.amount ?? 0
@@ -156,5 +171,144 @@ describe('createWithdrawal', () => {
         amount: 0,
       }),
     ).rejects.toThrow('El monto debe ser mayor a 0')
+  })
+})
+
+describe('createConversion — modo mock (desarrollo local)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('mock')
+  })
+
+  test('convierte ARS a USD, ajusta los saldos y crea la transacción como completada', async () => {
+    await seedDemoUser()
+    const wallet = await getCurrentWallet()
+    expect(wallet).toBeDefined()
+
+    const before = await getBalancesByWallet(wallet!.id)
+    const arsBefore = balanceOf(before, 'ARS')
+    const usdBefore = balanceOf(before, 'USD')
+
+    const tx = await createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 1000 })
+
+    expect(tx.type).toBe('conversion')
+    expect(tx.status).toBe('completed')
+    expect(tx.currency_code).toBe('USD')
+    expect(tx.amount).toBeGreaterThan(0)
+    expect(tx.from_currency).toBe('ARS')
+    expect(tx.to_currency).toBe('USD')
+
+    const after = await getBalancesByWallet(wallet!.id)
+    expect(balanceOf(after, 'ARS')).toBe(arsBefore - 1000)
+    expect(balanceOf(after, 'USD')).toBeGreaterThan(usdBefore)
+  })
+
+  test('rechaza la conversión si no hay saldo suficiente', async () => {
+    await seedDemoUser()
+    await expect(
+      createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 999999999 }),
+    ).rejects.toThrow('Saldo insuficiente')
+  })
+
+  test('rechaza que origen y destino sean la misma moneda', async () => {
+    await seedDemoUser()
+    await expect(
+      createConversion({ fromCurrency: 'USD', toCurrency: 'USD', amount: 100 }),
+    ).rejects.toThrow('La moneda de origen y destino deben ser distintas')
+  })
+
+  test('rechaza montos menores o iguales a cero', async () => {
+    await seedDemoUser()
+    await expect(
+      createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 0 }),
+    ).rejects.toThrow('El monto debe ser mayor a 0')
+  })
+})
+
+describe('createConversion — modo firebase (API real)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('firebase')
+    mockFetch.mockReset()
+  })
+
+  test('envía la conversión a POST /transactions/exchange con Idempotency-Key y mapea la respuesta', async () => {
+    mockFetch.mockImplementation((path: string) => {
+      if (path === '/transactions/exchange') {
+        return Promise.resolve({
+          message: 'Operación de cambio realizada correctamente',
+          transaction: {
+            transaction_id: '30000000-0000-4000-8000-000000000001',
+            type: 'conversion',
+            status: 'completed',
+            description: null,
+            created_at: '2026-08-10T14:00:00.000Z',
+            completed_at: '2026-08-10T14:00:01.000Z',
+            source_currency: 'ARS',
+            target_currency: 'USD',
+            source_amount: '100000',
+            target_amount: '80',
+            applied_rate: '0.0008',
+            rate_provider: 'frankfurter',
+            rate_fetched_at: '2026-08-10T13:59:00.000Z',
+            source_balance_after: '0',
+            target_balance_after: '80',
+          },
+        })
+      }
+      if (path === '/wallet') {
+        return Promise.resolve({
+          user: { id: '11111111-1111-4111-8111-111111111111' },
+          wallet: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+          balances: [],
+        })
+      }
+      return Promise.reject(new Error(`Ruta inesperada: ${path}`))
+    })
+
+    const tx = await createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 100000 })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/transactions/exchange',
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          sourceCurrency: 'ARS',
+          targetCurrency: 'USD',
+          sourceAmount: '100000',
+        },
+        headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }),
+      }),
+    )
+
+    expect(tx.id).toBe('30000000-0000-4000-8000-000000000001')
+    expect(tx.wallet_id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+    expect(tx.type).toBe('conversion')
+    expect(tx.currency_code).toBe('USD')
+    expect(tx.amount).toBe(80)
+    expect(tx.status).toBe('completed')
+    expect(tx.from_currency).toBe('ARS')
+    expect(tx.to_currency).toBe('USD')
+  })
+
+  test('valida origen y destino antes de llamar a la API', async () => {
+    await expect(
+      createConversion({ fromCurrency: 'USD', toCurrency: 'USD', amount: 100 }),
+    ).rejects.toThrow('La moneda de origen y destino deben ser distintas')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('valida el monto antes de llamar a la API', async () => {
+    await expect(
+      createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 0 }),
+    ).rejects.toThrow('El monto debe ser mayor a 0')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(
+      createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 100 }),
+    ).rejects.toThrow('Network error')
   })
 })
