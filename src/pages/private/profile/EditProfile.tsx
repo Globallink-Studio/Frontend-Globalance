@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { InputField } from '../../../components/register/InputField'
 import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentUser } from '../../../api/users'
+import { getAuthMode } from '../../../api/auth'
 import { getCurrentWallet, updateCurrentWallet } from '../../../api/wallets'
 import { currencies } from '../../../mocks/data/currencies'
 import type { User } from '../../../mocks/data/users'
@@ -18,6 +19,7 @@ export default function EditProfile() {
   const [alias, setAlias] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [documentNumber, setDocumentNumber] = useState('')
   const [phone, setPhone] = useState('')
   const [displayCurrency, setDisplayCurrency] = useState('ARS')
   const [saving, setSaving] = useState(false)
@@ -34,6 +36,7 @@ export default function EditProfile() {
         if ('first_name' in p) {
           setFirstName(p.first_name)
           setLastName(p.last_name)
+          setDocumentNumber(p.document ?? '')
         }
         setPhone(p.phone ?? '')
       }
@@ -56,18 +59,33 @@ export default function EditProfile() {
     const normalizedAlias = alias.trim()
 
     try {
-      if (wallet) {
-        await updateCurrentWallet({ alias: normalizedAlias })
-      }
-      if (profile && isPerson) {
+      if (getAuthMode() === 'firebase') {
+        if (!profile || !isPerson) {
+          throw new Error('La edición del perfil de empresa todavía no está disponible en el backend')
+        }
         await updateCurrentPersonProfile({
           first_name: firstName.trim() || 'Usuario',
           last_name: lastName.trim(),
+          document: documentNumber.trim(),
           phone: phone.trim() || null,
+          alias: normalizedAlias,
+          displayCurrency,
         })
-      }
-      if (user) {
-        await updateCurrentUser({ display_currency: displayCurrency })
+      } else {
+        if (wallet) {
+          await updateCurrentWallet({ alias: normalizedAlias })
+        }
+        if (profile && isPerson) {
+          await updateCurrentPersonProfile({
+            first_name: firstName.trim() || 'Usuario',
+            last_name: lastName.trim(),
+            document: documentNumber.trim() || 'DNI pendiente',
+            phone: phone.trim() || null,
+          })
+        }
+        if (user) {
+          await updateCurrentUser({ display_currency: displayCurrency })
+        }
       }
       navigate('/dashboard/profile')
     } catch (err) {
@@ -136,6 +154,15 @@ export default function EditProfile() {
                   name="lastName"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                />
+                <InputField
+                  label="Documento"
+                  type="text"
+                  id="document"
+                  name="document"
+                  value={documentNumber}
+                  onChange={(e) => setDocumentNumber(e.target.value)}
+                  placeholder="DNI 30123456"
                 />
               </>
             ) : (

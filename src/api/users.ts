@@ -21,9 +21,14 @@ export async function getCurrentUser(): Promise<User | undefined> {
 interface ApiUserProfile {
   id: string
   user_type: 'person' | 'company' | null
+  display_currency?: string | null
   first_name?: string | null
   last_name?: string | null
   legal_name?: string | null
+}
+
+interface ApiWalletResponse {
+  wallet?: { alias?: string | null }
 }
 
 export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyProfile | undefined> {
@@ -68,15 +73,51 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
   }
 }
 
-export async function updateCurrentPersonProfile(
-  patch: Partial<PersonProfile>,
-): Promise<PersonProfile | undefined> {
+export type PersonProfilePatch = Partial<PersonProfile> & { alias?: string; displayCurrency?: string }
+
+export async function updateCurrentPersonProfile(patch: PersonProfilePatch): Promise<PersonProfile | undefined> {
   if (getAuthMode() === 'mock') {
     const user = await getCurrentUser()
     if (!user || user.user_type !== 'person') return undefined
     return updatePersonProfile(user.id, patch)
   }
-  throw new Error('La edición del perfil todavía no está disponible en el backend')
+
+  const [profileResp, walletResp] = await Promise.all([
+    fetchApi<{ data: ApiUserProfile }>('/users/profile'),
+    fetchApi<ApiWalletResponse>('/wallet'),
+  ])
+  const current = profileResp.data
+  if (!current) return undefined
+
+  const firebaseName = getFirebaseDisplayName() ?? ''
+  const firstName = patch.first_name ?? current.first_name ?? firebaseName
+  const lastName = patch.last_name ?? current.last_name ?? ''
+  const document = patch.document ?? ''
+  const phone = patch.phone ?? ''
+  const alias = patch.alias ?? walletResp.wallet?.alias ?? ''
+  const displayCurrency =
+    patch.displayCurrency ?? getCachedUser()?.display_currency ?? current.display_currency ?? 'ARS'
+
+  await fetchApi<{ data: { message: string } }>('/users/profile', {
+    method: 'PATCH',
+    body: {
+      userType: 'person',
+      firstName,
+      lastName,
+      document,
+      phone,
+      alias,
+      displayCurrency,
+    },
+  })
+
+  return {
+    user_id: current.id,
+    first_name: firstName,
+    last_name: lastName,
+    document,
+    phone: phone || null,
+  }
 }
 
 export async function updateCurrentUser(patch: Partial<User>): Promise<User | undefined> {

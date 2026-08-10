@@ -1,4 +1,4 @@
-import { getCurrentUser, getCurrentUserProfile } from '../../src/api/users'
+import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile } from '../../src/api/users'
 import { refreshCachedUser, logout } from '../../src/api/auth'
 import { fetchApi } from '../../src/api/fetchApi'
 import { seedDemoUser } from '../fixtures/db'
@@ -50,6 +50,24 @@ describe('users API — modo mock (desarrollo local)', () => {
   test('getCurrentUserProfile devuelve undefined sin usuario activo', async () => {
     const profile = await getCurrentUserProfile()
     expect(profile).toBeUndefined()
+  })
+
+  test('updateCurrentPersonProfile actualiza el perfil de la persona logueada', async () => {
+    await seedDemoUser()
+
+    const updated = await updateCurrentPersonProfile({
+      first_name: 'Sofi',
+      last_name: 'Martínez',
+      document: 'DNI 40123456',
+      phone: '+54 11 5555-0101',
+    })
+
+    expect(updated).toMatchObject({
+      first_name: 'Sofi',
+      last_name: 'Martínez',
+      document: 'DNI 40123456',
+      phone: '+54 11 5555-0101',
+    })
   })
 })
 
@@ -145,5 +163,105 @@ describe('users API — modo firebase (API real)', () => {
   test('getCurrentUserProfile propaga los errores de la API', async () => {
     mockFetch.mockRejectedValue(new Error('Network error'))
     await expect(getCurrentUserProfile()).rejects.toThrow('Network error')
+  })
+
+  test('updateCurrentPersonProfile envía el perfil completo a PATCH /users/profile', async () => {
+    const user: User = {
+      id: '11111111-1111-4111-8111-111111111111',
+      firebase_uid: 'firebase-uid-test',
+      email: 'sofia@test.com',
+      user_type: 'person',
+      display_currency: 'ARS',
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      last_access_at: null,
+    }
+    refreshCachedUser(user)
+    mockFetch
+      .mockResolvedValueOnce({
+        data: {
+          id: '11111111-1111-4111-8111-111111111111',
+          user_type: 'person',
+          display_currency: 'ARS',
+          first_name: 'Sofía',
+          last_name: 'Martínez',
+        },
+      })
+      .mockResolvedValueOnce({ wallet: { alias: 'sofia.martinez' } })
+      .mockResolvedValueOnce({ data: { message: 'Perfil actualizado correctamente.' } })
+
+    const updated = await updateCurrentPersonProfile({
+      first_name: 'Sofi',
+      last_name: 'Martínez',
+      document: 'DNI 40123456',
+      phone: '+54 11 5555-0101',
+      alias: 'sofia.nueva',
+      displayCurrency: 'USD',
+    })
+
+    expect(mockFetch).toHaveBeenNthCalledWith(1, '/users/profile')
+    expect(mockFetch).toHaveBeenNthCalledWith(2, '/wallet')
+    expect(mockFetch).toHaveBeenNthCalledWith(3, '/users/profile', {
+      method: 'PATCH',
+      body: {
+        userType: 'person',
+        firstName: 'Sofi',
+        lastName: 'Martínez',
+        document: 'DNI 40123456',
+        phone: '+54 11 5555-0101',
+        alias: 'sofia.nueva',
+        displayCurrency: 'USD',
+      },
+    })
+    expect(updated).toMatchObject({
+      user_id: '11111111-1111-4111-8111-111111111111',
+      first_name: 'Sofi',
+      document: 'DNI 40123456',
+      phone: '+54 11 5555-0101',
+    })
+  })
+
+  test('updateCurrentPersonProfile completa alias y displayCurrency desde el backend si el patch no los trae', async () => {
+    const user: User = {
+      id: '11111111-1111-4111-8111-111111111111',
+      firebase_uid: 'firebase-uid-test',
+      email: 'sofia@test.com',
+      user_type: 'person',
+      display_currency: 'USD',
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      last_access_at: null,
+    }
+    refreshCachedUser(user)
+    mockFetch
+      .mockResolvedValueOnce({
+        data: {
+          id: '11111111-1111-4111-8111-111111111111',
+          user_type: 'person',
+          display_currency: 'USD',
+          first_name: 'Sofía',
+          last_name: 'Martínez',
+        },
+      })
+      .mockResolvedValueOnce({ wallet: { alias: 'sofia.martinez' } })
+      .mockResolvedValueOnce({ data: { message: 'Perfil actualizado correctamente.' } })
+
+    await updateCurrentPersonProfile({ first_name: 'Sofi' })
+
+    expect(mockFetch).toHaveBeenNthCalledWith(3, '/users/profile', {
+      method: 'PATCH',
+      body: expect.objectContaining({
+        firstName: 'Sofi',
+        lastName: 'Martínez',
+        document: '',
+        alias: 'sofia.martinez',
+        displayCurrency: 'USD',
+      }),
+    })
+  })
+
+  test('updateCurrentPersonProfile propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('Network error'))
+    await expect(updateCurrentPersonProfile({ first_name: 'Sofi' })).rejects.toThrow('Network error')
   })
 })
