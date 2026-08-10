@@ -276,11 +276,36 @@ export async function createMoneyRequest(input: {
   currencyCode: string
   amount: number
   concept?: string
+  payerEmail?: string
 }): Promise<Transaction> {
-  const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
   if (!input.recipient) throw new Error('Indicá a quién querés cobrarle')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  if (getAuthMode() === 'firebase') {
+    if (!input.payerEmail) throw new Error('Se necesita el correo del pagador')
+    const resp = await fetchApi<ApiPaymentRequestResponse>('/payment-requests', {
+      method: 'POST',
+      body: {
+        payerEmail: input.payerEmail,
+        currency: input.currencyCode,
+        amount: String(input.amount),
+      },
+    })
+    const pr = resp.paymentRequest
+    return {
+      id: pr.id,
+      wallet_id: '',
+      currency_code: pr.currency_code,
+      type: 'request',
+      amount: Number(pr.amount),
+      description: `Solicitud de cobro a ${pr.payer_email}`,
+      status: pr.status as TransactionStatus,
+      created_at: pr.created_at,
+    }
+  }
+
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
 
   const tx = await createTransaction({
     wallet_id: wallet.id,
@@ -365,6 +390,29 @@ interface ApiTransferTransaction {
 interface ApiTransferResponse {
   message: string
   transaction: ApiTransferTransaction
+}
+
+interface ApiPaymentRequest {
+  id: string
+  payment_token: string
+  requester_user_id: string
+  payer_user_id: string
+  payer_email: string
+  currency_code: string
+  amount: string
+  status: string
+  paid_transaction_id: string | null
+  created_at: string
+  updated_at: string
+  expires_at: string
+  paid_at: string | null
+  cancelled_at: string | null
+  requester_email?: string
+}
+
+interface ApiPaymentRequestResponse {
+  message: string
+  paymentRequest: ApiPaymentRequest
 }
 
 interface ApiExchangeTransaction {

@@ -3,6 +3,7 @@ import {
   createWithdrawal,
   createConversion,
   createDeposit,
+  createMoneyRequest,
   getCurrentTransactions,
   getRecentTransactions,
   getTransactionsByType,
@@ -272,6 +273,128 @@ describe('createWithdrawal', () => {
         amount: 0,
       }),
     ).rejects.toThrow('El monto debe ser mayor a 0')
+  })
+})
+
+describe('createMoneyRequest — modo mock (desarrollo local)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('mock')
+    mockFetch.mockReset()
+  })
+
+  test('crea una solicitud de cobro pendiente', async () => {
+    await seedDemoUser()
+    const wallet = await getCurrentWallet()
+    expect(wallet).toBeDefined()
+
+    const tx = await createMoneyRequest({
+      recipient: 'Juan Pérez',
+      recipientUserId: JUAN_USER_ID,
+      currencyCode: 'ARS',
+      amount: 500,
+    })
+
+    expect(tx.type).toBe('request')
+    expect(tx.amount).toBe(500)
+    expect(tx.currency_code).toBe('ARS')
+    expect(tx.description).toBe('Solicitud de cobro a Juan Pérez')
+    expect(tx.status).toBe('pending')
+
+    const txs = await getTransactionsByWallet(wallet!.id)
+    expect(txs.some((t) => t.id === tx.id && t.type === 'request')).toBe(true)
+  })
+
+  test('rechaza montos menores o iguales a cero', async () => {
+    await seedDemoUser()
+    await expect(
+      createMoneyRequest({
+        recipient: 'Juan Pérez',
+        recipientUserId: JUAN_USER_ID,
+        currencyCode: 'ARS',
+        amount: 0,
+      }),
+    ).rejects.toThrow('El monto debe ser mayor a 0')
+  })
+})
+
+describe('createMoneyRequest — modo firebase (API real)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('firebase')
+    mockFetch.mockReset()
+  })
+
+  const apiPaymentRequest = {
+    id: '40000000-0000-4000-8000-000000000001',
+    payment_token: '40000000-0000-4000-8000-000000000002',
+    requester_user_id: '11111111-1111-4111-8111-111111111111',
+    payer_user_id: '22222222-2222-4222-8222-222222222222',
+    payer_email: 'juan@ejemplo.com',
+    currency_code: 'USD',
+    amount: '150.00',
+    status: 'pending',
+    paid_transaction_id: null,
+    created_at: '2026-08-10T14:00:00.000Z',
+    updated_at: '2026-08-10T14:00:00.000Z',
+    expires_at: '2026-08-17T14:00:00.000Z',
+    paid_at: null,
+    cancelled_at: null,
+  }
+
+  test('crea la solicitud vía POST /payment-requests y mapea la respuesta', async () => {
+    mockFetch.mockResolvedValue({ message: 'Solicitud de cobro creada correctamente', paymentRequest: apiPaymentRequest })
+
+    const tx = await createMoneyRequest({
+      recipient: 'juan.cash',
+      recipientUserId: JUAN_USER_ID,
+      currencyCode: 'USD',
+      amount: 150,
+      payerEmail: 'juan@ejemplo.com',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/payment-requests',
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          payerEmail: 'juan@ejemplo.com',
+          currency: 'USD',
+          amount: '150',
+        },
+      }),
+    )
+    expect(tx.id).toBe('40000000-0000-4000-8000-000000000001')
+    expect(tx.type).toBe('request')
+    expect(tx.currency_code).toBe('USD')
+    expect(tx.amount).toBe(150)
+    expect(tx.description).toBe('Solicitud de cobro a juan@ejemplo.com')
+    expect(tx.status).toBe('pending')
+  })
+
+  test('exige el correo del pagador antes de llamar a la API', async () => {
+    await expect(
+      createMoneyRequest({
+        recipient: 'juan.cash',
+        recipientUserId: JUAN_USER_ID,
+        currencyCode: 'USD',
+        amount: 150,
+      }),
+    ).rejects.toThrow('Se necesita el correo del pagador')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(
+      createMoneyRequest({
+        recipient: 'juan.cash',
+        recipientUserId: JUAN_USER_ID,
+        currencyCode: 'USD',
+        amount: 150,
+        payerEmail: 'juan@ejemplo.com',
+      }),
+    ).rejects.toThrow('Network error')
   })
 })
 
