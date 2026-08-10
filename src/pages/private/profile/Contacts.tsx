@@ -316,91 +316,91 @@ export default function Contacts() {
           </div>
 
           <div className="mt-4 contacts-filterbar">
-              <div className="contacts-filters">
+            <div className="contacts-filters">
+              <button
+                type="button"
+                onClick={() => setFilter('all')}
+                className={`contacts-chip${filter === 'all' ? ' contacts-chip--active' : ''}`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('favorites')}
+                className={`contacts-chip${filter === 'favorites' ? ' contacts-chip--active' : ''}`}
+              >
+                Favoritos
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('recent')}
+                className={`contacts-chip${filter === 'recent' ? ' contacts-chip--active' : ''}`}
+              >
+                Recientes
+              </button>
+              {categories.map((cat) => (
                 <button
+                  key={cat}
                   type="button"
-                  onClick={() => setFilter('all')}
-                  className={`contacts-chip${filter === 'all' ? ' contacts-chip--active' : ''}`}
+                  onClick={() => setFilter(filter === cat ? 'all' : cat)}
+                  className={`contacts-chip${filter === cat ? ' contacts-chip--active' : ''}`}
                 >
-                  Todos
+                  {cat}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter('favorites')}
-                  className={`contacts-chip${filter === 'favorites' ? ' contacts-chip--active' : ''}`}
-                >
-                  Favoritos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter('recent')}
-                  className={`contacts-chip${filter === 'recent' ? ' contacts-chip--active' : ''}`}
-                >
-                  Recientes
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setFilter(filter === cat ? 'all' : cat)}
-                    className={`contacts-chip${filter === cat ? ' contacts-chip--active' : ''}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-              <div className="contacts-menu-wrap" ref={catMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setCatMenuOpen(!catMenuOpen)}
-                  className="contacts-chip contacts-chip--icon"
-                  aria-label="Opciones de categorías"
-                  aria-expanded={catMenuOpen}
-                >
-                  <MoreHorizontal />
-                </button>
-                {catMenuOpen && (
-                  <div className="contacts-menu">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoryModalOpen(true)
-                        setCatMenuOpen(false)
-                      }}
-                      className="contacts-menu__btn btn-hover-edit"
-                    >
-                      <Plus />
-                      Añadir categoría
-                    </button>
-                    <button
-                      type="button"
-                      disabled={categories.length === 0}
-                      onClick={() => {
-                        openEditCategory()
-                        setCatMenuOpen(false)
-                      }}
-                      className="contacts-menu__btn btn-hover-edit"
-                    >
-                      <Pencil />
-                      Editar categoría
-                    </button>
-                    <button
-                      type="button"
-                      disabled={categories.length === 0}
-                      onClick={() => {
-                        setSelectedCats([])
-                        setDeleteCatOpen(true)
-                        setCatMenuOpen(false)
-                      }}
-                      className="contacts-menu__btn btn-hover-danger"
-                    >
-                      <Trash2 />
-                      Eliminar categoría
-                    </button>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
+            <div className="contacts-menu-wrap" ref={catMenuRef}>
+              <button
+                type="button"
+                onClick={() => setCatMenuOpen(!catMenuOpen)}
+                className="contacts-chip contacts-chip--icon"
+                aria-label="Opciones de categorías"
+                aria-expanded={catMenuOpen}
+              >
+                <MoreHorizontal />
+              </button>
+              {catMenuOpen && (
+                <div className="contacts-menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryModalOpen(true)
+                      setCatMenuOpen(false)
+                    }}
+                    className="contacts-menu__btn btn-hover-edit"
+                  >
+                    <Plus />
+                    Añadir categoría
+                  </button>
+                  <button
+                    type="button"
+                    disabled={categories.length === 0}
+                    onClick={() => {
+                      openEditCategory()
+                      setCatMenuOpen(false)
+                    }}
+                    className="contacts-menu__btn btn-hover-edit"
+                  >
+                    <Pencil />
+                    Editar categoría
+                  </button>
+                  <button
+                    type="button"
+                    disabled={categories.length === 0}
+                    onClick={() => {
+                      setSelectedCats([])
+                      setDeleteCatOpen(true)
+                      setCatMenuOpen(false)
+                    }}
+                    className="contacts-menu__btn btn-hover-danger"
+                  >
+                    <Trash2 />
+                    Eliminar categoría
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
           {visible.length === 0 ? (
             <p className="mt-6 text-sm text-muted-foreground">Sin contactos que coincidan.</p>
@@ -883,7 +883,7 @@ export default function Contacts() {
       {viewing && (
         <div className="tx-modal">
           <div className="tx-modal__card">
-            <h3 className="tx-modal__title">Planilla de {viewing.alias}</h3>
+            <h3 className="tx-modal__title">Perfil de {viewing.alias}</h3>
             <dl className="tx-review__rows">
               <div className="tx-review__row">
                 <dt className="tx-review__label">Alias</dt>
