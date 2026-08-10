@@ -134,10 +134,38 @@ export async function createTransfer(input: {
   currencyCode: string
   amount: number
   concept?: string
+  destinationAlias?: string
 }): Promise<Transaction> {
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  if (getAuthMode() === 'firebase') {
+    if (!input.destinationAlias) throw new Error('Se necesita el alias del destinatario')
+    const resp = await fetchApi<ApiTransferResponse>('/transactions/transfers/internal', {
+      method: 'POST',
+      body: {
+        currency: input.currencyCode,
+        amount: String(input.amount),
+        destinationType: 'alias',
+        destinationValue: input.destinationAlias,
+      },
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    })
+    const tx = resp.transaction
+    const wallet = await getCurrentWallet()
+    return {
+      id: tx.transaction_id,
+      wallet_id: wallet?.id ?? '',
+      currency_code: tx.currency,
+      type: 'transfer',
+      amount: Number(tx.amount),
+      description: `Transferencia a ${tx.destination_alias}`,
+      status: tx.status as TransactionStatus,
+      created_at: tx.created_at,
+    }
+  }
+
   const wallet = await getCurrentWallet()
   if (!wallet) throw new Error('No hay wallet activa')
-  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   const balances = await getCurrentBalances()
   const current = balances.find((b) => b.currency_code === input.currencyCode)
@@ -320,6 +348,23 @@ interface ApiIncomeTransaction {
 interface ApiIncomeResponse {
   message: string
   transaction: ApiIncomeTransaction
+}
+
+interface ApiTransferTransaction {
+  transaction_id: string
+  status: string
+  destination_wallet_id: string
+  destination_alias: string
+  currency: string
+  amount: string
+  source_balance_after: string
+  destination_balance_after: string
+  created_at: string
+}
+
+interface ApiTransferResponse {
+  message: string
+  transaction: ApiTransferTransaction
 }
 
 interface ApiExchangeTransaction {

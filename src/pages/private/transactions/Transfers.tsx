@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createTransfer, getTransactionsByType } from '../../../api/transactions'
 import { getCurrentBalances } from '../../../api/balances'
 import { getCurrentContacts } from '../../../api/contacts'
-import { getUserByEmail } from '../../../api/users'
 import { getWalletByAlias } from '../../../api/wallets'
 import TransactionList from '../../../components/TransactionList'
 import Select from '../../../components/Select'
@@ -23,10 +22,9 @@ export default function Transfers() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
-  const [sendMethod, setSendMethod] = useState<'alias' | 'contact' | 'email'>('alias')
+  const [sendMethod, setSendMethod] = useState<'alias' | 'contact'>('alias')
   const [alias, setAlias] = useState('')
   const [contactId, setContactId] = useState('')
-  const [email, setEmail] = useState('')
   const [currencyCode, setCurrencyCode] = useState('ARS')
   const [amount, setAmount] = useState('')
   const [concept, setConcept] = useState('')
@@ -58,12 +56,7 @@ export default function Transfers() {
 
   const selectedBalance = balances.find((b) => b.currency_code === currencyCode)
   const value = Number(amount)
-  const recipientFilled =
-    sendMethod === 'contact'
-      ? Boolean(contactId)
-      : sendMethod === 'email'
-        ? /^\S+@\S+\.\S+$/.test(email.trim())
-        : Boolean(alias.trim())
+  const recipientFilled = sendMethod === 'contact' ? Boolean(contactId) : Boolean(alias.trim())
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -87,15 +80,6 @@ export default function Transfers() {
       const contact = contacts.find((c) => c.id === contactId)
       recipient = contact?.alias ?? ''
       recipientUserId = contact?.recipient_user_id ?? ''
-    } else if (sendMethod === 'email') {
-      const user = await getUserByEmail(email.trim())
-      if (!user) {
-        setDismissReturns(false)
-        setErrorMessage('No existe un usuario registrado con ese correo')
-        return
-      }
-      recipient = user.email
-      recipientUserId = user.id
     } else {
       const wallet = await getWalletByAlias(alias)
       if (!wallet || wallet.status !== 'active') {
@@ -128,6 +112,7 @@ export default function Transfers() {
         currencyCode: review.currencyCode,
         amount: review.amount,
         concept: review.concept,
+        destinationAlias: review.recipient,
       })
       setMessage(`Transferencia a ${review.recipient} enviada`)
       setReview(null)
@@ -216,16 +201,6 @@ export default function Transfers() {
                   />
                   Contacto
                 </label>
-                <label className="tx-form__option">
-                  <input
-                    type="radio"
-                    name="sendMethod"
-                    value="email"
-                    checked={sendMethod === 'email'}
-                    onChange={() => setSendMethod('email')}
-                  />
-                  Correo electrónico
-                </label>
               </div>
             </div>
 
@@ -240,18 +215,6 @@ export default function Transfers() {
                   ...contacts.map((c) => ({ value: c.id, label: c.alias })),
                 ]}
               />
-            ) : sendMethod === 'email' ? (
-              <div className="tx-form__field">
-                <label htmlFor="email" className="tx-form__label">Correo del destinatario</label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="usuario@example.com"
-                  className="tx-form__control"
-                />
-              </div>
             ) : (
               <div className="tx-form__field">
                 <label htmlFor="alias" className="tx-form__label">Alias del destinatario</label>

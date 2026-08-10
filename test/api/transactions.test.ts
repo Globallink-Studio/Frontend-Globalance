@@ -117,9 +117,101 @@ describe('createTransfer', () => {
   })
 })
 
+describe('createTransfer — modo firebase (API real)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('firebase')
+    mockFetch.mockReset()
+  })
+
+  const apiTransaction = {
+    transaction_id: '30000000-0000-4000-8000-000000000004',
+    status: 'completed',
+    destination_wallet_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    destination_alias: 'juan.cash',
+    currency: 'USD',
+    amount: '100.00',
+    source_balance_after: '1400.00',
+    destination_balance_after: '100.00',
+    created_at: '2026-08-10T14:00:00.000Z',
+  }
+
+  test('transfiere vía POST /transactions/transfers/internal y mapea la respuesta', async () => {
+    mockFetch.mockImplementation((path, options) => {
+      if (path === '/transactions/transfers/internal' && options?.method === 'POST') {
+        return Promise.resolve({ message: 'Transferencia interna realizada correctamente', transaction: apiTransaction })
+      }
+      if (path === '/wallet') {
+        return Promise.resolve({
+          user: { id: '11111111-1111-4111-8111-111111111111' },
+          wallet: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+          balances: [],
+        })
+      }
+      return Promise.reject(new Error(`Ruta inesperada: ${path}`))
+    })
+
+    const tx = await createTransfer({
+      recipient: 'juan.cash',
+      recipientUserId: JUAN_USER_ID,
+      currencyCode: 'USD',
+      amount: 100,
+      destinationAlias: 'juan.cash',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/transactions/transfers/internal',
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          currency: 'USD',
+          amount: '100',
+          destinationType: 'alias',
+          destinationValue: 'juan.cash',
+        },
+        headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }),
+      }),
+    )
+    expect(tx.id).toBe('30000000-0000-4000-8000-000000000004')
+    expect(tx.type).toBe('transfer')
+    expect(tx.currency_code).toBe('USD')
+    expect(tx.amount).toBe(100)
+    expect(tx.description).toBe('Transferencia a juan.cash')
+    expect(tx.status).toBe('completed')
+    expect(tx.wallet_id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+  })
+
+  test('exige el alias del destinatario antes de llamar a la API', async () => {
+    await expect(
+      createTransfer({
+        recipient: 'juan.cash',
+        recipientUserId: JUAN_USER_ID,
+        currencyCode: 'USD',
+        amount: 100,
+      }),
+    ).rejects.toThrow('Se necesita el alias del destinatario')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(
+      createTransfer({
+        recipient: 'juan.cash',
+        recipientUserId: JUAN_USER_ID,
+        currencyCode: 'USD',
+        amount: 100,
+        destinationAlias: 'juan.cash',
+      }),
+    ).rejects.toThrow('Network error')
+  })
+})
+
 describe('createWithdrawal', () => {
   beforeEach(() => {
     localStorage.clear()
+    getAuthModeMock.mockReturnValue('mock')
+    mockFetch.mockReset()
   })
 
   test('resta el saldo, crea una transacción de retiro y la registra como pendiente', async () => {
