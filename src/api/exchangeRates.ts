@@ -1,8 +1,16 @@
-import { getExchangeRates } from '../mocks/handlers/exchangeRates'
-import type { ExchangeRate } from '../mocks/data/exchangeRates'
+import { getExchangeRates, getRateHistory as getMockRateHistory, refreshExchangeRates as refreshMockExchangeRates } from '../mocks/handlers/exchangeRates'
+import type { ExchangeRate, ExchangeRatePoint } from '../mocks/data/exchangeRates'
 
 export async function getQuotes(): Promise<ExchangeRate[]> {
   return getExchangeRates()
+}
+
+export async function getRateHistory(currencyCode: string, days: number): Promise<ExchangeRatePoint[]> {
+  return getMockRateHistory(currencyCode, days)
+}
+
+export async function refreshExchangeRates(): Promise<ExchangeRate[]> {
+  return refreshMockExchangeRates()
 }
 
 export async function convertCurrency(fromCurrency: string, toCurrency: string, amount: number): Promise<number> {

@@ -95,6 +95,18 @@
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 22%, transparent);
 }
 
+/* Sin flechitas en inputs numéricos (solo tipado manual) */
+input[type='number'].tx-amount {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type='number'].tx-amount::-webkit-outer-spin-button,
+input[type='number'].tx-amount::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .tx-form__hint {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
@@ -166,6 +178,21 @@
   color: var(--foreground);
   background-color: transparent;
   border: 1px solid var(--border);
+}
+
+.tx-button--surface {
+  color: oklch(0.26 0.02 285);
+  background-image: linear-gradient(120deg,
+      color-mix(in oklab, var(--pastel-lilac) 88%, white) 0%,
+      color-mix(in oklab, var(--pastel-sky) 88%, white) 50%,
+      color-mix(in oklab, var(--pastel-mint) 88%, white) 100%);
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-soft);
+}
+
+.tx-button--surface:hover:not(:disabled) {
+  filter: saturate(130%) brightness(1.03);
+  transform: translateY(-1px);
 }
 
 .tx-button--secondary:hover:not(:disabled) {

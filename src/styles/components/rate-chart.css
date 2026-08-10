@@ -1,0 +1,135 @@
+.rate-chart {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-soft);
+}
+
+.rate-chart__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rate-chart__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rate-chart__range {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem;
+  border-radius: 9999px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.rate-chart__range-btn {
+  border: none;
+  border-radius: 9999px;
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background-color: transparent;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.rate-chart__range-btn:hover {
+  color: var(--foreground);
+}
+
+.rate-chart__range-btn--active {
+  background-image: linear-gradient(120deg,
+      color-mix(in oklab, var(--pastel-lilac) 88%, white) 0%,
+      color-mix(in oklab, var(--pastel-sky) 88%, white) 50%,
+      color-mix(in oklab, var(--pastel-mint) 88%, white) 100%);
+  color: oklch(0.26 0.02 285);
+  box-shadow: var(--shadow-soft);
+}
+
+.rate-chart__title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.rate-chart__sub {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.rate-chart__value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.rate-chart__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.rate-chart__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.rate-chart__delta--up {
+  border-color: color-mix(in oklab, var(--success) 30%, transparent);
+  background-color: color-mix(in oklab, var(--success) 10%, transparent);
+  color: var(--success);
+}
+
+.rate-chart__delta--down {
+  border-color: color-mix(in oklab, var(--destructive) 30%, transparent);
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+}
+
+.rate-chart__delta--flat {
+  color: var(--muted-foreground);
+}
+
+.rate-chart__plot {
+  margin-top: 1rem;
+  flex: 1;
+  min-height: 14rem;
+}
+
+.rate-chart__tooltip {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background-color: var(--popover);
+  box-shadow: var(--shadow-soft);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.rate-chart__tooltip-label {
+  color: var(--muted-foreground);
+}
+
+.rate-chart__tooltip-value {
+  font-weight: 700;
+}

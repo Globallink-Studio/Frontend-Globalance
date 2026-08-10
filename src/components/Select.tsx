@@ -15,9 +15,11 @@ interface SelectProps {
   options: SelectOption[]
   placeholder?: string
   hint?: string
+  hideLabel?: boolean
+  variant?: 'default' | 'ghost' | 'badge'
 }
 
-export default function Select({ id, label, value, onChange, options, placeholder = '', hint }: SelectProps) {
+export default function Select({ id, label, value, onChange, options, placeholder = '', hint, hideLabel, variant = 'default' }: SelectProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -38,15 +40,18 @@ export default function Select({ id, label, value, onChange, options, placeholde
 
   const selected = options.find((o) => o.value === value)
 
+  const variantClass =
+    variant === 'ghost' ? ' select--ghost' : variant === 'badge' ? ' select--badge' : ''
+
   return (
     <div className="tx-form__field">
-      <label htmlFor={id} className="tx-form__label">{label}</label>
-      <div className="select" ref={ref}>
+      {!hideLabel && <label htmlFor={id} className="tx-form__label">{label}</label>}
+      <div className={`select${variantClass}`} ref={ref}>
         <button
           type="button"
           id={id}
           onClick={() => setOpen((o) => !o)}
-          className="tx-form__control select__trigger"
+          className={`tx-form__control select__trigger${variantClass}`}
           aria-haspopup="listbox"
           aria-expanded={open}
         >

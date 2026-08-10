@@ -7,6 +7,7 @@ import type { Transaction } from './data/transactions'
 import type { Contact } from './data/contacts'
 import type { AppNotification } from './data/notifications'
 import type { PaymentMethod } from './data/paymentMethods'
+import type { ExchangeRatePoint } from './data/exchangeRates'
 
 const USERS_KEY = 'globalance.mock.users'
 const PERSON_PROFILES_KEY = 'globalance.mock.personProfiles'
@@ -18,6 +19,7 @@ const CONTACTS_KEY = 'globalance.mock.contacts'
 const CONTACT_CATEGORIES_KEY = 'globalance.mock.contactCategories'
 const NOTIFICATIONS_KEY = 'globalance.mock.notifications'
 const PAYMENT_METHODS_KEY = 'globalance.mock.paymentMethods'
+const RATE_HISTORY_KEY = 'globalance.mock.rateHistory'
 
 function readAll<T>(key: string): T[] {
   try {
@@ -235,4 +237,12 @@ export function saveMockPaymentMethods(items: PaymentMethod[]): void {
 
 export function deleteMockPaymentMethod(id: string): void {
   saveAll(PAYMENT_METHODS_KEY, getMockPaymentMethods().filter((p) => p.id !== id))
+}
+
+export function getMockRateHistory(): ExchangeRatePoint[] {
+  return readAll<ExchangeRatePoint>(RATE_HISTORY_KEY)
+}
+
+export function saveMockRateHistory(items: ExchangeRatePoint[]): void {
+  saveAll(RATE_HISTORY_KEY, items)
 }

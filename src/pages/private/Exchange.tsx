@@ -1,32 +1,30 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { getQuotes, convertCurrency } from '../../api/exchangeRates'
+import { useEffect, useState } from 'react'
+import { DollarSign, Euro, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
+import { getQuotes, refreshExchangeRates } from '../../api/exchangeRates'
 import { getCurrentBalances } from '../../api/balances'
-import { createConversion, getTransactionsByType } from '../../api/transactions'
-import TransactionList from '../../components/TransactionList'
-import Select from '../../components/Select'
+import { createConversion } from '../../api/transactions'
+import ConvertForm, { type ConvertData } from '../../components/ConvertForm'
+import RateChart from '../../components/RateChart'
 import type { ExchangeRate } from '../../mocks/data/exchangeRates'
 import type { Balance } from '../../mocks/data/balances'
-import type { Transaction } from '../../mocks/data/transactions'
 import '../../styles/pages/private/transactions.css'
 
 export default function Exchange() {
   const [quotes, setQuotes] = useState<ExchangeRate[]>([])
   const [balances, setBalances] = useState<Balance[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [fromCurrency, setFromCurrency] = useState('ARS')
-  const [toCurrency, setToCurrency] = useState('USD')
-  const [amount, setAmount] = useState('')
-  const [result, setResult] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
-
-  const loadConversions = () => getTransactionsByType('conversion').then(setTransactions)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pending, setPending] = useState<ConvertData | null>(null)
+  const [resetKey, setResetKey] = useState(0)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     getQuotes().then(setQuotes)
     getCurrentBalances().then(setBalances)
-    loadConversions()
   }, [])
 
   useEffect(() => {
@@ -35,39 +33,27 @@ export default function Exchange() {
     return () => clearTimeout(t)
   }, [message])
 
-  const fromBalance = balances.find((b) => b.currency_code === fromCurrency)
-
   useEffect(() => {
-    const value = Number(amount)
-    if (!value || value <= 0 || fromCurrency === toCurrency) {
-      setResult(null)
-      return
-    }
-    convertCurrency(fromCurrency, toCurrency, value).then(setResult)
-  }, [amount, fromCurrency, toCurrency])
+    if (!refreshMessage) return
+    const t = setTimeout(() => setRefreshMessage(null), 4000)
+    return () => clearTimeout(t)
+  }, [refreshMessage])
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const value = Number(amount)
+  const handleValidSubmit = (data: ConvertData) => {
+    setPending(data)
+    setConfirmOpen(true)
+  }
+
+  const handleConfirm = async () => {
+    if (!pending) return
     setErrorMessage(null)
-    setMessage(null)
-
-    if (fromCurrency === toCurrency) {
-      setErrorMessage('La moneda de origen y destino deben ser distintas')
-      return
-    }
-    if (!value || value <= 0) {
-      setErrorMessage('Ingresá un monto válido')
-      return
-    }
-
     setSending(true)
     try {
-      await createConversion({ fromCurrency, toCurrency, amount: value })
-      setMessage(`Convertidos ${value} ${fromCurrency} a ${toCurrency}`)
-      setAmount('')
-      setResult(null)
-      await loadConversions()
+      await createConversion({ fromCurrency: pending.fromCurrency, toCurrency: pending.toCurrency, amount: pending.amount })
+      setConfirmOpen(false)
+      setPending(null)
+      setMessage(`Convertidos ${pending.amount} ${pending.fromCurrency} a ${pending.toCurrency}`)
+      setResetKey((k) => k + 1)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Error al convertir')
     } finally {
@@ -75,111 +61,162 @@ export default function Exchange() {
     }
   }
 
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    setRefreshMessage(null)
+    try {
+      const rates = await refreshExchangeRates()
+      setQuotes(rates)
+      setRefreshKey((k) => k + 1)
+      setRefreshMessage('Cotizaciones actualizadas')
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'No se pudieron actualizar las cotizaciones')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {quotes.map((q) => (
-          <div key={q.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-            <p className="text-sm text-muted-foreground">{q.currency_name}</p>
-            <p className="mb-3 text-2xl font-semibold">{q.symbol}</p>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Compra</span>
-                <span className="font-medium">
-                  {q.buy_price.toLocaleString('es-AR')} ARS
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Venta</span>
-                <span className="font-medium">
-                  {q.sell_price.toLocaleString('es-AR')} ARS
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw className={`size-4${refreshing ? ' animate-spin' : ''}`} />
+          {refreshing ? 'Actualizando...' : 'Actualizar cotizaciones'}
+        </button>
       </div>
 
-      <div className="tx-page">
-        <h2 className="tx-page__title">Nueva conversión</h2>
+      {refreshMessage && <div className="tx-toast">{refreshMessage}</div>}
 
-        <div className="tx-grid">
-          <form onSubmit={handleSubmit} className="tx-card tx-form">
-            <div className="tx-form__grid">
-              <Select
-                id="from"
-                label="Desde"
-                value={fromCurrency}
-                onChange={setFromCurrency}
-                options={balances.map((b) => ({ value: b.currency_code, label: b.currency_code }))}
-                hint={
-                  fromBalance
-                    ? `Saldo: ${fromBalance.amount.toLocaleString('es-AR')} ${fromBalance.currency_code}`
-                    : undefined
-                }
-              />
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {quotes.map((q) => {
+          const Icon = q.currency_code === 'EUR' ? Euro : DollarSign
+          const delta = q.prev_buy_price > 0 ? ((q.buy_price - q.prev_buy_price) / q.prev_buy_price) * 100 : 0
+          const rounded = Math.round(delta * 10) / 10
+          const up = rounded > 0
+          const down = rounded < 0
+          const pair = q.currency_code === 'ARS' ? 'Moneda base' : `${q.currency_code} / ARS`
+          const formatPrice = (v: number) => `$${v.toLocaleString('es-AR')}`
+          return (
+            <div key={q.id} className="flex h-full flex-col rounded-3xl border border-border bg-card p-6 shadow-soft md:p-8">
+              <div className="flex items-start justify-between">
+                <div className="grid size-12 place-items-center rounded-2xl border border-border/50 bg-surface">
+                  <Icon className="size-5 text-foreground" />
+                </div>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium${
+                    up
+                      ? ' border-success/30 bg-success/10 text-success'
+                      : down
+                        ? ' border-destructive/30 bg-destructive/10 text-destructive'
+                        : ' border-border bg-surface text-muted-foreground'
+                  }`}
+                >
+                  {up && <TrendingUp className="size-3" />}
+                  {down && <TrendingDown className="size-3" />}
+                  {rounded === 0 ? 'Estable' : `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('es-AR')}%`}
+                </span>
+              </div>
 
-              <Select
-                id="to"
-                label="Hacia"
-                value={toCurrency}
-                onChange={setToCurrency}
-                options={quotes
-                  .filter((q) => q.currency_code !== fromCurrency)
-                  .map((q) => ({ value: q.currency_code, label: q.currency_code }))}
-              />
+              <div className="mt-6">
+                <h2 className="text-lg font-medium tracking-tight">{q.currency_name}</h2>
+                <p className="text-sm text-muted-foreground">{pair}</p>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-border py-3">
+                  <span className="text-sm text-muted-foreground">Compra</span>
+                  <span className="text-xl font-semibold tracking-tight">{formatPrice(q.buy_price)}</span>
+                </div>
+                <div className="flex items-center justify-between py-3">
+                  <span className="text-sm text-muted-foreground">Venta</span>
+                  <span className="text-xl font-semibold tracking-tight">
+                    {q.currency_code === 'ARS' ? '—' : formatPrice(q.sell_price)}
+                  </span>
+                </div>
+              </div>
             </div>
+          )
+        })}
+      </div>
 
-            <div className="tx-form__field">
-              <label htmlFor="amount" className="tx-form__label">Monto</label>
-              <input
-                id="amount"
-                type="number"
-                min="0"
-                step="any"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
-                className="tx-form__control"
-              />
-              {result !== null && (
-                <p className="tx-form__result">
-                  Recibís ≈ {result.toLocaleString('es-AR')} {toCurrency}
-                </p>
-              )}
-            </div>
-
-            <button type="submit" disabled={sending} className="tx-button tx-button--primary tx-button--block">
-              {sending ? 'Convirtiendo...' : 'Convertir'}
-            </button>
-          </form>
-
-          <section className="tx-card">
-            <h3 className="tx-section__title">Historial de conversiones</h3>
-            <TransactionList transactions={transactions} compact />
-          </section>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div className="tx-card lg:col-span-1">
+          <h3 className="tx-section__title">Convertir</h3>
+          <ConvertForm
+            balances={balances}
+            quotes={quotes}
+            submitLabel="Confirmar conversión"
+            disabled={sending}
+            resetKey={resetKey}
+            onValidSubmit={handleValidSubmit}
+            onError={setErrorMessage}
+          />
         </div>
 
-        {message && (
-          <div className="tx-toast">{message}</div>
-        )}
+        <div className="lg:col-span-2">
+          <RateChart refreshKey={refreshKey} />
+        </div>
+      </div>
 
-        {errorMessage && (
-          <div className="tx-modal">
-            <div className="tx-modal__card">
-              <h3 className="tx-modal__title">No se pudo realizar la operación</h3>
-              <p className="tx-modal__message">{errorMessage}</p>
+      {message && (
+        <div className="tx-toast">{message}</div>
+      )}
+
+      {confirmOpen && pending && (
+        <div className="tx-modal">
+          <div className="tx-modal__card">
+            <h3 className="tx-modal__title">Confirmar conversión</h3>
+            <p className="tx-modal__message">
+              ¿Confirmás la conversión de {pending.amount.toLocaleString('es-AR')} {pending.fromCurrency} a{' '}
+              {pending.result > 0 ? pending.result.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : '—'} {pending.toCurrency}?
+            </p>
+            {pending.result > 0 && (
+              <p className="tx-modal__message">
+                Se descontará una comisión del 0,4% ({(pending.result * 0.004).toLocaleString('es-AR')} {pending.toCurrency}).
+              </p>
+            )}
+            <div className="tx-review__actions">
               <button
                 type="button"
-                onClick={() => setErrorMessage(null)}
-                className="tx-button tx-button--primary tx-button--block"
+                disabled={sending}
+                onClick={() => setConfirmOpen(false)}
+                className="tx-button tx-button--secondary"
               >
-                Confirmar
+                Volver
+              </button>
+              <button
+                type="button"
+                disabled={sending}
+                onClick={handleConfirm}
+                className="tx-button tx-button--primary"
+              >
+                {sending ? 'Convirtiendo...' : 'Confirmar'}
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="tx-modal">
+          <div className="tx-modal__card">
+            <h3 className="tx-modal__title">No se pudo realizar la operación</h3>
+            <p className="tx-modal__message">{errorMessage}</p>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="tx-button tx-button--primary tx-button--block"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
