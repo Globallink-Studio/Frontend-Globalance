@@ -1,4 +1,12 @@
-import { createTransfer, createWithdrawal, createConversion } from '../../src/api/transactions'
+import {
+  createTransfer,
+  createWithdrawal,
+  createConversion,
+  getCurrentTransactions,
+  getRecentTransactions,
+  getTransactionsByType,
+  getTransactionsByCurrency,
+} from '../../src/api/transactions'
 import { getCurrentWallet, getWalletByUserId } from '../../src/api/wallets'
 import { getBalancesByWallet } from '../../src/mocks/handlers/balances'
 import { getTransactionsByWallet } from '../../src/mocks/handlers/transactions'
@@ -310,5 +318,170 @@ describe('createConversion — modo firebase (API real)', () => {
     await expect(
       createConversion({ fromCurrency: 'ARS', toCurrency: 'USD', amount: 100 }),
     ).rejects.toThrow('Network error')
+  })
+})
+
+describe('historial de transacciones — modo mock (desarrollo local)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('mock')
+  })
+
+  test('getCurrentTransactions lista las transacciones de la wallet del usuario', async () => {
+    await seedDemoUser()
+    const txs = await getCurrentTransactions()
+    expect(txs.length).toBeGreaterThan(0)
+    expect(txs.every((t) => t.wallet_id)).toBeTruthy()
+  })
+
+  test('getRecentTransactions respeta el límite', async () => {
+    await seedDemoUser()
+    const txs = await getRecentTransactions(2)
+    expect(txs).toHaveLength(2)
+  })
+
+  test('getTransactionsByType filtra por tipo', async () => {
+    await seedDemoUser()
+    const deposits = await getTransactionsByType('deposit')
+    expect(deposits.length).toBeGreaterThan(0)
+    expect(deposits.every((t) => t.type === 'deposit')).toBe(true)
+  })
+
+  test('getTransactionsByCurrency filtra por moneda', async () => {
+    await seedDemoUser()
+    const usd = await getTransactionsByCurrency('USD')
+    expect(usd.length).toBeGreaterThan(0)
+    expect(usd.every((t) => t.currency_code === 'USD')).toBe(true)
+  })
+})
+
+describe('historial de transacciones — modo firebase (API real)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('firebase')
+    mockFetch.mockReset()
+  })
+
+  const apiTransactions = [
+    {
+      id: '30000000-0000-4000-8000-000000000001',
+      type: 'income',
+      status: 'completed',
+      description: 'Depósito de sueldo',
+      created_at: '2026-08-01T09:00:00.000Z',
+      completed_at: '2026-08-01T09:00:01.000Z',
+      source_currency: null,
+      target_currency: null,
+      applied_rate: null,
+      rate_provider: null,
+      rate_fetched_at: null,
+      destination_wallet_id: null,
+      recipient_name: null,
+      funding_method: 'bank_transfer',
+      movements: [
+        {
+          direction: 'credit',
+          concept: 'principal',
+          currency: 'ARS',
+          amount: '50000',
+          balance_before: '0',
+          balance_after: '50000',
+          created_at: '2026-08-01T09:00:01.000Z',
+        },
+      ],
+    },
+    {
+      id: '30000000-0000-4000-8000-000000000002',
+      type: 'conversion',
+      status: 'completed',
+      description: 'Conversión desde ARS',
+      created_at: '2026-08-02T10:00:00.000Z',
+      completed_at: '2026-08-02T10:00:01.000Z',
+      source_currency: 'ARS',
+      target_currency: 'USD',
+      applied_rate: '0.0008',
+      rate_provider: 'frankfurter',
+      rate_fetched_at: '2026-08-02T09:59:00.000Z',
+      destination_wallet_id: null,
+      recipient_name: null,
+      funding_method: null,
+      movements: [
+        {
+          direction: 'debit',
+          concept: 'principal',
+          currency: 'ARS',
+          amount: '100000',
+          balance_before: '200000',
+          balance_after: '100000',
+          created_at: '2026-08-02T10:00:01.000Z',
+        },
+        {
+          direction: 'credit',
+          concept: 'principal',
+          currency: 'USD',
+          amount: '80',
+          balance_before: '100',
+          balance_after: '180',
+          created_at: '2026-08-02T10:00:01.000Z',
+        },
+      ],
+    },
+  ]
+
+  test('getCurrentTransactions consulta /transactions y mapea income a deposit', async () => {
+    mockFetch.mockResolvedValue({ transactions: apiTransactions, pagination: { limit: 100, offset: 0, returned: 2 } })
+
+    const txs = await getCurrentTransactions()
+
+    expect(mockFetch).toHaveBeenCalledWith('/transactions?limit=100')
+    expect(txs).toHaveLength(2)
+    expect(txs[0]).toMatchObject({
+      id: '30000000-0000-4000-8000-000000000001',
+      type: 'deposit',
+      currency_code: 'ARS',
+      amount: 50000,
+      description: 'Depósito de sueldo',
+      status: 'completed',
+    })
+    expect(txs[1]).toMatchObject({
+      type: 'conversion',
+      currency_code: 'USD',
+      amount: 80,
+      from_currency: 'ARS',
+      to_currency: 'USD',
+    })
+  })
+
+  test('getRecentTransactions usa el límite en el query', async () => {
+    mockFetch.mockResolvedValue({ transactions: apiTransactions, pagination: { limit: 5, offset: 0, returned: 2 } })
+
+    const txs = await getRecentTransactions(5)
+
+    expect(mockFetch).toHaveBeenCalledWith('/transactions?limit=5')
+    expect(txs).toHaveLength(2)
+  })
+
+  test('getTransactionsByType filtra sobre el historial traído de la API', async () => {
+    mockFetch.mockResolvedValue({ transactions: apiTransactions, pagination: { limit: 100, offset: 0, returned: 2 } })
+
+    const conversions = await getTransactionsByType('conversion')
+
+    expect(mockFetch).toHaveBeenCalledWith('/transactions?limit=100')
+    expect(conversions).toHaveLength(1)
+    expect(conversions[0].id).toBe('30000000-0000-4000-8000-000000000002')
+  })
+
+  test('getTransactionsByCurrency filtra sobre el historial traído de la API', async () => {
+    mockFetch.mockResolvedValue({ transactions: apiTransactions, pagination: { limit: 100, offset: 0, returned: 2 } })
+
+    const usd = await getTransactionsByCurrency('USD')
+
+    expect(usd).toHaveLength(1)
+    expect(usd[0].id).toBe('30000000-0000-4000-8000-000000000002')
+  })
+
+  test('propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(getCurrentTransactions()).rejects.toThrow('Network error')
   })
 })

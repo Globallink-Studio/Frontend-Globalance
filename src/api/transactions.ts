@@ -17,14 +17,83 @@ export const transactionStatusLabels: Record<TransactionStatus, string> = {
   reversed: 'Revertida',
 }
 
+interface ApiTransactionMovement {
+  direction: 'debit' | 'credit'
+  concept: 'principal' | 'fee'
+  currency: string
+  amount: string
+  balance_before: string
+  balance_after: string
+  created_at: string
+}
+
+interface ApiTransaction {
+  id: string
+  type: 'income' | 'purchase' | 'sale' | 'conversion' | 'transfer'
+  status: string
+  description: string | null
+  created_at: string
+  completed_at: string | null
+  source_currency: string | null
+  target_currency: string | null
+  applied_rate: string | null
+  rate_provider: string | null
+  rate_fetched_at: string | null
+  destination_wallet_id: string | null
+  recipient_name: string | null
+  funding_method: string | null
+  movements: ApiTransactionMovement[]
+}
+
+interface ApiTransactionsResponse {
+  transactions: ApiTransaction[]
+  pagination: { limit: number; offset: number; returned: number }
+}
+
+function apiTypeToLocal(type: ApiTransaction['type']): TransactionType {
+  switch (type) {
+    case 'income':
+      return 'deposit'
+    case 'purchase':
+    case 'sale':
+    case 'conversion':
+      return 'conversion'
+    case 'transfer':
+      return 'transfer'
+  }
+}
+
+function mapApiTransaction(tx: ApiTransaction): Transaction {
+  const principal =
+    tx.movements.find((m) => m.concept === 'principal' && m.direction === 'credit') ??
+    tx.movements.find((m) => m.concept === 'principal') ??
+    tx.movements.find((m) => m.direction === 'credit') ??
+    tx.movements[0]
+  return {
+    id: tx.id,
+    wallet_id: '',
+    currency_code: principal?.currency ?? tx.target_currency ?? tx.source_currency ?? '',
+    type: apiTypeToLocal(tx.type),
+    amount: principal ? Number(principal.amount) : 0,
+    description: tx.description ?? '',
+    status: tx.status as TransactionStatus,
+    created_at: tx.created_at,
+    from_currency: tx.source_currency ?? undefined,
+    to_currency: tx.target_currency ?? undefined,
+  }
+}
+
 async function getCurrentWalletTransactions(): Promise<Transaction[]> {
-  if (getAuthMode() !== 'mock') return []
-  const wallet = await getCurrentWallet()
-  if (!wallet) return []
-  const all = await getTransactions()
-  return all
-    .filter((t) => t.wallet_id === wallet.id)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+  if (getAuthMode() === 'mock') {
+    const wallet = await getCurrentWallet()
+    if (!wallet) return []
+    const all = await getTransactions()
+    return all
+      .filter((t) => t.wallet_id === wallet.id)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+  }
+  const resp = await fetchApi<ApiTransactionsResponse>('/transactions?limit=100')
+  return resp.transactions.map(mapApiTransaction)
 }
 
 export async function getCurrentTransactions(): Promise<Transaction[]> {
@@ -32,17 +101,30 @@ export async function getCurrentTransactions(): Promise<Transaction[]> {
 }
 
 export async function getRecentTransactions(limit = 5): Promise<Transaction[]> {
-  const all = await getCurrentWalletTransactions()
-  return all.slice(0, limit)
+  if (getAuthMode() === 'mock') {
+    const all = await getCurrentWalletTransactions()
+    return all.slice(0, limit)
+  }
+  const safeLimit = Math.min(Math.max(limit, 1), 100)
+  const resp = await fetchApi<ApiTransactionsResponse>(`/transactions?limit=${safeLimit}`)
+  return resp.transactions.map(mapApiTransaction)
 }
 
 export async function getTransactionsByType(type: TransactionType): Promise<Transaction[]> {
-  const all = await getCurrentWalletTransactions()
+  if (getAuthMode() === 'mock') {
+    const all = await getCurrentWalletTransactions()
+    return all.filter((t) => t.type === type)
+  }
+  const all = await getCurrentTransactions()
   return all.filter((t) => t.type === type)
 }
 
 export async function getTransactionsByCurrency(currencyCode: string): Promise<Transaction[]> {
-  const all = await getCurrentWalletTransactions()
+  if (getAuthMode() === 'mock') {
+    const all = await getCurrentWalletTransactions()
+    return all.filter((t) => t.currency_code === currencyCode)
+  }
+  const all = await getCurrentTransactions()
   return all.filter((t) => t.currency_code === currencyCode)
 }
 
