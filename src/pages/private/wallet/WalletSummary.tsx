@@ -11,18 +11,21 @@ import {
   Send,
 } from 'lucide-react'
 import { getCurrentBalanceSummary } from '../../../api/balances'
-import { getRecentTransactions, createDeposit, createMoneyRequest, createWithdrawal } from '../../../api/transactions'
+import { getRecentTransactions, createDeposit, createMoneyRequest, createWithdrawal, createConversion } from '../../../api/transactions'
+import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getCurrentContacts } from '../../../api/contacts'
 import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
 import Select from '../../../components/Select'
+import ConvertForm, { type ConvertData } from '../../../components/ConvertForm'
 import type { BalanceSummaryItem } from '../../../api/balances'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Card } from '../../../mocks/data/cards'
 import type { PaymentMethod } from '../../../mocks/data/paymentMethods'
 import type { Contact } from '../../../mocks/data/contacts'
+import type { ExchangeRate } from '../../../mocks/data/exchangeRates'
 import '../../../styles/pages/private/wallet-summary.css'
 import '../../../styles/pages/private/transactions.css'
 
@@ -46,6 +49,7 @@ export default function WalletSummary() {
   const [cards, setCards] = useState<Card[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [quotes, setQuotes] = useState<ExchangeRate[]>([])
   const [activeCardIndex, setActiveCardIndex] = useState(0)
   const [depositOpen, setDepositOpen] = useState(false)
   const [depositStep, setDepositStep] = useState(1)
@@ -53,6 +57,8 @@ export default function WalletSummary() {
   const [requestStep, setRequestStep] = useState(1)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [withdrawStep, setWithdrawStep] = useState(1)
+  const [convertOpen, setConvertOpen] = useState(false)
+  const [convertStep, setConvertStep] = useState(1)
   const [accountDetail, setAccountDetail] = useState<BalanceSummaryItem | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -68,6 +74,7 @@ export default function WalletSummary() {
     getCurrentCards().then(setCards)
     getPaymentMethodsList().then(setPaymentMethods)
     getCurrentContacts().then(setContacts)
+    getQuotes().then(setQuotes)
   }, [])
 
   useEffect(() => {
@@ -106,7 +113,7 @@ export default function WalletSummary() {
                   <Download className="wallet-banner__btn-icon" />
                   Cobrar
                 </button>
-                <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => navigate('/dashboard/exchange')}>
+                <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => setConvertOpen(true)}>
                   <Repeat className="wallet-banner__btn-icon" />
                   Convertir
                 </button>
@@ -315,6 +322,24 @@ export default function WalletSummary() {
         />
       </Modal>
 
+      <Modal open={convertOpen} onClose={() => setConvertOpen(false)} title="Convertir" step={convertStep} totalSteps={2}>
+        <ConvertWizard
+          summary={summary}
+          quotes={quotes}
+          step={convertStep}
+          setStep={setConvertStep}
+          onDone={(msg) => {
+            setConvertOpen(false)
+            setConvertStep(1)
+            setMessage(msg)
+            reload()
+          }}
+          onError={setErrorMessage}
+          sending={sending}
+          setSending={setSending}
+        />
+      </Modal>
+
       {message && (
         <div className="tx-toast">{message}</div>
       )}
@@ -356,14 +381,11 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
 
   const value = Number(amount)
   const method = paymentMethods.find((pm) => pm.id === methodId)
+  const isValid = Boolean(method) && value > 0
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    onError('')
-    if (!value || value <= 0) {
-      onError('Ingresá un monto válido')
-      return
-    }
+    if (!isValid) return
     setStep(2)
   }
 
@@ -374,6 +396,9 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
       await createDeposit({ currencyCode, amount: value, methodName: method?.name })
       onDone(`Depositados ${value.toLocaleString('es-AR')} ${currencyCode}`)
     } catch (err) {
+      setMethodId('')
+      setAmount('')
+      setStep(1)
       onError(err instanceof Error ? err.message : 'No se pudo realizar el depósito')
     } finally {
       setSending(false)
@@ -463,7 +488,7 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
         />
       </div>
 
-      <button type="submit" className="tx-button tx-button--primary tx-button--block">
+      <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">
         Continuar
       </button>
     </form>
@@ -491,22 +516,11 @@ function WithdrawWizard({ summary, paymentMethods, step, setStep, onDone, onErro
   const method = paymentMethods.find((pm) => pm.id === methodId)
   const available = summary.find((s) => s.currency_code === currencyCode)?.amount ?? 0
   const insufficient = value > 0 && value > available
+  const isValid = Boolean(method) && value > 0 && !insufficient
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    onError('')
-    if (!method) {
-      onError('Elegí a dónde querés retirar')
-      return
-    }
-    if (!value || value <= 0) {
-      onError('Ingresá un monto válido')
-      return
-    }
-    if (insufficient) {
-      onError(`Saldo insuficiente: tenés ${available.toLocaleString('es-AR')} ${currencyCode} disponibles`)
-      return
-    }
+    if (!isValid) return
     setStep(2)
   }
 
@@ -517,6 +531,10 @@ function WithdrawWizard({ summary, paymentMethods, step, setStep, onDone, onErro
       await createWithdrawal({ currencyCode, amount: value, methodName: method?.name })
       onDone(`Retirados ${value.toLocaleString('es-AR')} ${currencyCode} hacia ${method?.name}`)
     } catch (err) {
+      setMethodId('')
+      setAmount('')
+      setConfirmed(false)
+      setStep(1)
       onError(err instanceof Error ? err.message : 'No se pudo realizar el retiro')
     } finally {
       setSending(false)
@@ -617,7 +635,7 @@ function WithdrawWizard({ summary, paymentMethods, step, setStep, onDone, onErro
 
       <button
         type="submit"
-        disabled={insufficient}
+        disabled={!isValid}
         className="tx-button tx-button--primary tx-button--block"
       >
         Continuar
@@ -645,18 +663,11 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
 
   const value = Number(amount)
   const contact = contacts.find((c) => c.id === contactId)
+  const isValid = Boolean(contact) && value > 0
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    onError('')
-    if (!contact) {
-      onError('Elegí a quién querés cobrarle')
-      return
-    }
-    if (!value || value <= 0) {
-      onError('Ingresá un monto válido')
-      return
-    }
+    if (!isValid) return
     setStep(2)
   }
 
@@ -674,6 +685,10 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
       })
       onDone(`Solicitud de ${value.toLocaleString('es-AR')} ${currencyCode} enviada a ${contact.alias}`)
     } catch (err) {
+      setContactId('')
+      setAmount('')
+      setConcept('')
+      setStep(1)
       onError(err instanceof Error ? err.message : 'No se pudo realizar la solicitud')
     } finally {
       setSending(false)
@@ -775,9 +790,110 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         />
       </div>
 
-      <button type="submit" className="tx-button tx-button--primary tx-button--block">
+      <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">
         Continuar
       </button>
     </form>
+  )
+}
+
+interface ConvertWizardProps {
+  summary: BalanceSummaryItem[]
+  quotes: ExchangeRate[]
+  step: number
+  setStep: (v: number) => void
+  onDone: (msg: string) => void
+  onError: (msg: string) => void
+  sending: boolean
+  setSending: (v: boolean) => void
+}
+
+function ConvertWizard({ summary, quotes, step, setStep, onDone, onError, sending, setSending }: ConvertWizardProps) {
+  const [data, setData] = useState<ConvertData | null>(null)
+
+  const handleConfirm = async () => {
+    if (!data) return
+    onError('')
+    setSending(true)
+    try {
+      await createConversion({ fromCurrency: data.fromCurrency, toCurrency: data.toCurrency, amount: data.amount })
+      onDone(`Convertidos ${data.amount.toLocaleString('es-AR')} ${data.fromCurrency} a ${data.toCurrency}`)
+    } catch (err) {
+      setData(null)
+      setStep(1)
+      onError(err instanceof Error ? err.message : 'No se pudo realizar la conversión')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  if (step === 2 && data) {
+    return (
+      <div className="tx-review">
+        <dl className="tx-review__rows">
+          <div className="tx-review__row">
+            <dt className="tx-review__label">De la cuenta</dt>
+            <dd className="tx-review__value">{data.fromCurrency}</dd>
+          </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">A la cuenta</dt>
+            <dd className="tx-review__value">{data.toCurrency}</dd>
+          </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Monto</dt>
+            <dd className="tx-review__value tx-review__amount">
+              {data.amount.toLocaleString('es-AR')} {data.fromCurrency}
+            </dd>
+          </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Recibirás</dt>
+            <dd className="tx-review__value">
+              {data.result > 0 ? `${data.result.toLocaleString('es-AR', { maximumFractionDigits: 2 })} ${data.toCurrency}` : '—'}
+            </dd>
+          </div>
+          {data.result > 0 && (
+            <div className="tx-review__row">
+              <dt className="tx-review__label">Comisión (0,4%)</dt>
+              <dd className="tx-review__value">
+                -{(data.result * 0.004).toLocaleString('es-AR', { maximumFractionDigits: 2 })} {data.toCurrency}
+              </dd>
+            </div>
+          )}
+        </dl>
+
+        <div className="tx-review__actions">
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            disabled={sending}
+            className="tx-button tx-button--secondary"
+          >
+            Volver
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={sending}
+            className="tx-button tx-button--primary"
+          >
+            {sending ? 'Convirtiendo...' : 'Confirmar conversión'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <ConvertForm
+      balances={summary}
+      quotes={quotes}
+      submitLabel="Continuar"
+      disabled={sending}
+      disableWhenInvalid
+      onValidSubmit={(d) => {
+        setData(d)
+        setStep(2)
+      }}
+    />
   )
 }
