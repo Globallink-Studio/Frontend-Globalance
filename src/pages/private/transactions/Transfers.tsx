@@ -57,30 +57,37 @@ export default function Transfers() {
   }, [transactions])
 
   const selectedBalance = balances.find((b) => b.currency_code === currencyCode)
+  const value = Number(amount)
+  const recipientFilled =
+    sendMethod === 'contact'
+      ? Boolean(contactId)
+      : sendMethod === 'email'
+        ? /^\S+@\S+\.\S+$/.test(email.trim())
+        : Boolean(alias.trim())
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const value = Number(amount)
     setErrorMessage(null)
     setMessage(null)
+
+    if (!recipientFilled) {
+      setDismissReturns(false)
+      setErrorMessage('Completá el destinatario para continuar')
+      return
+    }
+    if (!(value > 0)) {
+      setDismissReturns(false)
+      setErrorMessage('Ingresá un monto válido para continuar')
+      return
+    }
 
     let recipient = ''
     let recipientUserId = ''
     if (sendMethod === 'contact') {
       const contact = contacts.find((c) => c.id === contactId)
-      if (!contact) {
-        setDismissReturns(false)
-        setErrorMessage('Elegí un contacto')
-        return
-      }
-      recipient = contact.alias
-      recipientUserId = contact.recipient_user_id
+      recipient = contact?.alias ?? ''
+      recipientUserId = contact?.recipient_user_id ?? ''
     } else if (sendMethod === 'email') {
-      if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-        setDismissReturns(false)
-        setErrorMessage('Ingresá un correo electrónico válido')
-        return
-      }
       const user = await getUserByEmail(email.trim())
       if (!user) {
         setDismissReturns(false)
@@ -90,11 +97,6 @@ export default function Transfers() {
       recipient = user.email
       recipientUserId = user.id
     } else {
-      if (!alias.trim()) {
-        setDismissReturns(false)
-        setErrorMessage('Ingresá el alias del destinatario')
-        return
-      }
       const wallet = await getWalletByAlias(alias)
       if (!wallet || wallet.status !== 'active') {
         setDismissReturns(false)
@@ -103,12 +105,6 @@ export default function Transfers() {
       }
       recipient = wallet.alias
       recipientUserId = wallet.user_id
-    }
-
-    if (!value || value <= 0) {
-      setDismissReturns(false)
-      setErrorMessage('Ingresá un monto válido')
-      return
     }
 
     setReview({
