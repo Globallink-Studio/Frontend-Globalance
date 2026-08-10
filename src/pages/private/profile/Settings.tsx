@@ -1,8 +1,6 @@
 export default function Settings() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Ajustes</h1>
-
       <div className="space-y-3">
         <button
           type="button"

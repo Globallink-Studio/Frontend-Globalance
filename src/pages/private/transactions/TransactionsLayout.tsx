@@ -5,9 +5,7 @@ const tabs = [
   { label: 'Resumen', to: '/dashboard/transactions', end: true },
   { label: 'Transferencias', to: '/dashboard/transactions/transfers' },
   { label: 'Depósitos', to: '/dashboard/transactions/deposits' },
-  { label: 'Conversiones', to: '/dashboard/transactions/conversions' },
   { label: 'Solicitudes', to: '/dashboard/transactions/requests' },
-  { label: 'Historial', to: '/dashboard/transactions/history' },
 ]
 
 export default function TransactionsLayout() {

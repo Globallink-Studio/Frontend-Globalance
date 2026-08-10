@@ -12,7 +12,6 @@ export default function Deposits() {
 
   return (
     <div>
-      <h2>Transacciones / Depósitos</h2>
       <TransactionList transactions={transactions} />
     </div>
   )

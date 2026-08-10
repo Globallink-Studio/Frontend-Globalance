@@ -36,7 +36,6 @@ export default function Assistant() {
 
   return (
     <div className="assistant">
-      <h1 className="assistant__title">Asistente IA</h1>
       <div className="assistant-chat">
         <div className="assistant-chat__messages">
           {messages.map((m, i) => (

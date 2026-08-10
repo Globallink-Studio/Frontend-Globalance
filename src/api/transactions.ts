@@ -4,6 +4,7 @@ import { getAuthMode } from './auth'
 import { getCurrentWallet, getWalletByUserId } from './wallets'
 import { getCurrentBalances } from './balances'
 import { convertCurrency } from './exchangeRates'
+import { notifyCurrentUser, notifyUser } from './notifications'
 import type { Transaction, TransactionStatus, TransactionType } from '../mocks/data/transactions'
 
 export const transactionStatusLabels: Record<TransactionStatus, string> = {
@@ -23,6 +24,10 @@ async function getCurrentWalletTransactions(): Promise<Transaction[]> {
   return all
     .filter((t) => t.wallet_id === wallet.id)
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
+}
+
+export async function getCurrentTransactions(): Promise<Transaction[]> {
+  return getCurrentWalletTransactions()
 }
 
 export async function getRecentTransactions(limit = 5): Promise<Transaction[]> {
@@ -66,6 +71,12 @@ export async function createTransfer(input: {
     concept: input.concept,
   })
   await adjustBalance(wallet.id, input.currencyCode, -input.amount)
+  await notifyCurrentUser(
+    'Transferencia enviada',
+    `Enviaste ${input.amount} ${input.currencyCode} a ${input.recipient}.`,
+    'transfer',
+    '/dashboard/history',
+  )
 
   const recipientWallet = await getWalletByUserId(input.recipientUserId)
   if (recipientWallet && recipientWallet.status === 'active') {
@@ -75,9 +86,16 @@ export async function createTransfer(input: {
       currency_code: input.currencyCode,
       type: 'transfer',
       amount: input.amount,
-      description: 'Transferencia recibida',
+      description: `Transferencia recibida de ${wallet.alias}`,
       status: 'pending',
     })
+    await notifyUser(
+      input.recipientUserId,
+      'Transferencia recibida',
+      `Recibiste ${input.amount} ${input.currencyCode} de ${wallet.alias}.`,
+      'transfer',
+      '/dashboard/history',
+    )
     setTimeout(async () => {
       await setTransactionStatus(tx.id, 'completed')
       await setTransactionStatus(recipientTx.id, 'completed')
@@ -87,6 +105,98 @@ export async function createTransfer(input: {
       await setTransactionStatus(tx.id, 'completed')
     }, 1500)
   }
+  return tx
+}
+
+export async function createDeposit(input: {
+  currencyCode: string
+  amount: number
+  methodName?: string
+}): Promise<Transaction> {
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  const tx = await createTransaction({
+    wallet_id: wallet.id,
+    currency_code: input.currencyCode,
+    type: 'deposit',
+    amount: input.amount,
+    description: input.methodName ? `Depósito desde ${input.methodName}` : 'Depósito de dinero',
+    status: 'completed',
+  })
+  await adjustBalance(wallet.id, input.currencyCode, input.amount)
+  await notifyCurrentUser(
+    'Depósito acreditado',
+    `Tu depósito de ${input.amount} ${input.currencyCode} fue acreditado en tu cuenta.`,
+    'deposit',
+    '/dashboard/history',
+  )
+  return tx
+}
+
+export async function createMoneyRequest(input: {
+  recipient: string
+  recipientUserId: string
+  currencyCode: string
+  amount: number
+  concept?: string
+}): Promise<Transaction> {
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
+  if (!input.recipient) throw new Error('Indicá a quién querés cobrarle')
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  const tx = await createTransaction({
+    wallet_id: wallet.id,
+    currency_code: input.currencyCode,
+    type: 'request',
+    amount: input.amount,
+    description: `Solicitud de cobro a ${input.recipient}`,
+    status: 'pending',
+    concept: input.concept,
+  })
+  await notifyCurrentUser(
+    'Solicitud de dinero enviada',
+    `Solicitaste ${input.amount} ${input.currencyCode} a ${input.recipient}.`,
+    'request',
+    '/dashboard/history',
+  )
+  return tx
+}
+
+export async function createWithdrawal(input: {
+  currencyCode: string
+  amount: number
+  methodName?: string
+}): Promise<Transaction> {
+  const wallet = await getCurrentWallet()
+  if (!wallet) throw new Error('No hay wallet activa')
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  const balances = await getCurrentBalances()
+  const current = balances.find((b) => b.currency_code === input.currencyCode)
+  if (!current) throw new Error('La moneda no tiene saldo')
+  if (input.amount > current.amount) throw new Error('Saldo insuficiente')
+
+  const tx = await createTransaction({
+    wallet_id: wallet.id,
+    currency_code: input.currencyCode,
+    type: 'withdrawal',
+    amount: input.amount,
+    description: input.methodName ? `Retiro hacia ${input.methodName}` : 'Retiro de dinero',
+    status: 'pending',
+  })
+  await adjustBalance(wallet.id, input.currencyCode, -input.amount)
+  await notifyCurrentUser(
+    'Retiro en proceso',
+    `Estás retirando ${input.amount} ${input.currencyCode}${input.methodName ? ` hacia ${input.methodName}` : ''}.`,
+    'withdrawal',
+    '/dashboard/history',
+  )
+  setTimeout(async () => {
+    await setTransactionStatus(tx.id, 'completed')
+  }, 1500)
   return tx
 }
 
@@ -115,9 +225,17 @@ export async function createConversion(input: {
     amount: result,
     description: `Conversión desde ${input.fromCurrency}`,
     status: 'processing',
+    from_currency: input.fromCurrency,
+    to_currency: input.toCurrency,
   })
   await adjustBalance(wallet.id, input.fromCurrency, -input.amount)
   await adjustBalance(wallet.id, input.toCurrency, result)
   const done = await setTransactionStatus(tx.id, 'completed')
+  await notifyCurrentUser(
+    'Conversión completada',
+    `Convertiste ${input.amount} ${input.fromCurrency} a ${result.toFixed(2)} ${input.toCurrency}.`,
+    'conversion',
+    '/dashboard/history',
+  )
   return done ?? tx
 }

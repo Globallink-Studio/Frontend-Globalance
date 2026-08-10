@@ -1,4 +1,4 @@
-export type TransactionType = 'transfer' | 'deposit' | 'conversion' | 'request'
+export type TransactionType = 'transfer' | 'deposit' | 'conversion' | 'request' | 'withdrawal'
 export type TransactionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'reversed'
 
 export interface Transaction {
@@ -11,6 +11,8 @@ export interface Transaction {
   status: TransactionStatus
   created_at: string
   concept?: string
+  from_currency?: string
+  to_currency?: string
 }
 
 export const transactions: Transaction[] = [
@@ -54,6 +56,8 @@ export const transactions: Transaction[] = [
     description: 'Conversión desde EUR',
     status: 'completed',
     created_at: '2026-07-22T11:45:00.000Z',
+    from_currency: 'EUR',
+    to_currency: 'USD',
   },
   {
     id: '20000000-0000-4000-8000-000000000004b',
@@ -74,6 +78,8 @@ export const transactions: Transaction[] = [
     description: 'Conversión a EUR',
     status: 'completed',
     created_at: '2026-07-29T14:20:00.000Z',
+    from_currency: 'USD',
+    to_currency: 'EUR',
   },
   {
     id: '20000000-0000-4000-8000-000000000005',

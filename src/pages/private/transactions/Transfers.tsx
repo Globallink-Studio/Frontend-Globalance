@@ -5,6 +5,7 @@ import { getCurrentContacts } from '../../../api/contacts'
 import { getUserByEmail } from '../../../api/users'
 import { getWalletByAlias } from '../../../api/wallets'
 import TransactionList from '../../../components/TransactionList'
+import Select from '../../../components/Select'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Contact } from '../../../mocks/data/contacts'
 import type { Balance } from '../../../mocks/data/balances'
@@ -56,30 +57,37 @@ export default function Transfers() {
   }, [transactions])
 
   const selectedBalance = balances.find((b) => b.currency_code === currencyCode)
+  const value = Number(amount)
+  const recipientFilled =
+    sendMethod === 'contact'
+      ? Boolean(contactId)
+      : sendMethod === 'email'
+        ? /^\S+@\S+\.\S+$/.test(email.trim())
+        : Boolean(alias.trim())
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const value = Number(amount)
     setErrorMessage(null)
     setMessage(null)
+
+    if (!recipientFilled) {
+      setDismissReturns(false)
+      setErrorMessage('Completá el destinatario para continuar')
+      return
+    }
+    if (!(value > 0)) {
+      setDismissReturns(false)
+      setErrorMessage('Ingresá un monto válido para continuar')
+      return
+    }
 
     let recipient = ''
     let recipientUserId = ''
     if (sendMethod === 'contact') {
       const contact = contacts.find((c) => c.id === contactId)
-      if (!contact) {
-        setDismissReturns(false)
-        setErrorMessage('Elegí un contacto')
-        return
-      }
-      recipient = contact.alias
-      recipientUserId = contact.recipient_user_id
+      recipient = contact?.alias ?? ''
+      recipientUserId = contact?.recipient_user_id ?? ''
     } else if (sendMethod === 'email') {
-      if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-        setDismissReturns(false)
-        setErrorMessage('Ingresá un correo electrónico válido')
-        return
-      }
       const user = await getUserByEmail(email.trim())
       if (!user) {
         setDismissReturns(false)
@@ -89,11 +97,6 @@ export default function Transfers() {
       recipient = user.email
       recipientUserId = user.id
     } else {
-      if (!alias.trim()) {
-        setDismissReturns(false)
-        setErrorMessage('Ingresá el alias del destinatario')
-        return
-      }
       const wallet = await getWalletByAlias(alias)
       if (!wallet || wallet.status !== 'active') {
         setDismissReturns(false)
@@ -102,12 +105,6 @@ export default function Transfers() {
       }
       recipient = wallet.alias
       recipientUserId = wallet.user_id
-    }
-
-    if (!value || value <= 0) {
-      setDismissReturns(false)
-      setErrorMessage('Ingresá un monto válido')
-      return
     }
 
     setReview({
@@ -146,8 +143,6 @@ export default function Transfers() {
 
   return (
     <div className="tx-page">
-      <h2 className="tx-page__title">Nueva transferencia</h2>
-
       <div className="tx-grid">
         {review ? (
           <div className="tx-card">
@@ -235,20 +230,16 @@ export default function Transfers() {
             </div>
 
             {sendMethod === 'contact' ? (
-              <div className="tx-form__field">
-                <label htmlFor="contact" className="tx-form__label">Contacto</label>
-                <select
-                  id="contact"
-                  value={contactId}
-                  onChange={(e) => setContactId(e.target.value)}
-                  className="tx-form__control"
-                >
-                  <option value="">Elegí un contacto</option>
-                  {contacts.map((c) => (
-                    <option key={c.id} value={c.id}>{c.alias}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                id="contact"
+                label="Contacto"
+                value={contactId}
+                onChange={setContactId}
+                options={[
+                  { value: '', label: 'Elegí un contacto' },
+                  ...contacts.map((c) => ({ value: c.id, label: c.alias })),
+                ]}
+              />
             ) : sendMethod === 'email' ? (
               <div className="tx-form__field">
                 <label htmlFor="email" className="tx-form__label">Correo del destinatario</label>
@@ -276,24 +267,18 @@ export default function Transfers() {
             )}
 
             <div className="tx-form__grid">
-              <div className="tx-form__field">
-                <label htmlFor="currency" className="tx-form__label">Moneda</label>
-                <select
-                  id="currency"
-                  value={currencyCode}
-                  onChange={(e) => setCurrencyCode(e.target.value)}
-                  className="tx-form__control"
-                >
-                  {balances.map((b) => (
-                    <option key={b.currency_code} value={b.currency_code}>{b.currency_code}</option>
-                  ))}
-                </select>
-                {selectedBalance && (
-                  <p className="tx-form__hint">
-                    Saldo: {selectedBalance.amount.toLocaleString('es-AR')} {selectedBalance.currency_code}
-                  </p>
-                )}
-              </div>
+              <Select
+                id="currency"
+                label="Moneda"
+                value={currencyCode}
+                onChange={setCurrencyCode}
+                options={balances.map((b) => ({ value: b.currency_code, label: b.currency_code }))}
+                hint={
+                  selectedBalance
+                    ? `Saldo: ${selectedBalance.amount.toLocaleString('es-AR')} ${selectedBalance.currency_code}`
+                    : undefined
+                }
+              />
 
               <div className="tx-form__field">
                 <label htmlFor="amount" className="tx-form__label">Monto</label>
