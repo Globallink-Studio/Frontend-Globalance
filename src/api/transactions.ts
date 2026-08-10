@@ -196,9 +196,33 @@ export async function createDeposit(input: {
   amount: number
   methodName?: string
 }): Promise<Transaction> {
+  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+
+  if (getAuthMode() === 'firebase') {
+    const resp = await fetchApi<ApiIncomeResponse>('/transactions/income', {
+      method: 'POST',
+      body: {
+        currency: input.currencyCode,
+        amount: String(input.amount),
+      },
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    })
+    const tx = resp.transaction
+    const wallet = await getCurrentWallet()
+    return {
+      id: tx.transaction_id,
+      wallet_id: wallet?.id ?? '',
+      currency_code: tx.currency,
+      type: 'deposit',
+      amount: Number(tx.amount),
+      description: input.methodName ? `Depósito desde ${input.methodName}` : 'Depósito de dinero',
+      status: tx.status as TransactionStatus,
+      created_at: tx.created_at,
+    }
+  }
+
   const wallet = await getCurrentWallet()
   if (!wallet) throw new Error('No hay wallet activa')
-  if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   const tx = await createTransaction({
     wallet_id: wallet.id,
@@ -281,6 +305,21 @@ export async function createWithdrawal(input: {
     await setTransactionStatus(tx.id, 'completed')
   }, 1500)
   return tx
+}
+
+interface ApiIncomeTransaction {
+  transaction_id: string
+  status: string
+  currency: string
+  amount: string
+  balance_before: string
+  balance_after: string
+  created_at: string
+}
+
+interface ApiIncomeResponse {
+  message: string
+  transaction: ApiIncomeTransaction
 }
 
 interface ApiExchangeTransaction {

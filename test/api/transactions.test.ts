@@ -2,6 +2,7 @@ import {
   createTransfer,
   createWithdrawal,
   createConversion,
+  createDeposit,
   getCurrentTransactions,
   getRecentTransactions,
   getTransactionsByType,
@@ -179,6 +180,94 @@ describe('createWithdrawal', () => {
         amount: 0,
       }),
     ).rejects.toThrow('El monto debe ser mayor a 0')
+  })
+})
+
+describe('createDeposit — modo mock (desarrollo local)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('mock')
+  })
+
+  test('acredita el saldo y crea una transacción de depósito completada', async () => {
+    await seedDemoUser()
+    const wallet = await getCurrentWallet()
+    expect(wallet).toBeDefined()
+
+    const before = await getBalancesByWallet(wallet!.id)
+    const arsBefore = balanceOf(before, 'ARS')
+
+    const tx = await createDeposit({ currencyCode: 'ARS', amount: 1000, methodName: 'Mercado Pago' })
+
+    expect(tx.type).toBe('deposit')
+    expect(tx.amount).toBe(1000)
+    expect(tx.currency_code).toBe('ARS')
+    expect(tx.description).toBe('Depósito desde Mercado Pago')
+    expect(tx.status).toBe('completed')
+
+    const after = await getBalancesByWallet(wallet!.id)
+    expect(balanceOf(after, 'ARS')).toBe(arsBefore + 1000)
+  })
+})
+
+describe('createDeposit — modo firebase (API real)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('firebase')
+    mockFetch.mockReset()
+  })
+
+  const apiTransaction = {
+    transaction_id: '30000000-0000-4000-8000-000000000003',
+    status: 'completed',
+    currency: 'USD',
+    amount: '5000.00',
+    balance_before: '1500.00',
+    balance_after: '6500.00',
+    created_at: '2026-08-10T14:00:00.000Z',
+  }
+
+  test('carga saldo vía POST /transactions/income y mapea la respuesta', async () => {
+    mockFetch.mockImplementation((path, options) => {
+      if (path === '/transactions/income' && options?.method === 'POST') {
+        return Promise.resolve({ message: 'Carga de saldo demo realizada correctamente', transaction: apiTransaction })
+      }
+      if (path === '/wallet') {
+        return Promise.resolve({
+          user: { id: '11111111-1111-4111-8111-111111111111' },
+          wallet: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+          balances: [],
+        })
+      }
+      return Promise.reject(new Error(`Ruta inesperada: ${path}`))
+    })
+
+    const tx = await createDeposit({ currencyCode: 'USD', amount: 5000 })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/transactions/income',
+      expect.objectContaining({
+        method: 'POST',
+        body: { currency: 'USD', amount: '5000' },
+        headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }),
+      }),
+    )
+    expect(tx.id).toBe('30000000-0000-4000-8000-000000000003')
+    expect(tx.type).toBe('deposit')
+    expect(tx.currency_code).toBe('USD')
+    expect(tx.amount).toBe(5000)
+    expect(tx.status).toBe('completed')
+    expect(tx.wallet_id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+  })
+
+  test('valida el monto antes de llamar a la API', async () => {
+    await expect(createDeposit({ currencyCode: 'USD', amount: 0 })).rejects.toThrow('El monto debe ser mayor a 0')
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(createDeposit({ currencyCode: 'USD', amount: 100 })).rejects.toThrow('Network error')
   })
 })
 
