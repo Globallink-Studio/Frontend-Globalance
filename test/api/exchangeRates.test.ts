@@ -2,12 +2,24 @@ import { getQuotes, convertCurrency, refreshExchangeRates, getRateHistory } from
 import { refreshExchangeRates as refreshMockExchangeRates, getRateHistory as getMockRateHistory } from '../../src/mocks/handlers/exchangeRates'
 import { exchangeRates, seedExchangeRateHistory } from '../../src/mocks/data/exchangeRates'
 import { getMockRateHistory as readStoredHistory, saveMockRateHistory } from '../../src/mocks/storage'
+import { fetchApi } from '../../src/api/fetchApi'
+
+const { getAuthModeMock } = vi.hoisted(() => ({ getAuthModeMock: vi.fn() }))
+
+vi.mock('../../src/api/auth', () => ({ getAuthMode: getAuthModeMock }))
+
+vi.mock('../../src/api/fetchApi', () => ({
+  fetchApi: vi.fn(),
+}))
+
+const mockFetch = vi.mocked(fetchApi)
 
 const original = exchangeRates.map((r) => ({ ...r }))
 
-describe('exchangeRates API', () => {
+describe('exchangeRates API — modo mock (desarrollo local)', () => {
   beforeEach(() => {
     localStorage.clear()
+    getAuthModeMock.mockReturnValue('mock')
     exchangeRates.splice(0, exchangeRates.length, ...original.map((r) => ({ ...r })))
   })
 
@@ -150,5 +162,91 @@ describe('exchangeRates API', () => {
     custom.push({ currency_code: 'USD', date: '2026-08-01', buy_price: 1300 })
     saveMockRateHistory(custom)
     expect(readStoredHistory()).toHaveLength(custom.length)
+  })
+})
+
+describe('exchangeRates API — modo firebase (API real)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    getAuthModeMock.mockReturnValue('firebase')
+    mockFetch.mockReset()
+  })
+
+  test('getQuotes consulta /exchange/rates y convierte las tasas a ARS', async () => {
+    mockFetch.mockResolvedValue({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:00:00.000Z',
+        expiresAt: '2026-08-10T12:01:00.000Z',
+      },
+    })
+
+    const quotes = await getQuotes()
+
+    expect(mockFetch).toHaveBeenCalledWith('/exchange/rates?base=ARS')
+    expect(quotes).toHaveLength(3)
+
+    const usd = quotes.find((q) => q.currency_code === 'USD')!
+    expect(usd.buy_price).toBe(1250)
+    expect(usd.sell_price).toBe(1250)
+    expect(usd.provider).toBe('frankfurter')
+    expect(usd.fetched_at).toBe('2026-08-10T12:00:00.000Z')
+
+    const eur = quotes.find((q) => q.currency_code === 'EUR')!
+    expect(eur.buy_price).toBe(1333.33)
+
+    const ars = quotes.find((q) => q.currency_code === 'ARS')!
+    expect(ars.buy_price).toBe(1)
+  })
+
+  test('convertCurrency consulta /exchange/quotes y devuelve el monto destino', async () => {
+    mockFetch.mockResolvedValue({
+      quote: {
+        sourceCurrency: 'ARS',
+        targetCurrency: 'USD',
+        sourceAmount: '100000',
+        targetAmount: '80',
+        rate: '0.0008',
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:00:00.000Z',
+        expiresAt: '2026-08-10T12:01:00.000Z',
+      },
+    })
+
+    const result = await convertCurrency('ARS', 'USD', 100000)
+
+    expect(mockFetch).toHaveBeenCalledWith('/exchange/quotes?source=ARS&target=USD&amount=100000')
+    expect(result).toBe(80)
+  })
+
+  test('refreshExchangeRates vuelve a consultar la API en modo real', async () => {
+    mockFetch.mockResolvedValue({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:05:00.000Z',
+        expiresAt: '2026-08-10T12:06:00.000Z',
+      },
+    })
+
+    const quotes = await refreshExchangeRates()
+
+    expect(mockFetch).toHaveBeenCalledWith('/exchange/rates?base=ARS')
+    expect(quotes).toHaveLength(3)
+    expect(quotes[0].fetched_at).toBe('2026-08-10T12:05:00.000Z')
+  })
+
+  test('getRateHistory devuelve [] porque el backend aún no expone histórico', async () => {
+    const history = await getRateHistory('USD', 30)
+    expect(history).toEqual([])
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('getQuotes propaga los errores de la API', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(getQuotes()).rejects.toThrow('Network error')
   })
 })

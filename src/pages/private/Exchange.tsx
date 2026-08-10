@@ -139,6 +139,21 @@ export default function Exchange() {
                   </span>
                 </div>
               </div>
+
+              {q.provider && q.fetched_at && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Fuente: {q.provider}
+                    <span className="mx-1.5 text-border">·</span>
+                    {new Date(q.fetched_at).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              )}
             </div>
           )
         })}

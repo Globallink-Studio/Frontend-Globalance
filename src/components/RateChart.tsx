@@ -69,6 +69,8 @@ export default function RateChart({ refreshKey = 0 }: { refreshKey?: number }) {
 
   const data = useMemo(() => points, [points])
 
+  const isEmpty = data.length === 0
+
   const first = data[0]?.value ?? 0
   const last = data[data.length - 1]?.value ?? 0
   const delta = first > 0 ? ((last - first) / first) * 100 : 0
@@ -102,56 +104,64 @@ export default function RateChart({ refreshKey = 0 }: { refreshKey?: number }) {
       </div>
 
       <div className="rate-chart__value-row">
-        <span className="rate-chart__value">{formattedLast}</span>
-        <span
-          className={`rate-chart__delta${up ? ' rate-chart__delta--up' : down ? ' rate-chart__delta--down' : ' rate-chart__delta--flat'}`}
-        >
-          {up && <TrendingUp className="size-3" />}
-          {down && <TrendingDown className="size-3" />}
-          {rounded === 0 ? 'Estable' : `${rounded > 0 ? '+' : ''}${fmt(rounded)}%`}
-        </span>
+        <span className="rate-chart__value">{isEmpty ? '—' : formattedLast}</span>
+        {!isEmpty && (
+          <span
+            className={`rate-chart__delta${up ? ' rate-chart__delta--up' : down ? ' rate-chart__delta--down' : ' rate-chart__delta--flat'}`}
+          >
+            {up && <TrendingUp className="size-3" />}
+            {down && <TrendingDown className="size-3" />}
+            {rounded === 0 ? 'Estable' : `${rounded > 0 ? '+' : ''}${fmt(rounded)}%`}
+          </span>
+        )}
       </div>
 
-      <div className="rate-chart__plot">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-                <stop offset="100%" stopColor={color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="var(--border)" strokeDasharray="4 8" vertical={false} />
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-              tickLine={false}
-              axisLine={false}
-              interval="preserveStartEnd"
-              minTickGap={40}
-            />
-            <YAxis
-              domain={['dataMin', 'dataMax']}
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-              tickLine={false}
-              axisLine={false}
-              width={52}
-              tickFormatter={(v: number) => (v < 10 ? v.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : fmt(v))}
-            />
-            <Tooltip
-              content={<ChartTooltip />}
-              cursor={{ stroke: 'var(--border)' }}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={2.5}
-              fill={`url(#${gradId})`}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      {isEmpty ? (
+        <div className="rate-chart__empty">
+          El histórico de tasas estará disponible próximamente.
+        </div>
+      ) : (
+        <div className="rate-chart__plot">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="var(--border)" strokeDasharray="4 8" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+                minTickGap={40}
+              />
+              <YAxis
+                domain={['dataMin', 'dataMax']}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                tickLine={false}
+                axisLine={false}
+                width={52}
+                tickFormatter={(v: number) => (v < 10 ? v.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : fmt(v))}
+              />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: 'var(--border)' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={color}
+                strokeWidth={2.5}
+                fill={`url(#${gradId})`}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }

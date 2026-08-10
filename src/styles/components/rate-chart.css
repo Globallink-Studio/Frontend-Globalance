@@ -117,6 +117,20 @@
   min-height: 14rem;
 }
 
+.rate-chart__empty {
+  display: grid;
+  flex: 1;
+  min-height: 14rem;
+  margin-top: 1rem;
+  place-items: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 1rem;
+}
+
 .rate-chart__tooltip {
   border: 1px solid var(--border);
   border-radius: 0.75rem;
