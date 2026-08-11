@@ -3,6 +3,7 @@ import { currencies } from '../mocks/data/currencies'
 import { getAuthMode } from './auth'
 import { fetchApi } from './fetchApi'
 import { getCurrentWallet } from './wallets'
+import { convertCurrency } from './exchangeRates'
 import type { Balance } from '../mocks/data/balances'
 
 export interface BalanceSummaryItem {
@@ -43,4 +44,17 @@ export async function getCurrentBalanceSummary(): Promise<BalanceSummaryItem[]> 
         amount: balance?.amount ?? 0,
       }
     })
+}
+
+export async function getUnifiedBalance(displayCurrency: string): Promise<number> {
+  const balances = await getCurrentBalanceSummary()
+  let total = 0
+  for (const balance of balances) {
+    const value =
+      balance.currency_code === displayCurrency
+        ? balance.amount
+        : await convertCurrency(balance.currency_code, displayCurrency, balance.amount)
+    total += value
+  }
+  return Math.round(total * 100) / 100
 }

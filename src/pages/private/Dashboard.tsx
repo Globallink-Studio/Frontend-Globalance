@@ -11,8 +11,10 @@ import {
   Legend,
 } from 'recharts'
 import { dashboardMock, type Metric, type ChartPoint } from '../../data/mocks'
-import { getCurrentBalanceSummary, type BalanceSummaryItem } from '../../api/balances'
+import { getCurrentBalanceSummary, getUnifiedBalance, type BalanceSummaryItem } from '../../api/balances'
+import { getCurrentUser } from '../../api/users'
 import { getDashboardMetrics, getDashboardChart } from '../../api/dashboard'
+import { convertCurrency } from '../../api/exchangeRates'
 import { getRecentTransactions } from '../../api/transactions'
 import type { Transaction } from '../../mocks/data/transactions'
 import '../../styles/pages/private/dashboard.css'
@@ -30,16 +32,45 @@ const formatAmount = (value: number, currency: string) => {
 export default function Dashboard() {
   const { aiSummary } = dashboardMock
   const [metrics, setMetrics] = useState<Metric[]>([])
+  const [baseMetrics, setBaseMetrics] = useState<Metric[]>([])
   const [chart, setChart] = useState<ChartPoint[]>([])
   const [balances, setBalances] = useState<BalanceSummaryItem[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [displayCurrency, setDisplayCurrency] = useState('ARS')
 
   useEffect(() => {
-    getDashboardMetrics().then(setMetrics)
+    getCurrentUser().then((u) => setDisplayCurrency(u?.display_currency ?? 'ARS'))
+  }, [])
+
+  useEffect(() => {
+    getDashboardMetrics().then((m) => {
+      setBaseMetrics(m)
+      setMetrics(m)
+    })
     getDashboardChart().then(setChart)
     getCurrentBalanceSummary().then(setBalances)
     getRecentTransactions(5).then(setTransactions)
   }, [])
+
+  useEffect(() => {
+    if (!displayCurrency || baseMetrics.length === 0) return
+    const apply = async () => {
+      const converted: Metric[] = []
+      for (const m of baseMetrics) {
+        if (m.label === 'Saldo Total') {
+          const total = await getUnifiedBalance(displayCurrency)
+          converted.push({ ...m, amount: total, currency: displayCurrency })
+        } else if (m.label === 'Ingresos del mes' || m.label === 'Gastos del mes') {
+          const amount = await convertCurrency(m.currency, displayCurrency, m.amount)
+          converted.push({ ...m, amount, currency: displayCurrency })
+        } else {
+          converted.push(m)
+        }
+      }
+      setMetrics(converted)
+    }
+    void apply()
+  }, [displayCurrency, baseMetrics])
 
   return (
     <div className="dashboard">
@@ -89,7 +120,7 @@ export default function Dashboard() {
             <span className="dashboard-ai__icon" aria-hidden="true">
               <Sparkles className="dashboard-ai__icon-svg" />
             </span>
-            <h2 className="dashboard-card__title">Copiloto IA</h2>
+            <h2 className="dashboard-card__title">Asistente IA</h2>
           </div>
           <p className="dashboard-ai__summary">{aiSummary}</p>
           <button type="button" className="dashboard-ai__button">
