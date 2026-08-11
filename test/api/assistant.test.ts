@@ -1,5 +1,6 @@
 import { askAssistant } from '../../src/api/assistant'
 import { fetchApi } from '../../src/api/fetchApi'
+import { NetworkError } from '../../src/api/errors'
 
 const { getAuthModeMock } = vi.hoisted(() => ({ getAuthModeMock: vi.fn(() => 'mock') }))
 
@@ -31,6 +32,22 @@ describe('assistant API — modo mock (desarrollo local)', () => {
     const reply = await askAssistant('¿cuál es la cotización del dólar?')
     expect(reply).toContain('Compra')
     expect(reply).toContain('Venta')
+  })
+
+  test('simula un error 400 al pedirlo', async () => {
+    await expect(askAssistant('error 400')).rejects.toThrow('Error 400')
+  })
+
+  test('simula un error 500 al pedirlo', async () => {
+    await expect(askAssistant('simular error 500')).rejects.toThrow('Error 500')
+  })
+
+  test('simula un error 502 al pedirlo', async () => {
+    await expect(askAssistant('probá el error 502')).rejects.toThrow('Error 502')
+  })
+
+  test('simula un error de red al pedirlo', async () => {
+    await expect(askAssistant('error red')).rejects.toBeInstanceOf(NetworkError)
   })
 })
 
