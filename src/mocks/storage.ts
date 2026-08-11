@@ -129,17 +129,28 @@ export function saveMockTransactions(items: Transaction[]): void {
 }
 
 export function getMockContacts(): Contact[] {
-  return readAll<Contact>(CONTACTS_KEY).map((c) => ({
-    ...c,
-    ...(c.category === undefined ? { category: null } : {}),
-    ...(c.email === undefined ? { email: null } : {}),
-    ...(c.description === undefined ? { description: null } : {}),
-    ...(c.favorite === undefined ? { favorite: false } : {}),
-    ...(c.account === undefined ? { account: null } : {}),
-    ...(c.currency_code === undefined ? { currency_code: null } : {}),
-    ...(c.last_amount === undefined ? { last_amount: null } : {}),
-    ...(c.last_activity === undefined ? { last_activity: null } : {}),
-  }))
+  return readAll<Contact>(CONTACTS_KEY).map((c) => {
+    const migrated = {
+      ...c,
+      ...(c.contact_type === undefined ? { contact_type: null } : {}),
+      ...(c.contact_value === undefined ? { contact_value: null } : {}),
+      ...(c.category === undefined ? { category: null } : {}),
+      ...(c.email === undefined ? { email: null } : {}),
+      ...(c.description === undefined ? { description: null } : {}),
+      ...(c.favorite === undefined ? { favorite: false } : {}),
+      ...(c.account === undefined ? { account: null } : {}),
+      ...(c.currency_code === undefined ? { currency_code: null } : {}),
+      ...(c.last_amount === undefined ? { last_amount: null } : {}),
+      ...(c.last_activity === undefined ? { last_activity: null } : {}),
+    }
+    // Contactos guardados antes de existir contact_type: si tienen número de
+    // cuenta, derivarlo como account_number; si no, son alias.
+    if (migrated.contact_type === null && migrated.account) {
+      migrated.contact_type = 'account_number'
+      migrated.contact_value = migrated.account
+    }
+    return migrated
+  })
 }
 
 export function addMockContact(contact: Contact): void {

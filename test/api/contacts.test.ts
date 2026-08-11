@@ -1,4 +1,4 @@
-import { getCurrentContacts, createContact, updateContact, deleteContact } from '../../src/api/contacts'
+import { getCurrentContacts, createContact, deleteContact } from '../../src/api/contacts'
 import { fetchApi } from '../../src/api/fetchApi'
 import { seedDemoUser, JUAN_USER_ID } from '../fixtures/db'
 
@@ -37,41 +37,55 @@ describe('contacts API — modo mock (desarrollo local)', () => {
     expect(contacts).toEqual([])
   })
 
-  test('createContact valida contra el directorio y agrega el contacto', async () => {
+  test('createContact valida contra el directorio y agrega el contacto por número de cuenta', async () => {
     await seedDemoUser()
     const contact = await createContact({
-      recipientUserId: JUAN_USER_ID,
-      alias: 'papá',
-      email: 'juan@ejemplo.com',
-      account: '0000000002',
+      name: 'papá',
+      contactType: 'account_number',
+      contactValue: '0000000002',
     })
     expect(contact).toMatchObject({
       alias: 'papá',
-      email: 'juan@ejemplo.com',
-      account: '0000000002',
+      contact_type: 'account_number',
+      contact_value: '0000000002',
       recipient_user_id: JUAN_USER_ID,
     })
   })
 
-  test('createContact rechaza sin alias', async () => {
+  test('createContact valida contra el directorio y agrega el contacto por alias', async () => {
+    await seedDemoUser()
+    const contact = await createContact({
+      name: 'papá',
+      contactType: 'alias',
+      contactValue: 'juan.cash',
+    })
+    expect(contact).toMatchObject({
+      alias: 'papá',
+      contact_type: 'alias',
+      contact_value: 'juan.cash',
+      recipient_user_id: JUAN_USER_ID,
+    })
+  })
+
+  test('createContact rechaza un número de cuenta inexistente', async () => {
     await seedDemoUser()
     await expect(
-      createContact({ recipientUserId: JUAN_USER_ID, alias: ' ', email: 'juan@ejemplo.com', account: '0000000002' }),
-    ).rejects.toThrow('Indicá un alias para el contacto')
+      createContact({ name: 'papá', contactType: 'account_number', contactValue: '9999999999' }),
+    ).rejects.toThrow('No existe una billetera activa con ese número de cuenta')
   })
 
-  test('updateContact actualiza los datos del contacto', async () => {
+  test('createContact rechaza un alias inexistente', async () => {
     await seedDemoUser()
-    const [contact] = await getCurrentContacts()
-    const updated = await updateContact(contact.id, { favorite: true })
-    expect(updated).toBeDefined()
-    expect(updated!.favorite).toBe(true)
+    await expect(
+      createContact({ name: 'papá', contactType: 'alias', contactValue: 'nadie' }),
+    ).rejects.toThrow('No existe una billetera activa con ese alias')
   })
 
-  test('updateContact devuelve undefined si el contacto no existe', async () => {
+  test('createContact rechaza sin nombre', async () => {
     await seedDemoUser()
-    const updated = await updateContact('contacto-inexistente', { favorite: true })
-    expect(updated).toBeUndefined()
+    await expect(
+      createContact({ name: ' ', contactType: 'account_number', contactValue: '0000000002' }),
+    ).rejects.toThrow('Indicá un nombre para el contacto')
   })
 
   test('deleteContact elimina el contacto', async () => {
@@ -137,9 +151,9 @@ describe('contacts API — modo firebase (API real)', () => {
     mockFetch.mockResolvedValue({ contact: apiContact })
 
     const contact = await createContact({
-      recipientUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      alias: 'mamá',
-      account: '0000000002',
+      name: 'mamá',
+      contactType: 'account_number',
+      contactValue: '0000000002',
     })
 
     expect(mockFetch).toHaveBeenCalledWith('/contacts', {
@@ -154,27 +168,21 @@ describe('contacts API — modo firebase (API real)', () => {
     mockFetch.mockResolvedValue({ contact: { ...apiContact, contact_type: 'alias', contact_value: 'glb.mama' } })
 
     await createContact({
-      recipientUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      alias: 'mamá',
+      name: 'mamá',
+      contactType: 'alias',
+      contactValue: 'glb.mama',
     })
 
     expect(mockFetch).toHaveBeenCalledWith('/contacts', {
       method: 'POST',
-      body: { name: 'mamá', type: 'alias', value: 'mamá' },
+      body: { name: 'mamá', type: 'alias', value: 'glb.mama' },
     })
   })
 
-  test('createContact rechaza sin alias antes de llamar a la API', async () => {
+  test('createContact rechaza sin nombre antes de llamar a la API', async () => {
     await expect(
-      createContact({ recipientUserId: 'x', alias: '   ' }),
-    ).rejects.toThrow('Indicá un alias para el contacto')
-    expect(mockFetch).not.toHaveBeenCalled()
-  })
-
-  test('updateContact todavía no está disponible en firebase', async () => {
-    await expect(updateContact(apiContact.id, { favorite: true })).rejects.toThrow(
-      'Editar contactos todavía no está disponible en el backend',
-    )
+      createContact({ name: '   ', contactType: 'alias', contactValue: 'glb.mama' }),
+    ).rejects.toThrow('Indicá un nombre para el contacto')
     expect(mockFetch).not.toHaveBeenCalled()
   })
 

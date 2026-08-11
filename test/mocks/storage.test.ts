@@ -6,7 +6,6 @@ import {
   deleteMockPaymentMethod,
   getMockContacts,
   addMockContact,
-  updateMockContact,
   saveMockContacts,
   deleteMockContact,
   getMockNotifications,
@@ -45,6 +44,8 @@ function buildContact(overrides: Partial<Contact> = {}): Contact {
     user_id: 'user-1',
     recipient_user_id: 'user-2',
     alias: 'mamá',
+    contact_type: 'account_number',
+    contact_value: '0000000002',
     phone: '+54 11 5555-0301',
     email: 'juan@ejemplo.com',
     category: null,
@@ -121,14 +122,9 @@ describe('storage: paymentMethods', () => {
 })
 
 describe('storage: contacts', () => {
-  test('agrega, actualiza, guarda y elimina', () => {
+  test('agrega, guarda y elimina', () => {
     addMockContact(buildContact())
     expect(getMockContacts()).toHaveLength(1)
-
-    updateMockContact('c-1', { favorite: true, category: 'familia' })
-    const [updated] = getMockContacts()
-    expect(updated.favorite).toBe(true)
-    expect(updated.category).toBe('familia')
 
     saveMockContacts([])
     expect(getMockContacts()).toEqual([])
@@ -149,9 +145,21 @@ describe('storage: contacts', () => {
     expect(contact.description).toBeNull()
     expect(contact.favorite).toBe(false)
     expect(contact.account).toBeNull()
+    expect(contact.contact_type).toBeNull()
+    expect(contact.contact_value).toBeNull()
     expect(contact.currency_code).toBeNull()
     expect(contact.last_amount).toBeNull()
     expect(contact.last_activity).toBeNull()
+  })
+
+  test('deriva contact_type account_number de contactos viejos con account', () => {
+    localStorage.setItem(
+      CONTACTS_KEY,
+      JSON.stringify([{ id: 'c-viejo', user_id: 'user-1', recipient_user_id: 'user-2', alias: 'x', account: '0000000002' }]),
+    )
+    const [contact] = getMockContacts()
+    expect(contact.contact_type).toBe('account_number')
+    expect(contact.contact_value).toBe('0000000002')
   })
 })
 

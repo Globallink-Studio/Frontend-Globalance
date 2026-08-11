@@ -12,6 +12,8 @@ export interface TransferReviewData {
   currencyCode: string
   amount: number
   concept?: string
+  idLabel: string
+  idValue: string
 }
 
 interface TransferWizardProps {
@@ -22,13 +24,14 @@ interface TransferWizardProps {
   onError: (msg: string) => void
   sending: boolean
   setSending: (v: boolean) => void
+  initialContactId?: string
 }
 
-export default function TransferWizard({ contacts, step, setStep, onDone, onError, sending, setSending }: TransferWizardProps) {
+export default function TransferWizard({ contacts, step, setStep, onDone, onError, sending, setSending, initialContactId }: TransferWizardProps) {
   const [balances, setBalances] = useState<Balance[]>([])
-  const [sendMethod, setSendMethod] = useState<'alias' | 'contact'>('alias')
+  const [sendMethod, setSendMethod] = useState<'alias' | 'contact'>(initialContactId ? 'contact' : 'alias')
   const [alias, setAlias] = useState('')
-  const [contactId, setContactId] = useState('')
+  const [contactId, setContactId] = useState(initialContactId ?? '')
   const [currencyCode, setCurrencyCode] = useState('ARS')
   const [amount, setAmount] = useState('')
   const [concept, setConcept] = useState('')
@@ -56,10 +59,14 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
 
     let recipient = ''
     let recipientUserId = ''
+    let idLabel = 'Alias'
+    let idValue = ''
     if (sendMethod === 'contact') {
       const contact = contacts.find((c) => c.id === contactId)
       recipient = contact?.alias ?? ''
       recipientUserId = contact?.recipient_user_id ?? ''
+      idLabel = contact?.contact_type === 'account_number' || contact?.account ? 'Número de cuenta' : 'Alias'
+      idValue = contact?.contact_value ?? contact?.account ?? contact?.alias ?? ''
     } else {
       const wallet = await getWalletByAlias(alias)
       if (!wallet || wallet.status !== 'active') {
@@ -68,6 +75,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
       }
       recipient = wallet.alias
       recipientUserId = wallet.user_id
+      idValue = alias.trim()
     }
 
     setReview({
@@ -76,6 +84,8 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
       currencyCode,
       amount: value,
       concept: concept.trim() || undefined,
+      idLabel,
+      idValue,
     })
     setStep(2)
   }
@@ -112,6 +122,10 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             <dd className="tx-review__value">{review.recipient}</dd>
           </div>
           <div className="tx-review__row">
+            <dt className="tx-review__label">{review.idLabel}</dt>
+            <dd className="tx-review__value">{review.idValue}</dd>
+          </div>
+          <div className="tx-review__row">
             <dt className="tx-review__label">Moneda</dt>
             <dd className="tx-review__value">{review.currencyCode}</dd>
           </div>
@@ -141,7 +155,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={sending}
+            disabled={sending || !review.recipient || !review.recipientUserId || !(review.amount > 0) || !review.idValue}
             className="tx-button tx-button--primary"
           >
             {sending ? 'Enviando...' : 'Confirmar transferencia'}
@@ -180,16 +194,40 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
         </div>
 
       {sendMethod === 'contact' ? (
-        <Select
-          id="contact"
-          label="Contacto"
-          value={contactId}
-          onChange={setContactId}
-          options={[
-            { value: '', label: 'Elegí un contacto' },
-            ...contacts.map((c) => ({ value: c.id, label: c.alias })),
-          ]}
-        />
+        <>
+          <Select
+            id="contact"
+            label="Contacto"
+            value={contactId}
+            onChange={setContactId}
+            options={[
+              { value: '', label: 'Elegí un contacto' },
+              ...contacts.map((c) => ({ value: c.id, label: c.alias })),
+            ]}
+          />
+          {(() => {
+            const contact = contacts.find((c) => c.id === contactId)
+            if (!contact) return null
+            const isAccount = contact.contact_type === 'account_number' || Boolean(contact.account)
+            const value = isAccount
+              ? contact.contact_value ?? contact.account ?? ''
+              : contact.contact_value ?? contact.alias ?? ''
+            return (
+              <div className="tx-form__field">
+                <label htmlFor="contact-value" className="tx-form__label">
+                  {isAccount ? 'Número de cuenta' : 'Alias'}
+                </label>
+                <input
+                  id="contact-value"
+                  type="text"
+                  value={value}
+                  readOnly
+                  className="tx-form__control tx-form__control--readonly"
+                />
+              </div>
+            )
+          })()}
+        </>
       ) : (
         <div className="tx-form__field">
           <label htmlFor="alias" className="tx-form__label">Alias del destinatario</label>
@@ -230,6 +268,9 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             placeholder="0"
             className="tx-form__control"
           />
+          {selectedBalance && value > selectedBalance.amount && (
+            <p className="tx-form__error" role="alert">Saldo insuficiente</p>
+          )}
         </div>
       </div>
 
@@ -245,7 +286,11 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
         />
       </div>
 
-      <button type="submit" className="tx-button tx-button--primary tx-button--block">
+      <button
+        type="submit"
+        disabled={Boolean(selectedBalance && value > selectedBalance.amount)}
+        className="tx-button tx-button--primary tx-button--block"
+      >
         Continuar
       </button>
     </form>

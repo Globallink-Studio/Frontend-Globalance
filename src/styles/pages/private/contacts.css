@@ -56,6 +56,17 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.contacts-filters .contacts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.contacts-filters .contacts-chip svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .contacts-chip {
   flex-shrink: 0;
   border-radius: 0.75rem;

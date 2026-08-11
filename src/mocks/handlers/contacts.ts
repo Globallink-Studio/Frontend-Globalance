@@ -12,16 +12,24 @@ import { balances as seedBalances } from '../data/balances'
 // El "directorio demo": para que las validaciones de contactos tengan contra
 // quién validar en modo mock, se busca primero en storage (siembra de
 // provisionDemoDirectory) y como respaldo en los seeds de data/*.
-function directoryUserByEmail(email: string): User | undefined {
-  const normalized = email.trim().toLowerCase()
+function directoryUserByUserId(userId: string): User | undefined {
+  return getMockUsers().find((u) => u.id === userId) ?? seedUsers.find((u) => u.id === userId)
+}
+
+function directoryWalletByAlias(alias: string): Wallet | undefined {
+  const normalized = alias.trim().toLowerCase()
   return (
-    getMockUsers().find((u) => u.email.toLowerCase() === normalized) ??
-    seedUsers.find((u) => u.email.toLowerCase() === normalized)
+    getMockWallets().find((w) => w.alias.toLowerCase() === normalized) ??
+    seedWallets.find((w) => w.alias.toLowerCase() === normalized)
   )
 }
 
-function directoryWalletByUserId(userId: string): Wallet | undefined {
-  return getMockWallets().find((w) => w.user_id === userId) ?? seedWallets.find((w) => w.user_id === userId)
+function directoryWalletByAccount(account: string): Wallet | undefined {
+  const normalized = account.trim()
+  return (
+    getMockWallets().find((w) => w.account_number === normalized) ??
+    seedWallets.find((w) => w.account_number === normalized)
+  )
 }
 
 function directoryBalancesByWalletId(walletId: string): Balance[] {
@@ -29,28 +37,34 @@ function directoryBalancesByWalletId(walletId: string): Balance[] {
   return fromStorage.length > 0 ? fromStorage : seedBalances.filter((b) => b.wallet_id === walletId)
 }
 
-function validateContactFields(input: {
-  alias?: string | null
-  email?: string | null
-  account?: string | null
-}): { email: string; recipientUserId: string; currency: string | null } {
-  if (!input.alias?.trim()) throw new Error('El alias es obligatorio')
-  if (!input.account?.trim()) throw new Error('La cuenta es obligatoria')
-  if (!input.email?.trim()) throw new Error('El correo electrónico es obligatorio')
-
-  const email = input.email.trim().toLowerCase()
-  const user = directoryUserByEmail(email)
-  if (!user) throw new Error('No existe un usuario registrado con ese correo electrónico')
-
-  const wallet = directoryWalletByUserId(user.id)
-  if (!wallet || wallet.account_number !== input.account.trim()) {
-    throw new Error('La cuenta no coincide con las cuentas registradas de ese usuario')
+function resolveContactDestination(input: {
+  name?: string | null
+  contactType?: 'alias' | 'account_number' | null
+  contactValue?: string | null
+}): { recipientUserId: string; currency: string | null } {
+  if (!input.name?.trim()) throw new Error('El nombre del contacto es obligatorio')
+  if (!input.contactValue?.trim()) {
+    throw new Error(input.contactType === 'account_number' ? 'La cuenta es obligatoria' : 'El alias es obligatorio')
   }
 
-  const balances = directoryBalancesByWalletId(wallet.id)
-  const currency = balances[0]?.currency_code ?? user.display_currency ?? null
+  const wallet =
+    input.contactType === 'account_number'
+      ? directoryWalletByAccount(input.contactValue)
+      : directoryWalletByAlias(input.contactValue)
 
-  return { email, recipientUserId: user.id, currency }
+  if (!wallet || wallet.status !== 'active') {
+    throw new Error(
+      input.contactType === 'account_number'
+        ? 'No existe una billetera activa con ese número de cuenta'
+        : 'No existe una billetera activa con ese alias',
+    )
+  }
+
+  const user = directoryUserByUserId(wallet.user_id)
+  const balances = directoryBalancesByWalletId(wallet.id)
+  const currency = balances[0]?.currency_code ?? user?.display_currency ?? null
+
+  return { recipientUserId: wallet.user_id, currency }
 }
 
 export async function getContacts(): Promise<Contact[]> {
@@ -65,36 +79,21 @@ export async function getContactsByUserId(userId: string): Promise<Contact[]> {
 
 export async function createContact(input: {
   userId: string
-  recipientUserId: string
-  alias: string
-  phone?: string | null
-  email?: string | null
-  category?: string | null
-  description?: string | null
-  favorite?: boolean
-  account?: string | null
+  name: string
+  contactType: 'alias' | 'account_number'
+  contactValue: string
 }): Promise<Contact> {
   await delay()
-  const resolved = validateContactFields({
-    alias: input.alias,
-    email: input.email,
-    account: input.account,
-  })
+  const resolved = resolveContactDestination(input)
 
   const contact: Contact = {
     id: crypto.randomUUID(),
     user_id: input.userId,
     recipient_user_id: resolved.recipientUserId,
-    alias: input.alias.trim(),
-    phone: input.phone ?? null,
-    email: resolved.email,
-    category: input.category ?? null,
-    description: input.description ?? null,
-    favorite: input.favorite ?? false,
-    account: input.account?.trim() ?? null,
+    alias: input.name.trim(),
+    contact_type: input.contactType,
+    contact_value: input.contactValue.trim(),
     currency_code: resolved.currency,
-    last_amount: null,
-    last_activity: null,
     created_at: new Date().toISOString(),
   }
   addMockContact(contact)
@@ -107,13 +106,22 @@ export async function updateContact(id: string, patch: Partial<Contact>): Promis
   if (!current) return undefined
 
   const next: Partial<Contact> = { ...patch }
-  if (patch.email !== undefined || patch.account !== undefined || patch.alias !== undefined) {
-    const resolved = validateContactFields({
-      alias: patch.alias ?? current.alias,
-      email: patch.email ?? current.email,
-      account: patch.account ?? current.account,
+
+  const nextAlias = patch.alias ?? current.alias
+  const nextContactType = patch.contact_type ?? (patch.account !== undefined ? 'account_number' : current.contact_type)
+  const nextContactValue = patch.contact_value ?? patch.account ?? current.contact_value ?? current.account
+
+  if (
+    patch.alias !== undefined ||
+    patch.contact_type !== undefined ||
+    patch.contact_value !== undefined ||
+    patch.account !== undefined
+  ) {
+    const resolved = resolveContactDestination({
+      name: nextAlias,
+      contactType: nextContactType,
+      contactValue: nextContactValue,
     })
-    next.email = resolved.email
     next.recipient_user_id = resolved.recipientUserId
     next.currency_code = resolved.currency
   }
