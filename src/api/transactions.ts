@@ -53,7 +53,7 @@ export async function createTransfer(input: {
   concept?: string
 }): Promise<Transaction> {
   const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
+  if (!wallet) throw new Error('No hay billetera activa')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   const balances = await getCurrentBalances()
@@ -114,7 +114,7 @@ export async function createDeposit(input: {
   methodName?: string
 }): Promise<Transaction> {
   const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
+  if (!wallet) throw new Error('No hay billetera activa')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   const tx = await createTransaction({
@@ -143,7 +143,7 @@ export async function createMoneyRequest(input: {
   concept?: string
 }): Promise<Transaction> {
   const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
+  if (!wallet) throw new Error('No hay billetera activa')
   if (!input.recipient) throw new Error('Indicá a quién querés cobrarle')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
@@ -171,7 +171,7 @@ export async function createWithdrawal(input: {
   methodName?: string
 }): Promise<Transaction> {
   const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
+  if (!wallet) throw new Error('No hay billetera activa')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   const balances = await getCurrentBalances()
@@ -206,7 +206,7 @@ export async function createConversion(input: {
   amount: number
 }): Promise<Transaction> {
   const wallet = await getCurrentWallet()
-  if (!wallet) throw new Error('No hay wallet activa')
+  if (!wallet) throw new Error('No hay billetera activa')
   if (input.fromCurrency === input.toCurrency) throw new Error('La moneda de origen y destino deben ser distintas')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 

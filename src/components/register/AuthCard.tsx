@@ -1,6 +1,7 @@
 import React from "react";
 import { Wallet } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
+import AppFooter from "../layout/AppFooter";
 import "../../styles/components/auth-card.css";
 
 interface authCardProps {
@@ -20,26 +21,29 @@ export const AuthCard: React.FC<authCardProps> = ({
 }) => {
     return (
         <main className="auth-page">
-            <section className={`auth-card${className ? ` ${className}` : ""}`}>
-                <header className="auth-card__header">
-                    <div className="auth-card__brand">
-                        <span className="auth-card__logo" aria-hidden="true">
-                            <Wallet className="auth-card__logo-icon" />
-                        </span>
-                        <span className="auth-card__name">Globalance</span>
+            <div className="auth-page__center">
+                <section className={`auth-card${className ? ` ${className}` : ""}`}>
+                    <header className="auth-card__header">
+                        <div className="auth-card__brand">
+                            <span className="auth-card__logo" aria-hidden="true">
+                                <Wallet className="auth-card__logo-icon" />
+                            </span>
+                            <span className="auth-card__name">Globalance</span>
+                        </div>
+                        <ThemeToggle />
+                    </header>
+
+                    {title && <h1 className="auth-card__title">{title}</h1>}
+                    {subtitle && <p className="auth-card__subtitle">{subtitle}</p>}
+
+                    {errorMessage && <p className="auth-card__error" role="alert">{errorMessage}</p>}
+
+                    <div className="auth-card__content">
+                        {children}
                     </div>
-                    <ThemeToggle />
-                </header>
-
-                {title && <h1 className="auth-card__title">{title}</h1>}
-                {subtitle && <p className="auth-card__subtitle">{subtitle}</p>}
-
-                {errorMessage && <p className="auth-card__error" role="alert">{errorMessage}</p>}
-
-                <div className="auth-card__content">
-                    {children}
-                </div>
-            </section>
+                </section>
+            </div>
+            <AppFooter />
         </main>
     )
 }

@@ -1,14 +1,16 @@
 .logout-button {
+  display: inline-flex;
+  align-items: center;
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--pastel-lilac) 20%, transparent);
-  padding: 0.5rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  border: none;
+  padding: 0.8125rem 1.625rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
   background-image: linear-gradient(120deg,
       color-mix(in oklab, var(--pastel-lilac) 88%, white) 0%,
       color-mix(in oklab, var(--pastel-sky) 88%, white) 50%,
       color-mix(in oklab, var(--pastel-mint) 88%, white) 100%);
-  color: oklch(19.125% 0.00002 271.152);
+  color: oklch(0.26 0.02 285);
   box-shadow: var(--shadow-soft);
   cursor: pointer;
   transition:

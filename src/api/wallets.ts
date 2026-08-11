@@ -27,7 +27,7 @@ export async function updateCurrentWallet(patch: Partial<Wallet>): Promise<Walle
     if (!wallet) return undefined
     return updateWallet(wallet.id, patch)
   }
-  throw new Error('Actualizar la wallet todavía no está disponible en el backend')
+  throw new Error('Actualizar la billetera todavía no está disponible en el backend')
 }
 
 export { getWallets, getWalletById, getWalletByUserId, getWalletByAlias }

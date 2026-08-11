@@ -4,6 +4,12 @@
   flex-direction: column;
 }
 
+.home-hero,
+.home-faq,
+.home-about {
+  scroll-margin-top: 5.5rem;
+}
+
 /* ── Navbar ──────────────────────────────────────────────────────── */
 .home-nav {
   display: flex;
@@ -63,7 +69,8 @@
   transition: color 0.2s ease;
 }
 
-.home-nav__link:hover {
+.home-nav__link:hover,
+.home-nav__link--active {
   color: var(--foreground);
 }
 
@@ -454,23 +461,247 @@
   color: var(--muted-foreground);
 }
 
-/* ── Footer ──────────────────────────────────────────────────────── */
-.home-footer {
+/* ── Demo gráficas ────────────────────────────────────────────────── */
+.home-demo {
+  padding: 2.5rem 2.5rem 4.5rem;
+  max-width: 75rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.home-demo__header {
+  margin-bottom: 1.5rem;
+}
+
+.home-demo__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.home-demo__subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+}
+
+.home-demo__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.home-demo-card {
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.home-demo-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.home-demo-card__plot {
+  height: 15rem;
+  width: 100%;
+}
+
+/* ── Nosotros ────────────────────────────────────────────────────── */
+.home-about {
+  padding: 2.5rem 2.5rem clamp(7rem, 22.5vh, 13rem);
+  max-width: 75rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.home-about__header {
+  margin-bottom: 1.5rem;
+}
+
+.home-about__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.home-about__subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--muted-foreground);
+  max-width: 40rem;
+}
+
+.home-about__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.home-member {
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.home-member:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px oklch(0.22 0.012 285 / 6%),
+    0 22px 44px -20px oklch(0.5 0.14 295 / 30%);
+}
+
+.home-member__avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: auto;
-  padding: 1.5rem 2.5rem;
-  border-top: 1px solid var(--border);
-  background-color: color-mix(in oklab, var(--background) 72%, transparent);
-  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 9999px;
+  margin: 0 auto 1rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: oklch(0.26 0.02 285);
+  background-image: var(--gradient-iridescent);
+  box-shadow: var(--shadow-soft);
 }
 
-.home-footer__copyright {
-  font-size: 0.8125rem;
+.home-member__name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.home-member__role {
+  font-size: 0.875rem;
   color: var(--muted-foreground);
-  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.home-member__email {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--foreground);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 0.375rem 0.875rem;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.home-member__email:hover {
+  border-color: var(--ring);
+  background-color: var(--muted);
+}
+
+.home-member__email-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* ── FAQ ──────────────────────────────────────────────────────────── */
+.home-faq {
+  padding: 2.5rem 2.5rem 4.5rem;
+  max-width: 75rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.home-faq__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+.home-faq__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-faq__item {
+  border-radius: var(--radius-lg);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.home-faq__heading {
+  margin: 0;
+}
+
+.home-faq__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--foreground);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.home-faq__button:hover {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.home-faq__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.home-faq__icon--open {
+  transform: rotate(180deg);
+}
+
+.home-faq__body {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.25s ease;
+  border-top: 1px solid transparent;
+}
+
+.home-faq__body--open {
+  max-height: 20rem;
+  opacity: 1;
+  border-top-color: var(--border);
+}
+
+.home-faq__answer {
+  padding: 1rem 1.25rem 1.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--muted-foreground);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────── */
@@ -484,6 +715,32 @@
   .home-features {
     grid-template-columns: 1fr;
     padding: 1.5rem;
+  }
+
+  .home-faq {
+    padding: 1.5rem;
+  }
+
+  .home-demo {
+    padding: 1.5rem;
+  }
+
+  .home-demo__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-about {
+    padding: 1.5rem;
+  }
+
+  .home-about__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .home-about__grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -513,9 +770,5 @@
   .home-hero__stats {
     gap: 1.5rem;
     flex-wrap: wrap;
-  }
-
-  .home-footer {
-    padding: 1.5rem 1.25rem;
   }
 }

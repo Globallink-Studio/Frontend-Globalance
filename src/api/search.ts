@@ -105,7 +105,7 @@ export function searchGlobal(data: SearchData, query: string, maxHitsPerSection 
 
   if (data.wallet && includes(q, data.wallet.alias, data.wallet.account_number)) {
     sections.push(
-      buildSection('wallet', 'Wallet', '/dashboard/wallet', [
+      buildSection('wallet', 'Billetera', '/dashboard/wallet', [
         {
           id: data.wallet.id,
           title: data.wallet.alias,

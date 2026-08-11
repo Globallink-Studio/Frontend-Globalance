@@ -70,7 +70,7 @@ export const landingMock: LandingMock = {
   features: [
     {
       title: "Multi-moneda",
-      description: "Gestioná USD, EUR, BTC y más desde una sola billetera, sin cuentas separadas.",
+      description: "Gestioná USD, EUR y ARS desde una sola billetera, sin cuentas separadas.",
     },
     {
       title: "Compra y venta",
