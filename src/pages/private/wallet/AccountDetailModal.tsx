@@ -110,7 +110,7 @@ export default function AccountDetailModal({ open, item, onClose }: AccountDetai
                 })}
               </ul>
             )}
-            <Link to="/dashboard/history" className="account-detail__link" onClick={onClose}>
+            <Link to="/dashboard/transactions" className="account-detail__link" onClick={onClose}>
               Ver todo el historial
               <ArrowRight className="account-detail__link-icon" />
             </Link>

@@ -187,7 +187,7 @@ export async function createTransfer(input: {
     'Transferencia enviada',
     `Enviaste ${input.amount} ${input.currencyCode} a ${input.recipient}.`,
     'transfer',
-    '/dashboard/history',
+    '/dashboard/transactions',
   )
 
   const recipientWallet = await getWalletByUserId(input.recipientUserId)
@@ -206,7 +206,7 @@ export async function createTransfer(input: {
       'Transferencia recibida',
       `Recibiste ${input.amount} ${input.currencyCode} de ${wallet.alias}.`,
       'transfer',
-      '/dashboard/history',
+      '/dashboard/transactions',
     )
     setTimeout(async () => {
       await setTransactionStatus(tx.id, 'completed')
@@ -267,7 +267,7 @@ export async function createDeposit(input: {
     'Depósito acreditado',
     `Tu depósito de ${input.amount} ${input.currencyCode} fue acreditado en tu cuenta.`,
     'deposit',
-    '/dashboard/history',
+    '/dashboard/transactions',
   )
   return tx
 }
@@ -322,7 +322,7 @@ export async function createMoneyRequest(input: {
     'Solicitud de dinero enviada',
     `Solicitaste ${input.amount} ${input.currencyCode} a ${input.recipient}.`,
     'request',
-    '/dashboard/history',
+    '/dashboard/transactions',
   )
   return tx
 }
@@ -467,7 +467,7 @@ export async function createConversion(input: {
     'Conversión completada',
     `Convertiste ${input.amount} ${input.fromCurrency} a ${result.toFixed(2)} ${input.toCurrency}.`,
     'conversion',
-    '/dashboard/history',
+    '/dashboard/transactions',
   )
   return done ?? tx
 }

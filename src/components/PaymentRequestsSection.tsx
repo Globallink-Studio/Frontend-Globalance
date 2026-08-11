@@ -5,9 +5,9 @@ import {
   payPaymentRequest,
   paymentRequestStatusLabels,
   type PaymentRequestScope,
-} from '../../../api/paymentRequests'
-import type { PaymentRequest, PaymentRequestStatus } from '../../../mocks/data/paymentRequests'
-import '../../../styles/pages/private/transactions.css'
+} from '../api/paymentRequests'
+import type { PaymentRequest, PaymentRequestStatus } from '../mocks/data/paymentRequests'
+import '../styles/pages/private/transactions.css'
 
 function statusClass(status: PaymentRequestStatus): string {
   if (status === 'pending') return 'tx-status--pending'
@@ -16,7 +16,7 @@ function statusClass(status: PaymentRequestStatus): string {
   return 'tx-status--processing'
 }
 
-export default function MoneyRequests() {
+export default function PaymentRequestsSection() {
   const [scope, setScope] = useState<PaymentRequestScope>('received')
   const [requests, setRequests] = useState<PaymentRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -63,9 +63,9 @@ export default function MoneyRequests() {
   }
 
   return (
-    <div className="tx-page">
+    <section className="tx-card">
       <div className="tx-summary__header">
-        <h2 className="tx-page__title">Solicitudes de cobro</h2>
+        <h3 className="tx-section__title">Solicitudes de cobro</h3>
         <div className="tx-period" role="tablist" aria-label="Tipo de solicitudes">
           {(['received', 'sent'] as const).map((s) => (
             <button
@@ -82,68 +82,66 @@ export default function MoneyRequests() {
         </div>
       </div>
 
-      <section className="tx-card">
-        <h3 className="tx-section__title">
-          {scope === 'received' ? 'Te solicitaron cobro' : 'Enviaste solicitudes'}
-        </h3>
+      <h3 className="tx-section__title">
+        {scope === 'received' ? 'Te solicitaron cobro' : 'Enviaste solicitudes'}
+      </h3>
 
-        {loading && <p className="tx-list__empty">Cargando solicitudes...</p>}
+      {loading && <p className="tx-list__empty">Cargando solicitudes...</p>}
 
-        {!loading && requests.length === 0 && (
-          <p className="tx-list__empty">
-            {scope === 'received'
-              ? 'No tenés solicitudes de cobro pendientes.'
-              : 'No enviaste solicitudes de cobro.'}
-          </p>
-        )}
+      {!loading && requests.length === 0 && (
+        <p className="tx-list__empty">
+          {scope === 'received'
+            ? 'No tenés solicitudes de cobro pendientes.'
+            : 'No enviaste solicitudes de cobro.'}
+        </p>
+      )}
 
-        <ul className="tx-list">
-          {requests.map((pr) => {
-            const counterpart = scope === 'received' ? pr.requester_email : pr.payer_email
-            const isPending = pr.status === 'pending'
-            return (
-              <li key={pr.id} className="tx-list__item">
-                <div className="tx-list__info">
-                  <p className="tx-list__description">
-                    {scope === 'received' ? 'Solicitud de ' : 'Solicitaste a '}
-                    {counterpart ?? '—'}
-                  </p>
-                  <div className="tx-list__status">
-                    <span className={`tx-status ${statusClass(pr.status)}`}>
-                      {paymentRequestStatusLabels[pr.status]}
-                    </span>
-                  </div>
+      <ul className="tx-list">
+        {requests.map((pr) => {
+          const counterpart = scope === 'received' ? pr.requester_email : pr.payer_email
+          const isPending = pr.status === 'pending'
+          return (
+            <li key={pr.id} className="tx-list__item">
+              <div className="tx-list__info">
+                <p className="tx-list__description">
+                  {scope === 'received' ? 'Solicitud de ' : 'Solicitaste a '}
+                  {counterpart ?? '—'}
+                </p>
+                <div className="tx-list__status">
+                  <span className={`tx-status ${statusClass(pr.status)}`}>
+                    {paymentRequestStatusLabels[pr.status]}
+                  </span>
                 </div>
-                <div className="tx-list__right">
-                  <p className="tx-list__amount">
-                    {Number(pr.amount).toLocaleString('es-AR')} {pr.currency_code}
-                  </p>
-                  {isPending && scope === 'received' && (
-                    <button
-                      type="button"
-                      className="tx-button tx-button--primary"
-                      disabled={actioning === pr.payment_token}
-                      onClick={() => handlePay(pr.payment_token)}
-                    >
-                      {actioning === pr.payment_token ? 'Pagando...' : 'Pagar'}
-                    </button>
-                  )}
-                  {isPending && scope === 'sent' && (
-                    <button
-                      type="button"
-                      className="tx-button tx-button--secondary"
-                      disabled={actioning === pr.id}
-                      onClick={() => handleCancel(pr.id)}
-                    >
-                      {actioning === pr.id ? 'Cancelando...' : 'Cancelar'}
-                    </button>
-                  )}
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+              </div>
+              <div className="tx-list__right">
+                <p className="tx-list__amount">
+                  {Number(pr.amount).toLocaleString('es-AR')} {pr.currency_code}
+                </p>
+                {isPending && scope === 'received' && (
+                  <button
+                    type="button"
+                    className="tx-button tx-button--primary"
+                    disabled={actioning === pr.payment_token}
+                    onClick={() => handlePay(pr.payment_token)}
+                  >
+                    {actioning === pr.payment_token ? 'Pagando...' : 'Pagar'}
+                  </button>
+                )}
+                {isPending && scope === 'sent' && (
+                  <button
+                    type="button"
+                    className="tx-button tx-button--secondary"
+                    disabled={actioning === pr.id}
+                    onClick={() => handleCancel(pr.id)}
+                  >
+                    {actioning === pr.id ? 'Cancelando...' : 'Cancelar'}
+                  </button>
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ul>
 
       {errorMessage && (
         <div className="tx-modal">
@@ -160,6 +158,6 @@ export default function MoneyRequests() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   )
 }

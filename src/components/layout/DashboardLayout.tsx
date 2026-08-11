@@ -4,7 +4,6 @@ import { Outlet, NavLink, Link, useLocation } from 'react-router-dom'
 import {
   Home,
   Wallet,
-  ArrowLeftRight,
   History,
   Users,
   BookUser,
@@ -30,8 +29,7 @@ import '../../styles/components/dashboard-layout.css'
 const menuItems = [
   { label: 'Resumen', to: '/dashboard', icon: Home },
   { label: 'Billetera', to: '/dashboard/wallet', icon: Wallet },
-  { label: 'Transacciones', to: '/dashboard/transactions', icon: ArrowLeftRight },
-  { label: 'Historial', to: '/dashboard/history', icon: History },
+  { label: 'Transacciones', to: '/dashboard/transactions', icon: History },
   { label: 'Billetera Grupal', to: '/dashboard/groups', icon: Users },
   { label: 'Cotizaciones', to: '/dashboard/exchange', icon: LineChart },
   { label: 'Contactos', to: '/dashboard/contacts', icon: BookUser },
@@ -44,10 +42,6 @@ const pageTitles: Record<string, string> = {
   '/dashboard': 'Resumen',
   '/dashboard/wallet': 'Billetera',
   '/dashboard/transactions': 'Transacciones',
-  '/dashboard/transactions/transfers': 'Nueva transferencia',
-  '/dashboard/transactions/deposits': 'Depósitos',
-  '/dashboard/transactions/requests': 'Solicitudes',
-  '/dashboard/history': 'Historial',
   '/dashboard/groups': 'Billetera Grupal',
   '/dashboard/exchange': 'Cotizaciones',
   '/dashboard/contacts': 'Contactos',

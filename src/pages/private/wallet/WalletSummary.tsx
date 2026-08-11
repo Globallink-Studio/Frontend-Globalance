@@ -157,8 +157,8 @@ export default function WalletSummary() {
           <section className="wallet-card wallet-transactions">
             <div className="wallet-card__header">
               <h2 className="wallet-card__title">Últimos movimientos de la billetera</h2>
-              <Link to="/dashboard/history" className="wallet-card__link">
-                Historial global
+              <Link to="/dashboard/transactions" className="wallet-card__link">
+                Ver todas las transacciones
                 <ArrowRight className="wallet-card__link-icon" />
               </Link>
             </div>
@@ -273,7 +273,6 @@ export default function WalletSummary() {
       <Modal open={depositOpen} onClose={() => setDepositOpen(false)} title="Depositar" step={depositStep} totalSteps={2}>
         <DepositWizard
           summary={summary}
-          paymentMethods={paymentMethods}
           step={depositStep}
           setStep={setDepositStep}
           onDone={(msg) => {
@@ -366,7 +365,6 @@ export default function WalletSummary() {
 
 interface DepositWizardProps {
   summary: BalanceSummaryItem[]
-  paymentMethods: PaymentMethod[]
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
@@ -375,14 +373,12 @@ interface DepositWizardProps {
   setSending: (v: boolean) => void
 }
 
-function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError, sending, setSending }: DepositWizardProps) {
+function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSending }: DepositWizardProps) {
   const [currencyCode, setCurrencyCode] = useState('ARS')
-  const [methodId, setMethodId] = useState('')
   const [amount, setAmount] = useState('')
 
   const value = Number(amount)
-  const method = paymentMethods.find((pm) => pm.id === methodId)
-  const isValid = Boolean(method) && value > 0
+  const isValid = value > 0
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -394,10 +390,9 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
     onError('')
     setSending(true)
     try {
-      await createDeposit({ currencyCode, amount: value, methodName: method?.name })
+      await createDeposit({ currencyCode, amount: value, methodName: 'Método de pago demo' })
       onDone(`Depositados ${value.toLocaleString('es-AR')} ${currencyCode}`)
     } catch (err) {
-      setMethodId('')
       setAmount('')
       setStep(1)
       onError(err instanceof Error ? err.message : 'No se pudo realizar el depósito')
@@ -416,7 +411,7 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
           </div>
           <div className="tx-review__row">
             <dt className="tx-review__label">Desde</dt>
-            <dd className="tx-review__value">{method ? `${method.name}${method.last_four ? ` ····${method.last_four}` : ''}` : '—'}</dd>
+            <dd className="tx-review__value">Método de pago demo</dd>
           </div>
           <div className="tx-review__row">
             <dt className="tx-review__label">Monto</dt>
@@ -461,19 +456,17 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
         }))}
       />
 
-      <Select
-        id="deposit-method"
-        label="Desde"
-        value={methodId}
-        onChange={setMethodId}
-        options={[
-          { value: '', label: 'Elegí un método' },
-          ...paymentMethods.map((pm) => ({
-            value: pm.id,
-            label: `${pm.name}${pm.last_four ? ` ····${pm.last_four}` : ''}`,
-          })),
-        ]}
-      />
+      <div className="tx-form__field">
+        <label htmlFor="deposit-method" className="tx-form__label">Método de pago</label>
+        <input
+          id="deposit-method"
+          type="text"
+          value="Método de pago demo"
+          readOnly
+          className="tx-form__control"
+        />
+        <p className="tx-form__hint">Depósito de prueba en entorno demo.</p>
+      </div>
 
       <div className="tx-form__field">
         <label htmlFor="deposit-amount" className="tx-form__label">Monto</label>

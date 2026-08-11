@@ -1,17 +1,17 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-import History from '../../../src/pages/private/History'
+import Transactions from '../../../src/pages/private/Transactions'
 import { seedDemoUser, seedDemoWallet, seedExtraTransactions } from '../../fixtures/db'
 
-describe('History', () => {
+describe('Transactions', () => {
   beforeEach(async () => {
     localStorage.clear()
     await seedDemoUser()
   })
 
   test('muestra la tabla con las seis columnas y las transacciones del usuario', async () => {
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -26,7 +26,7 @@ describe('History', () => {
 
   test('filtra por búsqueda de descripción o concepto', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -38,7 +38,7 @@ describe('History', () => {
 
   test('filtra con los chips de tipo', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -50,7 +50,7 @@ describe('History', () => {
 
   test('filtra por moneda y estado con los filtros avanzados', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -75,7 +75,7 @@ describe('History', () => {
     const walletId = await seedDemoWallet()
     await seedExtraTransactions(walletId, 15)
 
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Movimiento extra 15')
 
@@ -90,7 +90,7 @@ describe('History', () => {
 
   test('muestra mensaje de vacío cuando no hay coincidencias', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -101,7 +101,7 @@ describe('History', () => {
 
   test('abre el modal al hacer clic en una fila', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     const row = await screen.findByText('Pago de alquiler')
     await user.click(row)

@@ -5,6 +5,7 @@ import Select from '../../components/Select'
 import DatePicker from '../../components/DatePicker'
 import Pagination from '../../components/Pagination'
 import TransactionDetailModal from '../../components/TransactionDetailModal'
+import PaymentRequestsSection from '../../components/PaymentRequestsSection'
 import type { Transaction, TransactionStatus } from '../../mocks/data/transactions'
 import '../../styles/pages/private/transactions.css'
 import '../../styles/pages/private/profile.css'
@@ -32,7 +33,7 @@ const currencies = ['USD', 'EUR', 'ARS']
 
 const formatMoney = (amount: number, currency: string) => `${amount.toLocaleString('es-AR')} ${currency}`
 
-export default function History() {
+export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [type, setType] = useState('')
   const [currency, setCurrency] = useState('')
@@ -262,6 +263,10 @@ export default function History() {
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </>
           )}
+
+          <div className="mt-6">
+            <PaymentRequestsSection />
+          </div>
       </div>
 
       <TransactionDetailModal transaction={selected} onClose={() => setSelected(null)} />

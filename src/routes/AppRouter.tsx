@@ -1,15 +1,10 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import Home from '../pages/public/Home'
 import Dashboard from '../pages/private/Dashboard'
 import WalletSummary from '../pages/private/wallet/WalletSummary'
-import TransactionsLayout from '../pages/private/transactions/TransactionsLayout'
-import TransactionsSummary from '../pages/private/transactions/TransactionsSummary'
-import History from '../pages/private/History'
-import Transfers from '../pages/private/transactions/Transfers'
-import Deposits from '../pages/private/transactions/Deposits'
-import MoneyRequests from '../pages/private/transactions/MoneyRequests'
+import Transactions from '../pages/private/Transactions'
 import GroupsLayout from '../pages/private/groups/GroupsLayout'
 import MyGroups from '../pages/private/groups/MyGroups'
 import CreateGroup from '../pages/private/groups/CreateGroup'
@@ -48,15 +43,8 @@ export default function AppRouter() {
           <Route path="wallet" element={<WalletSummary />} />
 
           {/* Transactions */}
-          <Route path="transactions" element={<TransactionsLayout />}>
-            <Route index element={<TransactionsSummary />} />
-            <Route path="transfers" element={<Transfers />} />
-            <Route path="deposits" element={<Deposits />} />
-            <Route path="requests" element={<MoneyRequests />} />
-          </Route>
-
-          {/* History */}
-          <Route path="history" element={<History />} />
+          <Route path="transactions" element={<Transactions />} />
+          <Route path="history" element={<Navigate to="/dashboard/transactions" replace />} />
 
           {/* Groups */}
           <Route path="groups" element={<GroupsLayout />}>
