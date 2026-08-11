@@ -7,6 +7,7 @@ import {
   addMockContact,
   addMockNotification,
   addMockPaymentMethod,
+  addMockPaymentRequests,
   getMockUsers,
   getMockWallets,
   getMockBalances,
@@ -15,6 +16,7 @@ import {
   getMockContactCategories,
   getMockNotifications,
   getMockPaymentMethods,
+  getMockPaymentRequests,
   addMockContactCategory,
 } from './storage'
 import { users as demoUsers } from './data/users'
@@ -26,6 +28,7 @@ import { contacts as demoContacts } from './data/contacts'
 import { contactCategories as demoContactCategories } from './data/contactCategories'
 import { notifications as demoNotifications } from './data/notifications'
 import { paymentMethods as demoPaymentMethods } from './data/paymentMethods'
+import { paymentRequests as demoPaymentRequests } from './data/paymentRequests'
 
 const DEMO_WALLET_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const DEMO_USER_ID = '11111111-1111-4111-8111-111111111111'
@@ -88,11 +91,28 @@ function provisionDemoPaymentMethods(userId: string): void {
     .forEach((p) => addMockPaymentMethod({ ...p, id: crypto.randomUUID(), user_id: userId }))
 }
 
+function provisionDemoPaymentRequests(userId: string): void {
+  if (getMockPaymentRequests().some((pr) => pr.requester_user_id === userId || pr.payer_user_id === userId)) return
+
+  addMockPaymentRequests(
+    demoPaymentRequests.map((pr) => {
+      const isSent = pr.requester_user_id === DEMO_USER_ID
+      return {
+        ...pr,
+        id: crypto.randomUUID(),
+        payment_token: crypto.randomUUID(),
+        ...(isSent ? { requester_user_id: userId } : { payer_user_id: userId }),
+      }
+    }),
+  )
+}
+
 export function provisionDemoData(userId: string, nameHint = ''): void {
   provisionDemoDirectory()
   provisionDemoContacts(userId)
   provisionDemoNotifications(userId)
   provisionDemoPaymentMethods(userId)
+  provisionDemoPaymentRequests(userId)
   if (getMockWallets().some((w) => w.user_id === userId)) return
 
   const walletId = crypto.randomUUID()
