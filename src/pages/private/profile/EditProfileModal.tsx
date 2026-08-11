@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import Modal from '../../../components/Modal'
 import { InputField } from '../../../components/register/InputField'
 import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentUser } from '../../../api/users'
 import { getCurrentWallet, updateCurrentWallet } from '../../../api/wallets'
@@ -8,8 +9,15 @@ import type { User } from '../../../mocks/data/users'
 import type { PersonProfile } from '../../../mocks/data/personProfiles'
 import type { CompanyProfile } from '../../../mocks/data/companyProfiles'
 import type { Wallet } from '../../../mocks/data/wallets'
+import '../../../styles/pages/private/profile.css'
 
-export default function EditProfile() {
+interface EditProfileModalProps {
+  open: boolean
+  onClose: () => void
+  onSaved: () => void
+}
+
+export default function EditProfileModal({ open, onClose, onSaved }: EditProfileModalProps) {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | undefined>()
   const [profile, setProfile] = useState<PersonProfile | CompanyProfile | undefined>()
@@ -20,32 +28,49 @@ export default function EditProfile() {
   const [lastName, setLastName] = useState('')
   const [phone, setPhone] = useState('')
   const [displayCurrency, setDisplayCurrency] = useState('ARS')
+  const [initial, setInitial] = useState({ alias: '', firstName: '', lastName: '', phone: '', displayCurrency: 'ARS' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    getCurrentUser().then((u) => {
+    if (!open) return
+    setError('')
+    setSaving(false)
+    Promise.all([getCurrentUser(), getCurrentUserProfile(), getCurrentWallet()]).then(([u, p, w]) => {
       setUser(u)
-      setDisplayCurrency(u?.display_currency ?? 'ARS')
-    })
-    getCurrentUserProfile().then((p) => {
       setProfile(p)
-      if (p) {
-        if ('first_name' in p) {
-          setFirstName(p.first_name)
-          setLastName(p.last_name)
-        }
-        setPhone(p.phone ?? '')
-      }
-    })
-    getCurrentWallet().then((w) => {
       setWallet(w)
-      setAlias(w?.alias ?? '')
+
+      const nextCurrency = u?.display_currency ?? 'ARS'
+      const nextFirstName = p && 'first_name' in p ? p.first_name : ''
+      const nextLastName = p && 'first_name' in p ? p.last_name : ''
+      const nextPhone = p?.phone ?? ''
+      const nextAlias = w?.alias ?? ''
+
+      setAlias(nextAlias)
+      setFirstName(nextFirstName)
+      setLastName(nextLastName)
+      setPhone(nextPhone)
+      setDisplayCurrency(nextCurrency)
+      setInitial({
+        alias: nextAlias,
+        firstName: nextFirstName,
+        lastName: nextLastName,
+        phone: nextPhone,
+        displayCurrency: nextCurrency,
+      })
     })
-  }, [])
+  }, [open])
 
   const isPerson = !!profile && 'first_name' in profile
   const isValid = alias.trim() !== ''
+
+  const hasChanges =
+    alias !== initial.alias ||
+    firstName !== initial.firstName ||
+    lastName !== initial.lastName ||
+    phone !== initial.phone ||
+    displayCurrency !== initial.displayCurrency
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -69,7 +94,8 @@ export default function EditProfile() {
       if (user) {
         await updateCurrentUser({ display_currency: displayCurrency })
       }
-      navigate('/dashboard/profile')
+      onSaved()
+      navigate('/dashboard/profile', { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ocurrió un error al guardar los cambios.')
     } finally {
@@ -78,12 +104,15 @@ export default function EditProfile() {
   }
 
   return (
-    <div className="profile-page">
-      <Link to="/dashboard/profile" className="profile-edit__back">
-        ← Volver al perfil
-      </Link>
-
-      <form className="profile-edit" onSubmit={handleSubmit}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Editar perfil"
+      step={1}
+      totalSteps={1}
+      panelClassName="modal__panel--wide"
+    >
+      <form className="tx-form" onSubmit={handleSubmit}>
         <div className="profile-card">
           <h2 className="profile-card__title">Datos de Cuenta</h2>
           <div className="profile-edit__fields">
@@ -163,14 +192,14 @@ export default function EditProfile() {
         {error && <p className="profile-edit__error">{error}</p>}
 
         <div className="profile-edit__actions">
-          <button type="button" className="profile-edit__btn profile-edit__btn--ghost" onClick={() => navigate('/dashboard/profile')}>
+          <button type="button" className="profile-edit__btn profile-edit__btn--ghost" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="profile-edit__btn profile-edit__btn--primary" disabled={saving || !isValid}>
+          <button type="submit" className="profile-edit__btn profile-edit__btn--primary" disabled={saving || !isValid || !hasChanges}>
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }

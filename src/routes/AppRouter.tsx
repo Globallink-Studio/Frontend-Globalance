@@ -22,11 +22,10 @@ import GroupSettings from '../pages/private/groups/group/GroupSettings'
 import Exchange from '../pages/private/Exchange'
 import ProfileLayout from '../pages/private/profile/ProfileLayout'
 import PersonalData from '../pages/private/profile/PersonalData'
-import EditProfile from '../pages/private/profile/EditProfile'
 import Cards from '../pages/private/profile/Cards'
 import ProfileContacts from '../pages/private/profile/Contacts'
 import NotificationsSettings from '../pages/private/profile/NotificationsSettings'
-import Settings from '../pages/private/profile/Settings'
+import TermsAndConditions from '../pages/private/profile/TermsAndConditions'
 import Assistant from '../pages/private/Assistant'
 import SigninAuth from '../pages/public/signinAuth'
 import SignupAuth from '../pages/public/signupAuth'
@@ -79,14 +78,13 @@ export default function AppRouter() {
           <Route path="contacts" element={<ProfileContacts />} />
           <Route path="notifications" element={<NotificationsSettings />} />
 
-          {/* Cards & Settings */}
+          {/* Cards */}
           <Route path="cards" element={<Cards />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="terms" element={<TermsAndConditions />} />
 
           {/* Profile */}
           <Route path="profile" element={<ProfileLayout />}>
             <Route index element={<PersonalData />} />
-            <Route path="edit" element={<EditProfile />} />
           </Route>
 
           {/* Assistant */}

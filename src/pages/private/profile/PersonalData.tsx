@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { getCurrentUser, getCurrentUserProfile } from '../../../api/users'
 import { getFirebaseDisplayName } from '../../../api/auth'
 import { getCurrentWallet } from '../../../api/wallets'
+import { useNotificationPrefs } from '../../../hooks/useNotificationPrefs'
+import AccountActions from './AccountActions'
+import EditProfileModal from './EditProfileModal'
 import type { User } from '../../../mocks/data/users'
 import type { PersonProfile } from '../../../mocks/data/personProfiles'
 import type { CompanyProfile } from '../../../mocks/data/companyProfiles'
@@ -44,8 +46,10 @@ export default function PersonalData() {
   const [user, setUser] = useState<User | undefined>()
   const [profile, setProfile] = useState<PersonProfile | CompanyProfile | undefined>()
   const [wallet, setWallet] = useState<Wallet | undefined>()
+  const [editOpen, setEditOpen] = useState(false)
+  const { enabled: notificationsEnabled, setEnabled: setNotificationsEnabled } = useNotificationPrefs()
   const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
-    notifications: true,
+    notifications: notificationsEnabled,
     receivedPayments: true,
     currencyUpdates: true,
     weeklySummary: false,
@@ -57,7 +61,16 @@ export default function PersonalData() {
     getCurrentWallet().then(setWallet)
   }, [])
 
-  const togglePref = (key: PrefKey) => setPrefs((prev) => ({ ...prev, [key]: !prev[key] }))
+  useEffect(() => {
+    setPrefs((prev) => ({ ...prev, notifications: notificationsEnabled }))
+  }, [notificationsEnabled])
+
+  const togglePref = (key: PrefKey) => {
+    if (key === 'notifications') {
+      setNotificationsEnabled(!prefs.notifications)
+    }
+    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const isPerson = !!profile && 'first_name' in profile
   const displayName = (() => {
@@ -74,82 +87,85 @@ export default function PersonalData() {
 
   return (
     <div className="profile-page">
-      {profile && (
-        <section className="profile-identity">
-          <span className="profile-identity__avatar">{getInitials(displayName)}</span>
-          <div className="profile-identity__info">
-            <p className="profile-identity__name">{displayName}</p>
-            <p className="profile-identity__subtitle">{subtitle}</p>
-          </div>
-          <Link to="/dashboard/profile/edit" className="profile-identity__edit">
-            Editar perfil
-          </Link>
-        </section>
-      )}
-
-      <div className="profile-body">
-        <div className="profile-main">
-          {user && (
-            <section className="profile-card">
-              <h2 className="profile-card__title">Datos de Cuenta</h2>
-              <InfoRow label="Alias">
-                <span className="profile-info-row__alias">{wallet?.alias ?? '—'}</span>
-              </InfoRow>
-              <InfoRow label="CVU">{wallet?.account_number ?? '—'}</InfoRow>
-              <InfoRow label="Documento">
-                {isPerson ? 'DNI' : 'CUIT'}
-              </InfoRow>
-              <InfoRow label="Tipo de usuario">{accountType}</InfoRow>
-              <InfoRow label="Moneda de visualización">
-                <Badge>{user.display_currency}</Badge>
-              </InfoRow>
-              <InfoRow label="Estado">
-                <Badge tone={user.status === 'active' ? 'success' : user.status === 'blocked' ? 'warning' : 'neutral'}>
-                  ● {statusLabel[user.status] ?? user.status}
-                </Badge>
-              </InfoRow>
-            </section>
-          )}
-
+      <div className="profile-top">
+        <div className="profile-stack">
           {profile && (
-            <section className="profile-card">
-              <h2 className="profile-card__title">Información personal</h2>
-              <InfoRow label="Nombre">{displayName || '—'}</InfoRow>
-              <InfoRow label="Email">{user?.email ?? '—'}</InfoRow>
-              <InfoRow label="Teléfono">
-                {profile.phone ? (
-                  profile.phone
-                ) : (
-                  <span className="profile-info-row__empty">
-                    Sin registrar{' '}
-                    <Link to="/dashboard/profile/edit" className="profile-info-row__action">
-                      + Agregar teléfono
-                    </Link>
-                  </span>
-                )}
-              </InfoRow>
+            <section className="profile-identity">
+              <span className="profile-identity__avatar">{getInitials(displayName)}</span>
+              <div className="profile-identity__info">
+                <p className="profile-identity__name">{displayName}</p>
+                <p className="profile-identity__subtitle">{subtitle}</p>
+              </div>
             </section>
           )}
+
+          <div className="profile-main">
+            {user && (
+              <section className="profile-card">
+                <h2 className="profile-card__title">Datos de Cuenta</h2>
+                <InfoRow label="Alias">
+                  <span className="profile-info-row__alias">{wallet?.alias ?? '—'}</span>
+                </InfoRow>
+                <InfoRow label="CVU">{wallet?.account_number ?? '—'}</InfoRow>
+                <InfoRow label="Documento">
+                  {isPerson ? 'DNI' : 'CUIT'}
+                </InfoRow>
+                <InfoRow label="Tipo de usuario">{accountType}</InfoRow>
+                <InfoRow label="Moneda de visualización">
+                  <Badge>{user.display_currency}</Badge>
+                </InfoRow>
+                <InfoRow label="Estado">
+                  <Badge tone={user.status === 'active' ? 'success' : user.status === 'blocked' ? 'warning' : 'neutral'}>
+                    ● {statusLabel[user.status] ?? user.status}
+                  </Badge>
+                </InfoRow>
+              </section>
+            )}
+
+            <div className="profile-stack">
+              {profile && (
+                <section className="profile-card">
+                  <h2 className="profile-card__title">Información personal</h2>
+                  <InfoRow label="Nombre">{displayName || '—'}</InfoRow>
+                  <InfoRow label="Email">{user?.email ?? '—'}</InfoRow>
+                  <InfoRow label="Teléfono">
+                    {profile.phone ? (
+                      profile.phone
+                    ) : (
+                      <span className="profile-info-row__empty">
+                        Sin registrar{' '}
+                        <button type="button" className="profile-info-row__action" onClick={() => setEditOpen(true)}>
+                          + Agregar teléfono
+                        </button>
+                      </span>
+                    )}
+                  </InfoRow>
+                </section>
+              )}
+
+              <section className="profile-card">
+                <h2 className="profile-card__title">Preferencias de usuario</h2>
+                <ul className="profile-prefs__list">
+                  {prefItems.map((pref) => (
+                    <li key={pref.key}>
+                      <button type="button" className="profile-prefs__row" onClick={() => togglePref(pref.key)}>
+                        <span className="profile-prefs__label">{pref.label}</span>
+                        <span className={`profile-switch${prefs[pref.key] ? ' profile-switch--on' : ''}`} aria-hidden="true">
+                          <span className="profile-switch__thumb" />
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
+          </div>
         </div>
 
-        <aside className="profile-sidebar">
-          <section className="profile-card">
-            <h2 className="profile-card__title">Preferencias de usuario</h2>
-            <ul className="profile-prefs__list">
-              {prefItems.map((pref) => (
-                <li key={pref.key}>
-                  <button type="button" className="profile-prefs__row" onClick={() => togglePref(pref.key)}>
-                    <span className="profile-prefs__label">{pref.label}</span>
-                    <span className={`profile-switch${prefs[pref.key] ? ' profile-switch--on' : ''}`} aria-hidden="true">
-                      <span className="profile-switch__thumb" />
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </aside>
+        <AccountActions onEditProfile={() => setEditOpen(true)} />
       </div>
+
+      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => setEditOpen(false)} />
     </div>
   )
 }

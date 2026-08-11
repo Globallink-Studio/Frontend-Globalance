@@ -567,7 +567,7 @@ export default function Contacts() {
             <h3 className="tx-modal__title">{editing ? 'Editar contacto' : 'Añadir contacto'}</h3>
             <form onSubmit={handleSubmit} className="tx-form">
               <div className="tx-form__field">
-                <label htmlFor="contact-alias" className="tx-form__label">Alias</label>
+                <label htmlFor="contact-alias" className="tx-form__label">Nombre de contacto</label>
                 <input
                   id="contact-alias"
                   type="text"
@@ -658,13 +658,13 @@ export default function Contacts() {
                 />
               </div>
               <div className="tx-form__field">
-                <label htmlFor="contact-account" className="tx-form__label">Cuenta</label>
+                <label htmlFor="contact-account" className="tx-form__label">Número de cuenta</label>
                 <input
                   id="contact-account"
                   type="text"
                   value={account}
                   onChange={(e) => setAccount(e.target.value)}
-                  placeholder="Número de cuenta registrado"
+                  placeholder="0000000002"
                   className="tx-form__control"
                 />
               </div>
