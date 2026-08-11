@@ -21,10 +21,25 @@ export default function Exchange() {
   const [pending, setPending] = useState<ConvertData | null>(null)
   const [resetKey, setResetKey] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const loadExchangeData = async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const [q, b] = await Promise.all([getQuotes(), getCurrentBalances()])
+      setQuotes(q)
+      setBalances(b)
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar las cotizaciones')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    getQuotes().then(setQuotes)
-    getCurrentBalances().then(setBalances)
+    void loadExchangeData()
   }, [])
 
   useEffect(() => {
@@ -92,6 +107,32 @@ export default function Exchange() {
 
       {refreshMessage && <div className="tx-toast">{refreshMessage}</div>}
 
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <p>{loadError}</p>
+          <button
+            type="button"
+            onClick={loadExchangeData}
+            className="rounded-full border border-destructive/30 bg-transparent px-3 py-1 text-xs font-medium text-destructive transition-colors hover:bg-surface"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+          Cargando cotizaciones…
+        </div>
+      )}
+
+      {!loading && !loadError && quotes.length === 0 && (
+        <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+          No hay cotizaciones disponibles por el momento.
+        </div>
+      )}
+
+      {!loading && quotes.length > 0 && (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {quotes.map((q) => {
           const Icon = q.currency_code === 'EUR' ? Euro : DollarSign
@@ -157,7 +198,8 @@ export default function Exchange() {
             </div>
           )
         })}
-      </div>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="tx-card lg:col-span-1">
@@ -166,7 +208,7 @@ export default function Exchange() {
             balances={balances}
             quotes={quotes}
             submitLabel="Confirmar conversión"
-            disabled={sending}
+            disabled={sending || loading}
             resetKey={resetKey}
             onValidSubmit={handleValidSubmit}
             onError={setErrorMessage}

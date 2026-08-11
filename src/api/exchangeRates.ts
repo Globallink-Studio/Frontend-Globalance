@@ -87,6 +87,9 @@ export async function refreshExchangeRates(): Promise<ExchangeRate[]> {
 }
 
 export async function convertCurrency(fromCurrency: string, toCurrency: string, amount: number): Promise<number> {
+  if (fromCurrency === toCurrency) return amount
+  if (!Number.isFinite(amount) || amount <= 0) return 0
+
   if (getAuthMode() === 'mock') {
     const quotes = await getQuotes()
     const buy = (code: string) => quotes.find((q) => q.currency_code === code)?.buy_price ?? 0
