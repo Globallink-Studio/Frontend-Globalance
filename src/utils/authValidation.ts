@@ -48,16 +48,16 @@ export function validateSignupField(
       return undefined
     }
     case 'firstName':
-      if (accountType === 'personal' && !values.firstName.trim()) return 'Ingresá tu nombre.'
+      if (accountType === 'personal' && !values.firstName.trim()) return 'El nombre es obligatorio.'
       return undefined
     case 'lastName':
-      if (accountType === 'personal' && !values.lastName.trim()) return 'Ingresá tu apellido.'
+      if (accountType === 'personal' && !values.lastName.trim()) return 'El apellido es obligatorio.'
       return undefined
     case 'legalName':
-      if (accountType === 'business' && !values.legalName.trim()) return 'Ingresá la razón social.'
+      if (accountType === 'business' && !values.legalName.trim()) return 'La razón social es obligatoria.'
       return undefined
     case 'document':
-      if (!values.document.trim()) return 'Ingresá tu documento.'
+      if (!values.document.trim()) return 'El documento es obligatorio.'
       return undefined
     case 'phone':
       return undefined

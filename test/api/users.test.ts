@@ -279,11 +279,15 @@ describe('users API — modo firebase (API real)', () => {
       body: expect.objectContaining({
         firstName: 'Sofi',
         lastName: 'Martínez',
-        document: '',
         alias: 'sofia.martinez',
         displayCurrency: 'USD',
       }),
     })
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      3,
+      '/users/profile',
+      expect.not.objectContaining({ document: '', phone: '' }),
+    )
   })
 
   test('updateCurrentPersonProfile propaga los errores de la API', async () => {

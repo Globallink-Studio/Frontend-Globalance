@@ -47,6 +47,7 @@ const pageTitles: Record<string, string> = {
   '/dashboard/contacts': 'Contactos',
   '/dashboard/notifications': 'Notificaciones',
   '/dashboard/terms': 'Términos y condiciones',
+  '/dashboard/privacy': 'Política de privacidad',
   '/dashboard/cards': 'Tarjetas',
   '/dashboard/profile': 'Perfil',
   '/dashboard/assistant': 'Asistente IA',

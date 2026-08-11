@@ -42,8 +42,8 @@ export default function SigninAuth() {
         setErrorMessage('');
         setGoogleLoading(true);
         try {
-            await loginWithGoogle();
-            navigate('/dashboard');
+            const status = await loginWithGoogle();
+            navigate(status === 'pending' ? '/complete-profile' : '/dashboard');
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión con Google');
         } finally {

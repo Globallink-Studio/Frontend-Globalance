@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { User, FileText, KeyRound, Trash2, Check } from 'lucide-react'
+import { User, FileText, KeyRound, Trash2, Check, ShieldCheck } from 'lucide-react'
 import Modal from '../../../components/Modal'
 import { InputField } from '../../../components/register/InputField'
 import TermsContent from './TermsContent'
+import PrivacyPolicyContent from './PrivacyPolicyContent'
 import '../../../styles/pages/private/transactions.css'
 
-type ModalKind = 'password' | 'terms' | 'delete' | null
+type ModalKind = 'password' | 'terms' | 'privacy' | 'delete' | null
 
 interface AccountActionsProps {
   onEditProfile: () => void
@@ -46,6 +47,14 @@ export default function AccountActions({ onEditProfile }: AccountActionsProps) {
         </button>
         <button
           type="button"
+          className="profile-actions__btn"
+          onClick={() => setModal('privacy')}
+        >
+          <ShieldCheck className="profile-actions__icon" />
+          Política de privacidad
+        </button>
+        <button
+          type="button"
           className="profile-actions__btn profile-actions__btn--danger"
           onClick={() => setModal('delete')}
         >
@@ -56,6 +65,7 @@ export default function AccountActions({ onEditProfile }: AccountActionsProps) {
 
       <PasswordModal open={modal === 'password'} onClose={close} />
       <TermsModal open={modal === 'terms'} onClose={close} />
+      <PrivacyModal open={modal === 'privacy'} onClose={close} />
       <DeleteAccountModal open={modal === 'delete'} onClose={close} />
     </section>
   )
@@ -191,7 +201,7 @@ function PasswordModal({ open, onClose }: { open: boolean; onClose: () => void }
   )
 }
 
-/* ── Términos y condiciones ─────────────────────── */
+/* ── Términos y condiciones y Política de Privacidad ─────── */
 
 function TermsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
@@ -199,6 +209,17 @@ function TermsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
       <div className="max-h-[24rem] overflow-y-auto rounded-xl border border-border p-4">
         <p className="profile-info-row__label mb-3">Última actualización: 10 de agosto de 2026</p>
         <TermsContent />
+      </div>
+    </Modal>
+  )
+}
+
+function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Modal open={open} onClose={onClose} title="Política de Privacidad" step={1} totalSteps={1}>
+      <div className="max-h-[24rem] overflow-y-auto rounded-xl border border-border p-4">
+        <p className="profile-info-row__label mb-3">Última actualización: 10 de agosto de 2026</p>
+        <PrivacyPolicyContent />
       </div>
     </Modal>
   )

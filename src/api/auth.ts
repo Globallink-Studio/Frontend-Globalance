@@ -13,7 +13,7 @@ import { login as mockLogin, logout as mockLogout, register as mockRegister } fr
 import { getUserById } from '../mocks/handlers/users'
 import { provisionDemoData } from '../mocks/provision'
 import { fetchApi, setAuthTokenGetter } from './fetchApi'
-import { getFriendlyErrorMessage } from './errors'
+import { ApiError, getFriendlyErrorMessage } from './errors'
 import { auth } from '../firebase/firebase'
 import type { User } from '../mocks/data/users'
 
@@ -168,14 +168,44 @@ export async function login(email: string, password: string): Promise<User> {
   }
 }
 
-export async function loginWithGoogle(): Promise<User> {
+export type GoogleLoginResult = { status: 'authenticated'; user: User } | { status: 'pending' }
+
+async function firebaseUserExists(): Promise<boolean> {
+  try {
+    const profile = await fetchApi<{ data: { id?: string } | null }>('/users/profile')
+    if (profile?.data?.id) return true
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error
+  }
+  try {
+    const wallet = await fetchApi<{ data?: { id?: string } | null }>('/wallet')
+    if (wallet?.data?.id) return true
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error
+  }
+  return false
+}
+
+export async function syncWithGoogleAccount(): Promise<User> {
+  const fb = requireFirebase()
+  const firebaseUser = fb.currentUser
+  if (!firebaseUser) throw new Error('No hay una sesión de Google activa')
+  const token = await getIdToken(firebaseUser)
+  const user = await syncUser(token)
+  applySession(user)
+  return user
+}
+
+export async function loginWithGoogle(): Promise<GoogleLoginResult> {
   if (getAuthMode() === 'mock') {
     throw new Error('El login con Google no está disponible en modo mock')
   }
   try {
     const fb = requireFirebase()
     const credential = await signInWithPopup(fb, new GoogleAuthProvider())
-    return await signInWithToken(credential.user)
+    if (!(await firebaseUserExists())) return { status: 'pending' }
+    const user = await signInWithToken(credential.user)
+    return { status: 'authenticated', user }
   } catch (error) {
     throw new Error(getAuthErrorMessage(error))
   }
@@ -239,8 +269,24 @@ export function subscribeToAuth(listener: AuthSessionListener): () => void {
       listener(null)
       return
     }
-    signInWithToken(firebaseUser)
-      .then((user) => listener(user))
+    const restoreExistingSession = () =>
+      signInWithToken(firebaseUser)
+        .then((user) => listener(user))
+        .catch(() => listener(null))
+    if (getCurrentUserId()) {
+      restoreExistingSession()
+      return
+    }
+    firebaseUserExists()
+      .then((exists) => {
+        if (!exists) {
+          cachedUser = null
+          clearCurrentUser()
+          listener(null)
+          return
+        }
+        restoreExistingSession()
+      })
       .catch(() => listener(null))
   })
 }

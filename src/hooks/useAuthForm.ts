@@ -11,7 +11,9 @@ interface UseAuthFormOptions<T extends Record<string, string>> {
 function focusFirstInvalidField(): void {
   requestAnimationFrame(() => {
     const field = document.querySelector<HTMLElement>('[aria-invalid="true"]')
-    field?.focus()
+    if (!field) return
+    field.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    field.focus({ preventScroll: true })
   })
 }
 

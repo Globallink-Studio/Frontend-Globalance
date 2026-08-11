@@ -30,7 +30,7 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
   const [documentNumber, setDocumentNumber] = useState('')
   const [phone, setPhone] = useState('')
   const [displayCurrency, setDisplayCurrency] = useState('ARS')
-  const [initial, setInitial] = useState({ alias: '', firstName: '', lastName: '', phone: '', displayCurrency: 'ARS' })
+  const [initial, setInitial] = useState({ alias: '', firstName: '', lastName: '', document: '', phone: '', displayCurrency: 'ARS' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -41,14 +41,15 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
     Promise.all([getCurrentUser(), getCurrentUserProfile(), getCurrentWallet()]).then(([u, p, w]) => {
       setUser(u)
       setProfile(p)
+      const nextDocument = p && 'first_name' in p ? p.document ?? '' : ''
       if (p) {
         if ('first_name' in p) {
           setFirstName(p.first_name)
           setLastName(p.last_name)
-          setDocumentNumber(p.document ?? '')
         }
         setPhone(p.phone ?? '')
       }
+      setDocumentNumber(nextDocument)
       setWallet(w)
 
       const nextCurrency = u?.display_currency ?? 'ARS'
@@ -66,6 +67,7 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
         alias: nextAlias,
         firstName: nextFirstName,
         lastName: nextLastName,
+        document: nextDocument,
         phone: nextPhone,
         displayCurrency: nextCurrency,
       })
@@ -79,6 +81,7 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
     alias !== initial.alias ||
     firstName !== initial.firstName ||
     lastName !== initial.lastName ||
+    documentNumber !== initial.document ||
     phone !== initial.phone ||
     displayCurrency !== initial.displayCurrency
 
@@ -86,6 +89,12 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
     e.preventDefault()
     if (!isValid) return
     setError('')
+
+    if (getAuthMode() === 'firebase' && (documentNumber.trim().length < 5 || phone.trim().length < 7)) {
+      setError('Completá tu documento (mínimo 5 caracteres) y teléfono (mínimo 7 caracteres) para guardar los cambios.')
+      return
+    }
+
     setSaving(true)
 
     const normalizedAlias = alias.trim()
@@ -167,6 +176,10 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
                 ))}
               </div>
             </div>
+            <p className="profile-edit__readonly">
+              <span>Número de cuenta</span>
+              <strong>{wallet?.account_number ?? '—'}</strong>
+            </p>
           </div>
         </div>
 

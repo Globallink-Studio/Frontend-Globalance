@@ -21,9 +21,11 @@ import Cards from '../pages/private/profile/Cards'
 import ProfileContacts from '../pages/private/profile/Contacts'
 import NotificationsSettings from '../pages/private/profile/NotificationsSettings'
 import TermsAndConditions from '../pages/private/profile/TermsAndConditions'
+import PrivacyPolicy from '../pages/private/profile/PrivacyPolicy'
 import Assistant from '../pages/private/Assistant'
 import SigninAuth from '../pages/public/signinAuth'
 import SignupAuth from '../pages/public/signupAuth'
+import CompleteProfile from '../pages/public/CompleteProfile'
 
 export default function AppRouter() {
   return (
@@ -33,6 +35,7 @@ export default function AppRouter() {
         <Route path="/" element={<Home />} />
         <Route path="/signin" element={<SigninAuth />} />
         <Route path="/signup" element={<SignupAuth />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
 
         {/* Private */}
         <Route path="/dashboard" element={<ProtectedRoute />}>
@@ -69,6 +72,7 @@ export default function AppRouter() {
           {/* Cards */}
           <Route path="cards" element={<Cards />} />
           <Route path="terms" element={<TermsAndConditions />} />
+          <Route path="privacy" element={<PrivacyPolicy />} />
 
           {/* Profile */}
           <Route path="profile" element={<ProfileLayout />}>

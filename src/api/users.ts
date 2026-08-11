@@ -4,7 +4,14 @@ import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
 import type { CompanyProfile } from '../mocks/data/companyProfiles'
-import { getAuthMode, getCachedUser, getCurrentUserId, getFirebaseDisplayName, refreshCachedUser } from './auth'
+import {
+  getAuthMode,
+  getCachedUser,
+  getCurrentUserId,
+  getFirebaseDisplayName,
+  refreshCachedUser,
+  syncWithGoogleAccount,
+} from './auth'
 import { fetchApi } from './fetchApi'
 
 interface ApiAuthMe {
@@ -47,6 +54,11 @@ interface ApiUserProfile {
   legal_name?: string | null
 }
 
+function splitFullName(fullName: string): { first: string; last: string } {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  return { first: parts[0] ?? '', last: parts.slice(1).join(' ') }
+}
+
 interface ApiWalletResponse {
   wallet?: { alias?: string | null }
 }
@@ -77,10 +89,11 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
   else isPerson = true
 
   if (isPerson) {
+    const fb = firebaseName ? splitFullName(firebaseName) : { first: '', last: '' }
     return {
       user_id: p.id,
-      first_name: firstName || firebaseName,
-      last_name: lastName,
+      first_name: firstName || fb.first,
+      last_name: lastName || fb.last,
       document: '',
       phone: null,
     }
@@ -107,32 +120,37 @@ export async function updateCurrentPersonProfile(patch: PersonProfilePatch): Pro
     fetchApi<ApiWalletResponse>('/wallet'),
   ])
   const current = profileResp.data
-  if (!current) return undefined
+  const fallbackUser = await getCurrentUser()
+  const userId = current?.id ?? fallbackUser?.id
+  if (!userId) return undefined
 
   const firebaseName = getFirebaseDisplayName() ?? ''
-  const firstName = patch.first_name ?? current.first_name ?? firebaseName
-  const lastName = patch.last_name ?? current.last_name ?? ''
-  const document = patch.document ?? ''
-  const phone = patch.phone ?? ''
+  const fb = firebaseName ? splitFullName(firebaseName) : { first: '', last: '' }
+  const firstName = patch.first_name ?? current?.first_name ?? fb.first
+  const lastName = patch.last_name ?? current?.last_name ?? fb.last
   const alias = patch.alias ?? walletResp.wallet?.alias ?? ''
   const displayCurrency =
-    patch.displayCurrency ?? getCachedUser()?.display_currency ?? current.display_currency ?? 'ARS'
+    patch.displayCurrency ?? getCachedUser()?.display_currency ?? current?.display_currency ?? 'ARS'
+
+  const body: Record<string, string> = {
+    userType: 'person',
+    firstName,
+    lastName,
+    alias,
+    displayCurrency,
+  }
+  const document = patch.document?.trim() ?? ''
+  const phone = patch.phone?.trim() ?? ''
+  if (document) body.document = document
+  if (phone) body.phone = phone
 
   await fetchApi<{ data: { message: string } }>('/users/profile', {
     method: 'PATCH',
-    body: {
-      userType: 'person',
-      firstName,
-      lastName,
-      document,
-      phone,
-      alias,
-      displayCurrency,
-    },
+    body,
   })
 
   return {
-    user_id: current.id,
+    user_id: userId,
     first_name: firstName,
     last_name: lastName,
     document,
@@ -149,6 +167,23 @@ export async function updateCurrentUser(patch: Partial<User>): Promise<User | un
     return updated
   }
   throw new Error('Actualizar los datos del usuario todavía no está disponible en el backend')
+}
+
+export interface CompleteGoogleProfileInput {
+  first_name: string
+  last_name: string
+  document: string
+  phone: string
+  alias: string
+}
+
+export async function completeGoogleProfile(patch: CompleteGoogleProfileInput): Promise<User | undefined> {
+  if (getAuthMode() === 'mock') {
+    throw new Error('El alta con Google no está disponible en modo mock')
+  }
+  const user = await syncWithGoogleAccount()
+  await updateCurrentPersonProfile(patch)
+  return user
 }
 
 export { getUsers, getUserById, getUserByEmail }

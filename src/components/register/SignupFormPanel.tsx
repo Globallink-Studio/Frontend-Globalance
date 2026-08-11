@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { User, Building2, ArrowLeft } from "lucide-react";
 import type { AccountType } from "./AccountTypeToggle";
 import { InputField } from "./InputField";
+import LegalConsent from "./LegalConsent";
 import { useAuth } from "../../providers/authentication/AuthContext";
 import { useAuthForm } from "../../hooks/useAuthForm";
 import {
@@ -32,10 +33,17 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
     const navigate = useNavigate();
     const { register } = useAuth();
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [termsChecked, setTermsChecked] = useState(false);
+    const [privacyChecked, setPrivacyChecked] = useState(false);
     const isPersonal = accountType === "personal";
 
     const handleRegister = async (values: SignupFormValues) => {
         setErrorMessage('');
+        if (!termsChecked || !privacyChecked) {
+            setErrorMessage('Debés aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
+            scrollToConsent();
+            return;
+        }
         const fullName = isPersonal ? `${values.firstName} ${values.lastName}`.trim() : values.legalName.trim();
         try {
             await register({ fullName, email: values.email, password: values.password });
@@ -43,6 +51,12 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
         }
+    };
+
+    const scrollToConsent = () => {
+        requestAnimationFrame(() => {
+            document.querySelector('#legal-consent')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
     };
 
     const form = useAuthForm<SignupFormValues>({
@@ -59,6 +73,9 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
         if (errorMessage) setErrorMessage('');
         formChange(e);
     };
+
+    const fieldsComplete = Object.keys(validateSignupForm(values, accountType)).length === 0;
+    const consentDone = termsChecked && privacyChecked;
 
     return (
         <div className={`signup-panel signup-panel--${accountType}`}>
@@ -203,6 +220,19 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
                 />
 
                 {errorMessage && <p className="signup-panel__error" role="alert">{errorMessage}</p>}
+
+                <LegalConsent
+                    termsChecked={termsChecked}
+                    privacyChecked={privacyChecked}
+                    onTermsChange={setTermsChecked}
+                    onPrivacyChange={setPrivacyChecked}
+                />
+
+                {fieldsComplete && !consentDone && (
+                    <p className="signup-panel__consent-hint" role="alert">
+                        Debés aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.
+                    </p>
+                )}
 
                 <button className="auth-button" type="submit" disabled={isSubmitting}>
                     {isSubmitting ? 'Registrando...' : 'Crear cuenta'}
