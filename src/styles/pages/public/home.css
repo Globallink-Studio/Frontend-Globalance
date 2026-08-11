@@ -153,6 +153,96 @@
   height: 1.25rem;
 }
 
+/* ── Burger (solo mobile) ─────────────────────────────────────────── */
+.home-nav__burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  color: var(--foreground);
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.home-nav__burger:hover {
+  border-color: var(--ring);
+  background-color: color-mix(in oklab, var(--muted-foreground) 20%, transparent);
+}
+
+.home-nav__burger-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* ── Backdrop del drawer ──────────────────────────────────────────── */
+.home-nav__backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background-color: oklch(0.22 0.012 285 / 40%);
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+.home-nav__backdrop--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── Drawer lateral (solo mobile) ─────────────────────────────────── */
+.home-nav__drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 16rem;
+  padding: 5rem 1.25rem 1.5rem;
+  background-color: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  z-index: 40;
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.25s ease,
+    visibility 0.25s ease;
+}
+
+.home-nav__drawer--open {
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.home-nav__drawer-link {
+  padding: 0.625rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.home-nav__drawer-link:hover,
+.home-nav__drawer-link--active {
+  color: var(--foreground);
+  background-color: var(--sidebar-accent);
+}
+
 /* ── Hero ────────────────────────────────────────────────────────── */
 .home-hero {
   display: grid;
@@ -751,6 +841,10 @@
 
   .home-nav__menu {
     display: none;
+  }
+
+  .home-nav__burger {
+    display: inline-flex;
   }
 
   .home-nav__actions {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Wallet, User, ArrowRight, Sparkles, Coins, TrendingUp, RefreshCw, ChevronDown, Mail } from 'lucide-react'
+import { Wallet, User, ArrowRight, Sparkles, Coins, TrendingUp, RefreshCw, ChevronDown, Mail, Menu, X } from 'lucide-react'
 import { ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { ThemeToggle } from '../../components/ThemeToggle'
 import ProfileMenu from '../../components/layout/ProfileMenu'
@@ -123,6 +123,7 @@ export default function Home() {
   const [team] = useState(() => shuffle(teamMembers))
   const [displayName, setDisplayName] = useState('')
   const [activeSection, setActiveSection] = useState('#inicio')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const sections = navLinks
@@ -181,6 +182,15 @@ export default function Home() {
         </nav>
 
         <div className="home-nav__actions">
+          <button
+            type="button"
+            className="home-nav__burger"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label="Abrir menú"
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X className="home-nav__burger-icon" /> : <Menu className="home-nav__burger-icon" />}
+          </button>
           <ThemeToggle />
           {initializing ? null : isAuthenticated ? (
             <ProfileMenu name={displayName} />
@@ -199,6 +209,27 @@ export default function Home() {
           )}
         </div>
       </header>
+
+      <div
+        className={`home-nav__backdrop${menuOpen ? ' home-nav__backdrop--visible' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+      <nav
+        className={`home-nav__drawer${menuOpen ? ' home-nav__drawer--open' : ''}`}
+        aria-label="Menú principal"
+      >
+        {navLinks.map((link) => (
+          <a
+            key={link.label}
+            href={link.to}
+            className="home-nav__drawer-link"
+            onClick={() => setMenuOpen(false)}
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
 
       <main>
         <section id="inicio" className="home-hero">
