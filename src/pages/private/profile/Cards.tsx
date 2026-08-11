@@ -3,6 +3,7 @@ import { getCurrentCards, addCard, blockCard, unblockCard, deleteCard } from '..
 import Modal from '../../../components/Modal'
 import Select from '../../../components/Select'
 import type { Card } from '../../../mocks/data/cards'
+import '../../../styles/pages/private/transactions.css'
 
 const brandLabel: Record<string, string> = {
   visa: 'Visa',
