@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, Link, useLocation } from 'react-router-dom'
 import {
   Home,
   Wallet,
@@ -12,7 +12,6 @@ import {
   LineChart,
   Search,
   Sparkles,
-  ArrowLeft,
   Menu,
   Bell,
 } from 'lucide-react'
@@ -20,18 +19,20 @@ import { getCurrentUserProfile } from '../../api/users'
 import type { CompanyProfile } from '../../mocks/data/companyProfiles'
 import { ThemeToggle } from '../ThemeToggle'
 import ProfileMenu from './ProfileMenu'
+import AppFooter from './AppFooter'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useNotificationPrefs } from '../../hooks/useNotificationPrefs'
 import { useGlobalSearch } from '../../hooks/useGlobalSearch'
 import NotificationsList from '../notifications/NotificationsList'
 import SearchModal from '../search/SearchModal'
 import '../../styles/components/dashboard-layout.css'
 
 const menuItems = [
-  { label: 'Dashboard', to: '/dashboard', icon: Home },
-  { label: 'Wallet', to: '/dashboard/wallet', icon: Wallet },
+  { label: 'Resumen', to: '/dashboard', icon: Home },
+  { label: 'Billetera', to: '/dashboard/wallet', icon: Wallet },
   { label: 'Transacciones', to: '/dashboard/transactions', icon: ArrowLeftRight },
   { label: 'Historial', to: '/dashboard/history', icon: History },
-  { label: 'Wallet Grupal', to: '/dashboard/groups', icon: Users },
+  { label: 'Billetera Grupal', to: '/dashboard/groups', icon: Users },
   { label: 'Cotizaciones', to: '/dashboard/exchange', icon: LineChart },
   { label: 'Contactos', to: '/dashboard/contacts', icon: BookUser },
   { label: 'Notificaciones', to: '/dashboard/notifications', icon: Bell },
@@ -40,21 +41,20 @@ const menuItems = [
 ]
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/dashboard/wallet': 'Wallet',
+  '/dashboard': 'Resumen',
+  '/dashboard/wallet': 'Billetera',
   '/dashboard/transactions': 'Transacciones',
   '/dashboard/transactions/transfers': 'Nueva transferencia',
   '/dashboard/transactions/deposits': 'Depósitos',
   '/dashboard/transactions/requests': 'Solicitudes',
   '/dashboard/history': 'Historial',
-  '/dashboard/groups': 'Wallet Grupal',
+  '/dashboard/groups': 'Billetera Grupal',
   '/dashboard/exchange': 'Cotizaciones',
   '/dashboard/contacts': 'Contactos',
   '/dashboard/notifications': 'Notificaciones',
-  '/dashboard/settings': 'Ajustes',
+  '/dashboard/terms': 'Términos y condiciones',
   '/dashboard/cards': 'Tarjetas',
   '/dashboard/profile': 'Perfil',
-  '/dashboard/profile/edit': 'Editar perfil',
   '/dashboard/assistant': 'Asistente IA',
 }
 
@@ -69,6 +69,7 @@ export default function DashboardLayout() {
   const panelRef = useRef<HTMLDivElement>(null)
   const [notifPos, setNotifPos] = useState<{ top: number; right: number } | null>(null)
   const { unreadCount } = useNotifications()
+  const { enabled: notificationsEnabled } = useNotificationPrefs()
   const searchData = useGlobalSearch()
 
   useEffect(() => {
@@ -131,12 +132,12 @@ export default function DashboardLayout() {
       <div className={`app-shell__backdrop${sidebarOpen ? ' app-shell__backdrop--visible' : ''}`} onClick={() => setSidebarOpen(false)} />
 
       <aside className={`app-sidebar${sidebarOpen ? ' app-sidebar--open' : ''}`}>
-        <div className="app-sidebar__brand">
+        <Link to="/" className="app-sidebar__brand">
           <span className="app-sidebar__logo" aria-hidden="true">
             <Wallet className="app-sidebar__logo-icon" />
           </span>
           <span className="app-sidebar__name">Globalance</span>
-        </div>
+        </Link>
 
         <nav className="app-sidebar__nav">
           {menuItems.map((item) => (
@@ -153,13 +154,6 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="app-sidebar__footer">
-          <NavLink to="/" className="app-sidebar__link app-sidebar__link--back">
-            <ArrowLeft className="app-sidebar__icon" />
-            Volver al inicio
-          </NavLink>
-        </div>
       </aside>
 
       <div className="app-shell__main">
@@ -172,7 +166,12 @@ export default function DashboardLayout() {
           >
             <Menu className="app-topbar__burger-icon" />
           </button>
-          <h1 className="app-topbar__title">{currentTitle}</h1>
+          <div className="app-topbar__titles">
+            <h1 className="app-topbar__title">{currentTitle}</h1>
+            {location.pathname.startsWith('/dashboard/groups') && (
+              <span className="app-topbar__subtitle">Próximamente · En desarrollo</span>
+            )}
+          </div>
           <button
             type="button"
             className="app-topbar__search"
@@ -198,7 +197,7 @@ export default function DashboardLayout() {
               aria-expanded={notifOpen}
             >
               <Bell className="app-topbar__bell-icon" />
-              {unreadCount > 0 && <span className="app-topbar__badge">{unreadCount}</span>}
+              {notificationsEnabled && unreadCount > 0 && <span className="app-topbar__badge">{unreadCount}</span>}
             </button>
             {notifOpen &&
               createPortal(
@@ -220,6 +219,8 @@ export default function DashboardLayout() {
         <main className="app-shell__content">
           <Outlet />
         </main>
+
+        <AppFooter />
       </div>
     </div>
   )
