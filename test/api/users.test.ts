@@ -98,6 +98,32 @@ describe('users API — modo firebase (API real)', () => {
     expect(current!.id).toBe('11111111-1111-4111-8111-111111111111')
   })
 
+  test('getCurrentUser consulta /auth/me y arma el usuario si no hay caché', async () => {
+    mockFetch.mockResolvedValue({
+      data: { uid: 'firebase-uid-test', email: 'sofia@test.com', name: 'Sofía Martínez' },
+    })
+
+    const current = await getCurrentUser()
+
+    expect(mockFetch).toHaveBeenCalledWith('/auth/me')
+    expect(current).toBeDefined()
+    expect(current!.id).toBe('firebase-uid-test')
+    expect(current!.firebase_uid).toBe('firebase-uid-test')
+    expect(current!.email).toBe('sofia@test.com')
+    expect(current!.user_type).toBe('person')
+  })
+
+  test('getCurrentUser devuelve undefined si /auth/me no trae uid', async () => {
+    mockFetch.mockResolvedValue({ data: null })
+    const current = await getCurrentUser()
+    expect(current).toBeUndefined()
+  })
+
+  test('getCurrentUser propaga los errores de /auth/me', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    await expect(getCurrentUser()).rejects.toThrow('Network error')
+  })
+
   test('getCurrentUserProfile consulta /users/profile y mapea una persona', async () => {
     mockFetch.mockResolvedValue({
       data: {

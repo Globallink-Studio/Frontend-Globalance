@@ -7,6 +7,13 @@ import type { CompanyProfile } from '../mocks/data/companyProfiles'
 import { getAuthMode, getCachedUser, getCurrentUserId, getFirebaseDisplayName, refreshCachedUser } from './auth'
 import { fetchApi } from './fetchApi'
 
+interface ApiAuthMe {
+  uid: string
+  email?: string | null
+  name?: string | null
+  picture?: string | null
+}
+
 export async function getCurrentUser(): Promise<User | undefined> {
   if (getAuthMode() === 'mock') {
     const cached = getCachedUser()
@@ -15,7 +22,20 @@ export async function getCurrentUser(): Promise<User | undefined> {
     if (!id) return undefined
     return getUserById(id)
   }
-  return getCachedUser() ?? undefined
+  const cached = getCachedUser()
+  if (cached) return cached
+  const resp = await fetchApi<{ data: ApiAuthMe | null }>('/auth/me')
+  if (!resp?.data?.uid) return undefined
+  return {
+    id: resp.data.uid,
+    firebase_uid: resp.data.uid,
+    email: resp.data.email ?? '',
+    user_type: 'person',
+    display_currency: 'ARS',
+    status: 'active',
+    created_at: new Date().toISOString(),
+    last_access_at: null,
+  }
 }
 
 interface ApiUserProfile {
