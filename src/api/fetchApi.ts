@@ -19,9 +19,9 @@ export class UnauthorizedError extends ApiError {
 
 export async function fetchApi<T>(
   path: string,
-  options: { method?: string; body?: unknown; token?: string } = {},
+  options: { method?: string; body?: unknown; token?: string; headers?: Record<string, string> } = {},
 ): Promise<T> {
-  const { method = 'GET', body, token } = options
+  const { method = 'GET', body, token, headers } = options
   const effectiveToken = token ?? (authTokenGetter ? await authTokenGetter() : undefined)
 
   let response: Response
@@ -31,6 +31,7 @@ export async function fetchApi<T>(
       headers: {
         'Content-Type': 'application/json',
         ...(effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {}),
+        ...headers,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     })

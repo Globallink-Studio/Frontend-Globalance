@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createTransfer } from '../api/transactions'
 import { getCurrentBalances } from '../api/balances'
-import { getUserByEmail } from '../mocks/handlers/users'
 import { getWalletByAlias } from '../mocks/handlers/wallets'
 import Select from './Select'
 import type { Contact } from '../mocks/data/contacts'
@@ -27,10 +26,9 @@ interface TransferWizardProps {
 
 export default function TransferWizard({ contacts, step, setStep, onDone, onError, sending, setSending }: TransferWizardProps) {
   const [balances, setBalances] = useState<Balance[]>([])
-  const [sendMethod, setSendMethod] = useState<'alias' | 'contact' | 'email'>('alias')
+  const [sendMethod, setSendMethod] = useState<'alias' | 'contact'>('alias')
   const [alias, setAlias] = useState('')
   const [contactId, setContactId] = useState('')
-  const [email, setEmail] = useState('')
   const [currencyCode, setCurrencyCode] = useState('ARS')
   const [amount, setAmount] = useState('')
   const [concept, setConcept] = useState('')
@@ -42,12 +40,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
 
   const selectedBalance = balances.find((b) => b.currency_code === currencyCode)
   const value = Number(amount)
-  const recipientFilled =
-    sendMethod === 'contact'
-      ? Boolean(contactId)
-      : sendMethod === 'email'
-        ? /^\S+@\S+\.\S+$/.test(email.trim())
-        : Boolean(alias.trim())
+  const recipientFilled = sendMethod === 'contact' ? Boolean(contactId) : Boolean(alias.trim())
 
   const handleNext = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -67,14 +60,6 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
       const contact = contacts.find((c) => c.id === contactId)
       recipient = contact?.alias ?? ''
       recipientUserId = contact?.recipient_user_id ?? ''
-    } else if (sendMethod === 'email') {
-      const user = await getUserByEmail(email.trim())
-      if (!user) {
-        onError('No existe un usuario registrado con ese correo')
-        return
-      }
-      recipient = user.email
-      recipientUserId = user.id
     } else {
       const wallet = await getWalletByAlias(alias)
       if (!wallet || wallet.status !== 'active') {
@@ -106,6 +91,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
         currencyCode: review.currencyCode,
         amount: review.amount,
         concept: review.concept,
+        destinationAlias: review.recipient,
       })
       onDone(`Transferencia a ${review.recipient} enviada`)
     } catch (err) {
@@ -180,28 +166,18 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             />
             Alias
           </label>
-          <label className="tx-form__option">
-            <input
-              type="radio"
-              name="sendMethod"
-              value="contact"
-              checked={sendMethod === 'contact'}
-              onChange={() => setSendMethod('contact')}
-            />
-            Contacto
-          </label>
-          <label className="tx-form__option">
-            <input
-              type="radio"
-              name="sendMethod"
-              value="email"
-              checked={sendMethod === 'email'}
-              onChange={() => setSendMethod('email')}
-            />
-            Correo electrónico
-          </label>
+            <label className="tx-form__option">
+              <input
+                type="radio"
+                name="sendMethod"
+                value="contact"
+                checked={sendMethod === 'contact'}
+                onChange={() => setSendMethod('contact')}
+              />
+              Contacto
+            </label>
+          </div>
         </div>
-      </div>
 
       {sendMethod === 'contact' ? (
         <Select
@@ -214,18 +190,6 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             ...contacts.map((c) => ({ value: c.id, label: c.alias })),
           ]}
         />
-      ) : sendMethod === 'email' ? (
-        <div className="tx-form__field">
-          <label htmlFor="email" className="tx-form__label">Correo del destinatario</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="usuario@example.com"
-            className="tx-form__control"
-          />
-        </div>
       ) : (
         <div className="tx-form__field">
           <label htmlFor="alias" className="tx-form__label">Alias del destinatario</label>
