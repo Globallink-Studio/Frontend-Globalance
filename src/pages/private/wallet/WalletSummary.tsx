@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -10,7 +10,8 @@ import {
   Repeat,
   Send,
 } from 'lucide-react'
-import { getCurrentBalanceSummary } from '../../../api/balances'
+import { getCurrentBalanceSummary, getUnifiedBalance, type BalanceSummaryItem } from '../../../api/balances'
+import { getCurrentUser } from '../../../api/users'
 import { getRecentTransactions, createDeposit, createMoneyRequest, createWithdrawal, createConversion } from '../../../api/transactions'
 import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentCards } from '../../../api/cards'
@@ -20,7 +21,7 @@ import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
 import Select from '../../../components/Select'
 import ConvertForm, { type ConvertData } from '../../../components/ConvertForm'
-import type { BalanceSummaryItem } from '../../../api/balances'
+import TransferWizard from '../../../components/TransferWizard'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Card } from '../../../mocks/data/cards'
 import type { PaymentMethod } from '../../../mocks/data/paymentMethods'
@@ -43,7 +44,6 @@ const cardVariants = [
 ]
 
 export default function WalletSummary() {
-  const navigate = useNavigate()
   const [summary, setSummary] = useState<BalanceSummaryItem[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [cards, setCards] = useState<Card[]>([])
@@ -59,10 +59,14 @@ export default function WalletSummary() {
   const [withdrawStep, setWithdrawStep] = useState(1)
   const [convertOpen, setConvertOpen] = useState(false)
   const [convertStep, setConvertStep] = useState(1)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [transferStep, setTransferStep] = useState(1)
   const [accountDetail, setAccountDetail] = useState<BalanceSummaryItem | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [unifiedBalance, setUnifiedBalance] = useState(0)
+  const [displayCurrency, setDisplayCurrency] = useState('USD')
 
   const reload = () => {
     getCurrentBalanceSummary().then(setSummary)
@@ -75,7 +79,13 @@ export default function WalletSummary() {
     getPaymentMethodsList().then(setPaymentMethods)
     getCurrentContacts().then(setContacts)
     getQuotes().then(setQuotes)
+    getCurrentUser().then((u) => setDisplayCurrency(u?.display_currency ?? 'USD'))
   }, [])
+
+  useEffect(() => {
+    if (!displayCurrency) return
+    getUnifiedBalance(displayCurrency).then(setUnifiedBalance)
+  }, [displayCurrency])
 
   useEffect(() => {
     if (!message) return
@@ -83,10 +93,9 @@ export default function WalletSummary() {
     return () => clearTimeout(t)
   }, [message])
 
-  const totalBalanceUSD = summary.reduce((acc, item) => {
-    const rate = item.currency_code === 'USD' ? 1 : item.currency_code === 'EUR' ? 1.08 : 0.0001
-    return acc + item.amount * rate
-  }, 0)
+  const unifiedSymbol =
+    summary.find((s) => s.currency_code === displayCurrency)?.symbol ??
+    (displayCurrency === 'USD' ? 'US$' : displayCurrency === 'EUR' ? '€' : '$')
 
   return (
     <div className="wallet-summary">
@@ -95,17 +104,17 @@ export default function WalletSummary() {
           <section className="wallet-card wallet-banner">
             <p className="wallet-banner__label">SALDO UNIFICADO</p>
             <div className="wallet-banner__row">
-              <p className="wallet-banner__amount">US$ {totalBalanceUSD.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="wallet-banner__amount">{unifiedSymbol} {unifiedBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <div className="wallet-banner__actions">
                 <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setDepositOpen(true)}>
                   <Plus className="wallet-banner__btn-icon" />
-                  Depositar
+                  Cargar saldo
                 </button>
                 <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setWithdrawOpen(true)}>
                   <Send className="wallet-banner__btn-icon" />
                   Retirar
                 </button>
-                <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => navigate('/dashboard/transactions/transfers')}>
+                <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => setTransferOpen(true)}>
                   <ArrowUpRight className="wallet-banner__btn-icon" />
                   Transferir
                 </button>
@@ -154,7 +163,7 @@ export default function WalletSummary() {
 
           <section className="wallet-card wallet-transactions">
             <div className="wallet-card__header">
-              <h2 className="wallet-card__title">Últimos movimientos de la wallet</h2>
+              <h2 className="wallet-card__title">Últimos movimientos de la billetera</h2>
               <Link to="/dashboard/history" className="wallet-card__link">
                 Historial global
                 <ArrowRight className="wallet-card__link-icon" />
@@ -331,6 +340,23 @@ export default function WalletSummary() {
           onDone={(msg) => {
             setConvertOpen(false)
             setConvertStep(1)
+            setMessage(msg)
+            reload()
+          }}
+          onError={setErrorMessage}
+          sending={sending}
+          setSending={setSending}
+        />
+      </Modal>
+
+      <Modal open={transferOpen} onClose={() => setTransferOpen(false)} title="Transferir" step={transferStep} totalSteps={2}>
+        <TransferWizard
+          contacts={contacts}
+          step={transferStep}
+          setStep={setTransferStep}
+          onDone={(msg) => {
+            setTransferOpen(false)
+            setTransferStep(1)
             setMessage(msg)
             reload()
           }}
