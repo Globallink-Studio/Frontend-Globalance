@@ -5,8 +5,18 @@ import {
   deleteNotification,
   createNotification,
 } from '../mocks/handlers/notifications'
-import { getCurrentUserId, getAuthMode } from './auth'
+import { getCurrentUserId } from './auth'
 import type { AppNotification, NotificationType } from '../mocks/data/notifications'
+
+// Las notificaciones se persisten en localStorage (sin BD). Este evento se
+// dispara ante cualquier cambio para que los componentes que escuchan
+// (useNotifications) refresquen su estado al instante.
+export const NOTIFICATIONS_CHANGED_EVENT = 'globalance:notifications-changed'
+
+function emitNotificationsChanged(): void {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_CHANGED_EVENT))
+}
 
 export async function getCurrentNotifications(): Promise<AppNotification[]> {
   const id = getCurrentUserId()
@@ -15,21 +25,24 @@ export async function getCurrentNotifications(): Promise<AppNotification[]> {
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  return markAsRead(id)
+  await markAsRead(id)
+  emitNotificationsChanged()
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
   const id = getCurrentUserId()
   if (!id) return
-  return markAllAsRead(id)
+  await markAllAsRead(id)
+  emitNotificationsChanged()
 }
 
 export async function deleteCurrentNotification(id: string): Promise<void> {
-  return deleteNotification(id)
+  await deleteNotification(id)
+  emitNotificationsChanged()
 }
 
-// Notificaciones generadas por eventos. En modo mock las crea el front; en
-// deploy las genera el back (ver "Pedir al back → 2. Notificaciones").
+// Notificaciones generadas por eventos. Se guardan en localStorage sin importar
+// el modo de auth, así la funcionalidad también funciona en deploy sin BD.
 export async function notifyUser(
   userId: string | null | undefined,
   title: string,
@@ -37,9 +50,9 @@ export async function notifyUser(
   type?: NotificationType,
   link?: string,
 ): Promise<void> {
-  if (getAuthMode() !== 'mock') return
   if (!userId) return
   await createNotification(userId, { title, message, type, link })
+  emitNotificationsChanged()
 }
 
 export async function notifyCurrentUser(
