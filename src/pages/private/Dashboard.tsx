@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 import {
@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { dashboardMock, type Metric, type ChartPoint } from '../../data/mocks'
+import { type Metric, type ChartPoint } from '../../data/mocks'
 import { getCurrentBalanceSummary, getUnifiedBalance, type BalanceSummaryItem } from '../../api/balances'
 import { getCurrentUser } from '../../api/users'
 import { getDashboardMetrics, getDashboardChart } from '../../api/dashboard'
@@ -32,13 +32,20 @@ const formatAmount = (value: number, currency: string) => {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { aiSummary } = dashboardMock
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [baseMetrics, setBaseMetrics] = useState<Metric[]>([])
   const [chart, setChart] = useState<ChartPoint[]>([])
   const [balances, setBalances] = useState<BalanceSummaryItem[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [displayCurrency, setDisplayCurrency] = useState('ARS')
+
+  const aiSummary = useMemo(() => {
+    const total = metrics.find((m) => m.label === 'Saldo Total')
+    const income = metrics.find((m) => m.label === 'Ingresos del mes')
+    const expense = metrics.find((m) => m.label === 'Gastos del mes')
+    if (!total) return 'Consultá a tu asistente para conocer más sobre tus finanzas.'
+    return `Tu saldo total es ${formatAmount(total.amount, total.currency)}. Este mes registraste ${formatAmount(income?.amount ?? 0, income?.currency ?? displayCurrency)} en ingresos y ${formatAmount(expense?.amount ?? 0, expense?.currency ?? displayCurrency)} en gastos.`
+  }, [metrics, displayCurrency])
 
   useEffect(() => {
     getCurrentUser().then((u) => setDisplayCurrency(u?.display_currency ?? 'ARS'))
@@ -92,13 +99,13 @@ export default function Dashboard() {
         <section className="dashboard-card dashboard-chart">
           <div className="dashboard-card__header">
             <h2 className="dashboard-card__title">Evolución financiera</h2>
-            <span className="dashboard-card__period">Últimos 7 meses</span>
+            <span className="dashboard-card__period">Mes actual</span>
           </div>
           <div className="dashboard-chart__plot">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{

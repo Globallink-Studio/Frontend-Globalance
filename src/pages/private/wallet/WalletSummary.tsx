@@ -104,7 +104,10 @@ export default function WalletSummary() {
           <section className="wallet-card wallet-banner">
             <p className="wallet-banner__label">SALDO UNIFICADO</p>
             <div className="wallet-banner__row">
-              <p className="wallet-banner__amount">{unifiedSymbol} {unifiedBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="wallet-banner__amount">
+              {unifiedSymbol} {unifiedBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              <span className="wallet-banner__currency">{displayCurrency}</span>
+            </p>
               <div className="wallet-banner__actions">
                 <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setDepositOpen(true)}>
                   <Plus className="wallet-banner__btn-icon" />
