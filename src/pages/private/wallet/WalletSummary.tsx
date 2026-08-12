@@ -97,6 +97,28 @@ export default function WalletSummary() {
     summary.find((s) => s.currency_code === displayCurrency)?.symbol ??
     (displayCurrency === 'USD' ? 'US$' : displayCurrency === 'EUR' ? '€' : '$')
 
+  const handleWizardError = (msg: string) => {
+    if (msg) {
+      if (depositStep === 2) {
+        setDepositOpen(false)
+        setDepositStep(1)
+      }
+      if (requestStep === 2) {
+        setRequestOpen(false)
+        setRequestStep(1)
+      }
+      if (convertStep === 2) {
+        setConvertOpen(false)
+        setConvertStep(1)
+      }
+      if (transferStep === 2) {
+        setTransferOpen(false)
+        setTransferStep(1)
+      }
+    }
+    setErrorMessage(msg)
+  }
+
   return (
     <div className="wallet-summary">
       <div className="wallet-summary__grid">
@@ -319,7 +341,7 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />
@@ -337,7 +359,7 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />
@@ -355,7 +377,7 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />
@@ -372,7 +394,7 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />

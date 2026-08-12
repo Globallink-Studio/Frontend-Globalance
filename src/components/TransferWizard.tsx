@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createTransfer } from '../api/transactions'
 import { getFriendlyErrorMessage } from '../api/errors'
 import { getCurrentBalances } from '../api/balances'
+import { getAuthMode } from '../api/auth'
 import { getWalletByAlias } from '../mocks/handlers/wallets'
 import Select from './Select'
 import type { Contact } from '../mocks/data/contacts'
@@ -10,6 +11,7 @@ import type { Balance } from '../mocks/data/balances'
 export interface TransferReviewData {
   recipient: string
   recipientUserId: string
+  destinationType: 'alias' | 'accountNumber'
   currencyCode: string
   amount: number
   concept?: string
@@ -60,28 +62,38 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
 
     let recipient = ''
     let recipientUserId = ''
+    let destinationType: 'alias' | 'accountNumber' = 'alias'
     let idLabel = 'Alias'
     let idValue = ''
     if (sendMethod === 'contact') {
       const contact = contacts.find((c) => c.id === contactId)
       recipient = contact?.alias ?? ''
       recipientUserId = contact?.recipient_user_id ?? ''
-      idLabel = contact?.contact_type === 'account_number' || contact?.account ? 'Número de cuenta' : 'Alias'
+      destinationType =
+        contact?.contact_type === 'account_number' || contact?.account ? 'accountNumber' : 'alias'
+      idLabel = destinationType === 'accountNumber' ? 'Número de cuenta' : 'Alias'
       idValue = contact?.contact_value ?? contact?.account ?? contact?.alias ?? ''
     } else {
-      const wallet = await getWalletByAlias(alias)
-      if (!wallet || wallet.status !== 'active') {
-        onError('No se encontró ninguna billetera activa con ese alias')
-        return
+      const trimmedAlias = alias.trim()
+      if (getAuthMode() === 'mock') {
+        const wallet = await getWalletByAlias(trimmedAlias)
+        if (!wallet || wallet.status !== 'active') {
+          onError('No se encontró ninguna billetera activa con ese alias')
+          return
+        }
+        recipient = wallet.alias
+        recipientUserId = wallet.user_id
+      } else {
+        recipient = trimmedAlias
+        recipientUserId = ''
       }
-      recipient = wallet.alias
-      recipientUserId = wallet.user_id
-      idValue = alias.trim()
+      idValue = trimmedAlias
     }
 
     setReview({
       recipient,
       recipientUserId,
+      destinationType,
       currencyCode,
       amount: value,
       concept: concept.trim() || undefined,
@@ -99,10 +111,11 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
       await createTransfer({
         recipient: review.recipient,
         recipientUserId: review.recipientUserId,
+        destinationType: review.destinationType,
         currencyCode: review.currencyCode,
         amount: review.amount,
         concept: review.concept,
-        destinationAlias: review.recipient,
+        destinationAlias: review.idValue,
       })
       onDone(`Transferencia a ${review.recipient} enviada`)
     } catch (err) {
@@ -156,7 +169,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={sending || !review.recipient || !review.recipientUserId || !(review.amount > 0) || !review.idValue}
+            disabled={sending || !review.recipient || (getAuthMode() === 'mock' && !review.recipientUserId) || !(review.amount > 0) || !review.idValue}
             className="tx-button tx-button--primary"
           >
             {sending ? 'Enviando...' : 'Confirmar transferencia'}

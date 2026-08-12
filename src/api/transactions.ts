@@ -135,6 +135,7 @@ export async function createTransfer(input: {
   amount: number
   concept?: string
   destinationAlias?: string
+  destinationType?: 'alias' | 'accountNumber'
 }): Promise<Transaction> {
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
@@ -145,7 +146,7 @@ export async function createTransfer(input: {
       body: {
         currency: input.currencyCode,
         amount: String(input.amount),
-        destinationType: 'alias',
+        destinationType: input.destinationType ?? 'alias',
         destinationValue: input.destinationAlias,
       },
       headers: { 'Idempotency-Key': crypto.randomUUID() },
