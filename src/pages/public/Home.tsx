@@ -119,7 +119,7 @@ const faqs = [
 export default function Home() {
   const { isAuthenticated, initializing } = useAuth()
   const { totalBalance, currencies, stats, features } = landingMock
-  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [team] = useState(() => shuffle(teamMembers))
   const [displayName, setDisplayName] = useState('')
   const [activeSection, setActiveSection] = useState('#inicio')
