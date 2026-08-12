@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Clock } from 'lucide-react'
 import { getCurrentUser, getCurrentUserProfile } from '../../../api/users'
 import { getFirebaseDisplayName } from '../../../api/auth'
 import { getCurrentWallet } from '../../../api/wallets'
@@ -155,17 +155,22 @@ export default function PersonalData() {
                   <ArrowRight className="profile-prefs__link-icon" />
                 </Link>
               </section>
+            </div>
+          </div>
+        </div>
 
-              <section className="profile-card">
-                <h2 className="profile-card__title">Preferencias</h2>
+        <div className="profile-sidebar">
+          <AccountActions onEditProfile={() => setEditOpen(true)} />
+
+          <section className="profile-card">
+            <h2 className="profile-card__title">Preferencias</h2>
+            <div className="profile-prefs__wrap">
+              <div className="profile-prefs__blur">
                 <ul className="profile-prefs__list">
                   {comingSoonPrefs.map((pref) => (
                     <li key={pref.key}>
                       <div className="profile-prefs__row profile-prefs__row--disabled" aria-disabled="true">
-                        <span className="profile-prefs__label">
-                          {pref.label}
-                          <span className="profile-prefs__badge">Próximamente</span>
-                        </span>
+                        <span className="profile-prefs__label">{pref.label}</span>
                         <span className="profile-switch" aria-hidden="true">
                           <span className="profile-switch__thumb" />
                         </span>
@@ -173,12 +178,16 @@ export default function PersonalData() {
                     </li>
                   ))}
                 </ul>
-              </section>
+              </div>
+              <div className="profile-prefs__overlay">
+                <span className="profile-prefs__coming">
+                  <Clock className="profile-prefs__coming-icon" />
+                  Próximamente
+                </span>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
-
-        <AccountActions onEditProfile={() => setEditOpen(true)} />
       </div>
 
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => { setEditOpen(false); reload() }} />
