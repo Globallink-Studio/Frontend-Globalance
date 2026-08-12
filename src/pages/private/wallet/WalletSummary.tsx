@@ -266,11 +266,11 @@ export default function WalletSummary() {
             </section>
           )}
 
-          {paymentMethods.length > 0 && (
-            <section className="wallet-card wallet-retiros">
-              <h2 className="wallet-card__title">Retiros</h2>
-              <div className="wallet-retiros__wrap">
-                <div className="wallet-retiros__blur">
+          <section className="wallet-card wallet-retiros">
+            <h2 className="wallet-card__title">Retiros</h2>
+            <div className="wallet-retiros__wrap">
+              <div className="wallet-retiros__blur">
+                {paymentMethods.length > 0 ? (
                   <ul className="wallet-retiros__list">
                     {paymentMethods.map((pm) => (
                       <li key={pm.id} className="wallet-retiro">
@@ -281,16 +281,23 @@ export default function WalletSummary() {
                       </li>
                     ))}
                   </ul>
-                </div>
-                <div className="wallet-retiros__overlay">
-                  <span className="wallet-retiros__coming">
-                    <Clock className="wallet-retiros__coming-icon" />
-                    Próximamente
-                  </span>
-                </div>
+                ) : (
+                  <ul className="wallet-retiros__list">
+                    <li className="wallet-retiro">
+                      <span className="wallet-retiro__name">Tus cuentas vinculadas</span>
+                      <span className="wallet-retiro__detail">Aparecerán acá</span>
+                    </li>
+                  </ul>
+                )}
               </div>
-            </section>
-          )}
+              <div className="wallet-retiros__overlay">
+                <span className="wallet-retiros__coming">
+                  <Clock className="wallet-retiros__coming-icon" />
+                  Próximamente
+                </span>
+              </div>
+            </div>
+          </section>
         </aside>
       </div>
 
