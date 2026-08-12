@@ -246,22 +246,26 @@ export default function WalletSummary() {
                   })}
                 </div>
 
-                <button
-                  type="button"
-                  className="wallet-cards__arrow wallet-cards__arrow--prev"
-                  onClick={() => setActiveCardIndex((i) => (i - 1 + cards.length) % cards.length)}
-                  aria-label="Tarjeta anterior"
-                >
-                  <ChevronLeft className="wallet-cards__arrow-icon" />
-                </button>
-                <button
-                  type="button"
-                  className="wallet-cards__arrow wallet-cards__arrow--next"
-                  onClick={() => setActiveCardIndex((i) => (i + 1) % cards.length)}
-                  aria-label="Tarjeta siguiente"
-                >
-                  <ChevronRight className="wallet-cards__arrow-icon" />
-                </button>
+                {cards.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="wallet-cards__arrow wallet-cards__arrow--prev"
+                      onClick={() => setActiveCardIndex((i) => (i - 1 + cards.length) % cards.length)}
+                      aria-label="Tarjeta anterior"
+                    >
+                      <ChevronLeft className="wallet-cards__arrow-icon" />
+                    </button>
+                    <button
+                      type="button"
+                      className="wallet-cards__arrow wallet-cards__arrow--next"
+                      onClick={() => setActiveCardIndex((i) => (i + 1) % cards.length)}
+                      aria-label="Tarjeta siguiente"
+                    >
+                      <ChevronRight className="wallet-cards__arrow-icon" />
+                    </button>
+                  </>
+                )}
               </div>
             </section>
           )}
