@@ -152,6 +152,12 @@ export async function createTransfer(input: {
     })
     const tx = resp.transaction
     const wallet = await getCurrentWallet()
+    await notifyCurrentUser(
+      'Transferencia enviada',
+      `Enviaste ${input.amount} ${input.currencyCode} a ${tx.destination_alias}.`,
+      'transfer',
+      '/dashboard/transactions',
+    )
     return {
       id: tx.transaction_id,
       wallet_id: wallet?.id ?? '',
@@ -238,6 +244,12 @@ export async function createDeposit(input: {
     })
     const tx = resp.transaction
     const wallet = await getCurrentWallet()
+    await notifyCurrentUser(
+      'Depósito acreditado',
+      `Tu depósito de ${input.amount} ${input.currencyCode} fue acreditado en tu cuenta.`,
+      'deposit',
+      '/dashboard/transactions',
+    )
     return {
       id: tx.transaction_id,
       wallet_id: wallet?.id ?? '',
@@ -294,6 +306,12 @@ export async function createMoneyRequest(input: {
       },
     })
     const pr = resp.paymentRequest
+    await notifyCurrentUser(
+      'Solicitud de dinero enviada',
+      `Solicitaste ${input.amount} ${input.currencyCode} a ${pr.payer_email}.`,
+      'request',
+      '/dashboard/transactions',
+    )
     return {
       id: pr.id,
       wallet_id: '',
@@ -425,6 +443,12 @@ export async function createConversion(input: {
     })
     const tx = resp.transaction
     const wallet = await getCurrentWallet()
+    await notifyCurrentUser(
+      'Conversión completada',
+      `Convertiste ${input.amount} ${input.fromCurrency} a ${tx.target_amount} ${input.toCurrency}.`,
+      'conversion',
+      '/dashboard/transactions',
+    )
     return {
       id: tx.transaction_id,
       wallet_id: wallet?.id ?? '',
