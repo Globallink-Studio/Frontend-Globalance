@@ -238,14 +238,29 @@ export async function register(input: {
   }
 }
 
-export async function logout(): Promise<void> {
-  if (getAuthMode() === 'mock') {
-    await mockLogout()
-  } else if (auth) {
-    await signOut(auth)
+const NOTIFICATION_PREFS_KEY = 'globalance:notification-prefs'
+
+function clearSessionStorage(): void {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('globalance.') && key !== NOTIFICATION_PREFS_KEY) {
+      localStorage.removeItem(key)
+    }
   }
-  cachedUser = null
-  clearCurrentUser()
+}
+
+export async function logout(): Promise<void> {
+  try {
+    if (getAuthMode() === 'mock') {
+      await mockLogout()
+    } else if (auth) {
+      await signOut(auth)
+    }
+  } finally {
+    cachedUser = null
+    clearCurrentUser()
+    clearSessionStorage()
+  }
 }
 
 // --- Sesión / restauración -----------------------------------------------
