@@ -91,11 +91,6 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
     if (!isValid) return
     setError('')
 
-    if (getAuthMode() === 'firebase' && (documentNumber.trim().length < 5 || phone.trim().length < 7)) {
-      setError('Completá tu documento (mínimo 5 caracteres) y teléfono (mínimo 7 caracteres) para guardar los cambios.')
-      return
-    }
-
     setSaving(true)
 
     const normalizedAlias = alias.trim()
@@ -108,7 +103,6 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
         await updateCurrentPersonProfile({
           first_name: firstName.trim() || 'Usuario',
           last_name: lastName.trim(),
-          document: documentNumber.trim(),
           phone: phone.trim() || null,
           alias: normalizedAlias,
           displayCurrency,
@@ -121,7 +115,6 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
           await updateCurrentPersonProfile({
             first_name: firstName.trim() || 'Usuario',
             last_name: lastName.trim(),
-            document: documentNumber.trim() || 'DNI pendiente',
             phone: phone.trim() || null,
           })
         }
@@ -205,15 +198,10 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                 />
-                <InputField
-                  label="Documento"
-                  type="text"
-                  id="document"
-                  name="document"
-                  value={documentNumber}
-                  onChange={(e) => setDocumentNumber(e.target.value)}
-                  placeholder="DNI 30123456"
-                />
+                <p className="profile-edit__readonly">
+                  <span>Documento</span>
+                  <strong>{documentNumber || '—'}</strong>
+                </p>
               </>
             ) : (
               <p className="profile-edit__readonly">
