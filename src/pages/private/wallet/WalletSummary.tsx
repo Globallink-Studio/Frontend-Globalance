@@ -644,7 +644,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         value={contactId}
         onChange={setContactId}
         options={[
-          { value: '', label: 'Elegí un contacto' },
+          { value: '', label: 'Elige un contacto' },
           ...contacts.map((c) => ({ value: c.id, label: c.alias })),
         ]}
       />

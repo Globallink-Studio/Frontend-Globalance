@@ -70,7 +70,7 @@ export async function createContact(input: {
       if (err instanceof ApiError && err.status === 404) {
         const target = input.contactType === 'alias' ? 'alias' : 'número de cuenta'
         throw new Error(
-          `No existe ninguna cuenta Globalance con ese ${target}. Revisá el dato e intentá de nuevo.`,
+          `No existe ninguna cuenta Globalance con ese ${target}. Revisa el dato e intenta de nuevo.`,
         )
       }
       throw err

@@ -119,8 +119,8 @@ export default function NotificationsList({ fromBell = false }: { fromBell?: boo
             {fromBell && !enabled
               ? 'Las notificaciones están desactivadas en tus preferencias.'
               : filter === 'unread'
-                ? 'No tenés notificaciones sin leer.'
-                : 'No tenés notificaciones.'}
+                ? 'No tienes notificaciones sin leer.'
+                : 'No tienes notificaciones.'}
           </div>
         ) : (
           groups.map((group) => (

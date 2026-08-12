@@ -92,7 +92,7 @@ export default function PaymentRequestsSection() {
       {!loading && requests.length === 0 && (
         <p className="tx-list__empty">
           {scope === 'received'
-            ? 'No tenés solicitudes de cobro pendientes.'
+            ? 'No tienes solicitudes de cobro pendientes.'
             : 'No enviaste solicitudes de cobro.'}
         </p>
       )}

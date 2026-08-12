@@ -52,7 +52,7 @@ export default function ConvertForm({
       })
       .catch(() => {
         if (requestSeq.current !== id) return
-        setQuoteError('No se pudo obtener la cotización. Revisá tu conexión e intentá de nuevo.')
+        setQuoteError('No se pudo obtener la cotización. Revisa tu conexión e intenta de nuevo.')
       })
   }
 
@@ -122,8 +122,8 @@ export default function ConvertForm({
         insufficient
           ? 'Saldo insuficiente para realizar la conversión'
           : fromCurrency === toCurrency
-            ? 'Elegí una moneda de destino distinta'
-            : 'Ingresá un monto válido para continuar'
+            ? 'Elige una moneda de destino distinta'
+            : 'Ingresa un monto válido para continuar'
       )
       return
     }

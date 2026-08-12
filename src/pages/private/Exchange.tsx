@@ -230,7 +230,7 @@ export default function Exchange() {
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Confirmar conversión</h3>
             <p className="tx-modal__message">
-              ¿Confirmás la conversión de {pending.amount.toLocaleString('es-AR')} {pending.fromCurrency} a{' '}
+              ¿Confirmas la conversión de {pending.amount.toLocaleString('es-AR')} {pending.fromCurrency} a{' '}
               {pending.result > 0 ? pending.result.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : '—'} {pending.toCurrency}?
             </p>
 

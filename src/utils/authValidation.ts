@@ -32,7 +32,7 @@ export function validateSignupField(
     case 'email': {
       const value = values.email.trim()
       if (!value) return 'El correo electrónico es obligatorio.'
-      if (!EMAIL_REGEX.test(value)) return 'Ingresá un correo electrónico válido.'
+      if (!EMAIL_REGEX.test(value)) return 'Ingresa un correo electrónico válido.'
       return undefined
     }
     case 'password': {
@@ -43,7 +43,7 @@ export function validateSignupField(
       return undefined
     }
     case 'confirmPassword': {
-      if (!values.confirmPassword) return 'Confirmá tu contraseña.'
+      if (!values.confirmPassword) return 'Confirma tu contraseña.'
       if (values.confirmPassword !== values.password) return 'Las contraseñas no coinciden.'
       return undefined
     }
@@ -94,7 +94,7 @@ export function validateSigninField(
     case 'email': {
       const value = values.email.trim()
       if (!value) return 'El correo electrónico es obligatorio.'
-      if (!EMAIL_REGEX.test(value)) return 'Ingresá un correo electrónico válido.'
+      if (!EMAIL_REGEX.test(value)) return 'Ingresa un correo electrónico válido.'
       return undefined
     }
     case 'password':

@@ -94,7 +94,7 @@ function mapUser(apiUser: ApiUser): User {
 }
 
 function requireFirebase() {
-  if (!auth) throw new Error('Firebase no configurado. Revisá las variables VITE_FIREBASE_* en .env')
+  if (!auth) throw new Error('Firebase no configurado. Revisa las variables VITE_FIREBASE_* en .env')
   return auth
 }
 
@@ -123,11 +123,11 @@ function getFirebaseErrorMessage(error: unknown): string {
     case 'auth/weak-password':
       return 'La contraseña debe tener al menos 6 caracteres'
     case 'auth/popup-closed-by-user':
-      return 'Ventana de Google cerrada. Intentá de nuevo'
+      return 'Ventana de Google cerrada. Intenta de nuevo'
     case 'auth/cancelled-popup-request':
       return 'Solicitud cancelada'
     case 'auth/network-request-failed':
-      return 'Sin conexión. Intentá de nuevo'
+      return 'Sin conexión. Intenta de nuevo'
     default:
       return error instanceof Error ? error.message : 'Error de autenticación'
   }

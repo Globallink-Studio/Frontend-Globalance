@@ -153,11 +153,11 @@ export default function Cards() {
             </h3>
             <p className="tx-modal__message">
               {confirm.action === 'delete' &&
-                `¿Seguro que querés eliminar la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? Esta acción no se puede deshacer.`}
+                `¿Seguro que quieres eliminar la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? Esta acción no se puede deshacer.`}
               {confirm.action === 'block' &&
-                `¿Seguro que querés bloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? No vas a poder usarla hasta desbloquearla.`}
+                `¿Seguro que quieres bloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? No vas a poder usarla hasta desbloquearla.`}
               {confirm.action === 'unblock' &&
-                `¿Seguro que querés desbloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}?`}
+                `¿Seguro que quieres desbloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}?`}
             </p>
             {error && <p className="profile-edit__error" role="alert">{error}</p>}
             <div className="tx-review__actions">

@@ -43,7 +43,7 @@ describe('assistant API — modo mock (desarrollo local)', () => {
   })
 
   test('simula un error 502 al pedirlo', async () => {
-    await expect(askAssistant('probá el error 502')).rejects.toThrow('Error 502')
+    await expect(askAssistant('probar el error 502')).rejects.toThrow('Error 502')
   })
 
   test('simula un error de red al pedirlo', async () => {

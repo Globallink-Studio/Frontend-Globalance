@@ -17,32 +17,32 @@ export class NetworkError extends Error {
 
 export function getFriendlyErrorMessage(error: unknown): string {
   if (error instanceof NetworkError) {
-    return 'No pudimos conectarnos con el servidor. Revisá tu conexión a internet y volvé a intentar.'
+    return 'No pudimos conectarnos con el servidor. Revisa tu conexión a internet y vuelve a intentar.'
   }
 
   if (error instanceof ApiError) {
     switch (error.status) {
       case 400:
-        return 'Los datos ingresados no son válidos. Revisalos e intentá de nuevo.'
+        return 'Los datos ingresados no son válidos. Revísalos e intenta de nuevo.'
       case 401:
-        return 'Tu sesión venció. Volvé a iniciar sesión.'
+        return 'Tu sesión venció. Vuelve a iniciar sesión.'
       case 403:
-        return 'No tenés permisos para realizar esta acción.'
+        return 'No tienes permisos para realizar esta acción.'
       case 404:
-        return 'No encontramos lo que buscás. Revisá los datos e intentá de nuevo.'
+        return 'No encontramos lo que buscas. Revisa los datos e intenta de nuevo.'
       case 409:
-        return 'Ya existe un registro con esos datos. Verificalo e intentá de nuevo.'
+        return 'Ya existe un registro con esos datos. Verifícalo e intenta de nuevo.'
       case 422:
-        return 'Los datos ingresados no son válidos. Revisalos e intentá de nuevo.'
+        return 'Los datos ingresados no son válidos. Revísalos e intenta de nuevo.'
       case 429:
-        return 'Hiciste demasiadas solicitudes en poco tiempo. Esperá un momento y volvé a intentar.'
+        return 'Hiciste demasiadas solicitudes en poco tiempo. Espera un momento y vuelve a intentar.'
       case 500:
       case 502:
       case 503:
       case 504:
-        return 'Estamos teniendo un problema del lado del servidor. Intentá de nuevo en unos minutos.'
+        return 'Estamos teniendo un problema del lado del servidor. Intenta de nuevo en unos minutos.'
       default:
-        return 'Estamos teniendo un problema del lado del servidor. Intentá de nuevo en unos minutos.'
+        return 'Estamos teniendo un problema del lado del servidor. Intenta de nuevo en unos minutos.'
     }
   }
 
@@ -50,5 +50,5 @@ export function getFriendlyErrorMessage(error: unknown): string {
     return error.message
   }
 
-  return 'Algo salió mal. Por favor, intentá de nuevo.'
+  return 'Algo salió mal. Por favor, intenta de nuevo.'
 }

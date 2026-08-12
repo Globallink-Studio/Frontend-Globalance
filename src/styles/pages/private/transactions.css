@@ -816,3 +816,27 @@ input[type='number'].tx-amount::-webkit-inner-spin-button {
 .tx-table__amount--income {
   color: color-mix(in oklab, var(--success) 85%, var(--foreground));
 }
+
+@media (max-width: 640px) {
+  .profile-card.history-toolbar {
+    padding: 0.875rem;
+  }
+
+  .tx-table {
+    min-width: 42rem;
+    font-size: 0.9375rem;
+  }
+
+  .tx-table th {
+    padding: 1rem 0.875rem 0.75rem;
+  }
+
+  .tx-table td {
+    padding: 0.875rem;
+  }
+
+  .tx-table tbody tr {
+    background-size: calc(100% - 1.75rem) 1px;
+    background-position: 0.875rem bottom;
+  }
+}

@@ -50,11 +50,11 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
     e.preventDefault()
     onError('')
     if (!recipientFilled) {
-      onError('Completá el destinatario para continuar')
+      onError('Completa el destinatario para continuar')
       return
     }
     if (!(value > 0)) {
-      onError('Ingresá un monto válido para continuar')
+      onError('Ingresa un monto válido para continuar')
       return
     }
 
@@ -202,7 +202,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             value={contactId}
             onChange={setContactId}
             options={[
-              { value: '', label: 'Elegí un contacto' },
+              { value: '', label: 'Elige un contacto' },
               ...contacts.map((c) => ({ value: c.id, label: c.alias })),
             ]}
           />

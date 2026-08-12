@@ -92,6 +92,7 @@ export default function DashboardLayout() {
   useEffect(() => {
     setNotifOpen(false)
     setSearchOpen(false)
+    setSidebarOpen(false)
   }, [location.pathname])
 
   useEffect(() => {
