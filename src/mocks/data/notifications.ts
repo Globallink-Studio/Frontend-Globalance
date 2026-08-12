@@ -44,7 +44,7 @@ export const notifications: AppNotification[] = [
     user_id: '11111111-1111-4111-8111-111111111111',
     type: 'info',
     title: 'Bienvenida a Globalance',
-    message: 'Tu cuenta está lista. Configurá tu perfil y agregá tus métodos de pago.',
+    message: 'Tu cuenta está lista. Configura tu perfil y agrega tus métodos de pago.',
     read: true,
     created_at: '2026-07-27T08:00:00.000Z',
   },

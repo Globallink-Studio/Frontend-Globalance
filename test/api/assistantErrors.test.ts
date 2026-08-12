@@ -4,40 +4,40 @@ import { getAssistantErrorMessage, isRetryableAssistantError } from '../../src/a
 describe('assistant errors — mensajes amigables', () => {
   test('mapea cada código de error a su mensaje', () => {
     expect(getAssistantErrorMessage(new ApiError(400))).toBe(
-      'El mensaje no pudo ser procesado. Reformulá la pregunta e intentá de nuevo.',
+      'El mensaje no pudo ser procesado. Reformula la pregunta e intenta de nuevo.',
     )
     expect(getAssistantErrorMessage(new ApiError(401))).toBe(
-      'Tu sesión expiró. Volvé a iniciar sesión y probá de nuevo.',
+      'Tu sesión expiró. Vuelve a iniciar sesión y prueba de nuevo.',
     )
     expect(getAssistantErrorMessage(new ApiError(429))).toBe(
-      'Hiciste muchas consultas seguidas. Esperá unos segundos y volvé a intentar.',
+      'Hiciste muchas consultas seguidas. Espera unos segundos y vuelve a intentar.',
     )
     expect(getAssistantErrorMessage(new ApiError(500))).toBe(
-      'Hubo un error en el servidor al responder. Intentá de nuevo en unos minutos.',
+      'Hubo un error en el servidor al responder. Intenta de nuevo en unos minutos.',
     )
     expect(getAssistantErrorMessage(new ApiError(502))).toBe(
-      'El servicio de inteligencia artificial no está disponible en este momento. Intentá de nuevo más tarde.',
+      'El servicio de inteligencia artificial no está disponible en este momento. Intenta de nuevo más tarde.',
     )
     expect(getAssistantErrorMessage(new ApiError(503))).toBe(
-      'El servicio de inteligencia artificial no está disponible en este momento. Intentá de nuevo más tarde.',
+      'El servicio de inteligencia artificial no está disponible en este momento. Intenta de nuevo más tarde.',
     )
     expect(getAssistantErrorMessage(new ApiError(504))).toBe(
-      'El servicio de inteligencia artificial no está disponible en este momento. Intentá de nuevo más tarde.',
+      'El servicio de inteligencia artificial no está disponible en este momento. Intenta de nuevo más tarde.',
     )
     expect(getAssistantErrorMessage(new ApiError(418))).toBe(
-      'Estamos teniendo un problema con el asistente. Intentá de nuevo en unos minutos.',
+      'Estamos teniendo un problema con el asistente. Intenta de nuevo en unos minutos.',
     )
   })
 
   test('mapea los errores de red', () => {
     expect(getAssistantErrorMessage(new NetworkError())).toBe(
-      'No pudimos conectarnos con el servidor. Revisá tu conexión y volvé a intentar.',
+      'No pudimos conectarnos con el servidor. Revisa tu conexión y vuelve a intentar.',
     )
   })
 
   test('devuelve un mensaje genérico para errores desconocidos', () => {
     expect(getAssistantErrorMessage(new Error('cualquier cosa'))).toBe(
-      'Algo salió mal. Por favor, intentá de nuevo.',
+      'Algo salió mal. Por favor, intenta de nuevo.',
     )
   })
 })

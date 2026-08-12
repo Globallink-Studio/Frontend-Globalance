@@ -239,10 +239,75 @@ describe('exchangeRates API — modo firebase (API real)', () => {
     expect(quotes[0].fetched_at).toBe('2026-08-10T12:05:00.000Z')
   })
 
-  test('getRateHistory devuelve [] porque el backend aún no expone histórico', async () => {
+  test('getRateHistory semilla un histórico de 30 días cuando el caché está vacío', async () => {
+    mockFetch.mockResolvedValue({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:00:00.000Z',
+        expiresAt: '2026-08-10T12:01:00.000Z',
+      },
+    })
+
     const history = await getRateHistory('USD', 30)
-    expect(history).toEqual([])
-    expect(mockFetch).not.toHaveBeenCalled()
+
+    expect(history).toHaveLength(30)
+    expect(history[history.length - 1].buy_price).toBe(1250)
+    expect(mockFetch).toHaveBeenCalledWith('/exchange/rates?base=ARS')
+  })
+
+  test('getRateHistory devuelve los últimos días pedidos del caché', async () => {
+    mockFetch.mockResolvedValue({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:00:00.000Z',
+        expiresAt: '2026-08-10T12:01:00.000Z',
+      },
+    })
+
+    const full = await getRateHistory('USD', 30)
+    const week = await getRateHistory('USD', 7)
+
+    expect(full.length).toBe(30)
+    expect(week.length).toBe(7)
+    expect(week[week.length - 1].buy_price).toBe(full[full.length - 1].buy_price)
+  })
+
+  test('getQuotes guarda el histórico en localStorage y usa el punto anterior como prev_buy_price', async () => {
+    mockFetch.mockResolvedValueOnce({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:00:00.000Z',
+        expiresAt: '2026-08-10T12:01:00.000Z',
+      },
+    })
+
+    const first = await getQuotes()
+    const usdFirst = first.find((q) => q.currency_code === 'USD')!
+
+    const stored = JSON.parse(localStorage.getItem('globalance.rates.history') ?? '{}') as Record<string, unknown>
+    expect(stored.USD).toBeDefined()
+    expect(Array.isArray(stored.USD)).toBe(true)
+
+    mockFetch.mockResolvedValueOnce({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.00081', EUR: '0.00076' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-11T12:00:00.000Z',
+        expiresAt: '2026-08-11T12:01:00.000Z',
+      },
+    })
+
+    const second = await getQuotes()
+    const usdSecond = second.find((q) => q.currency_code === 'USD')!
+
+    expect(usdSecond.prev_buy_price).toBe(usdFirst.buy_price)
   })
 
   test('getQuotes propaga los errores de la API', async () => {

@@ -12,7 +12,7 @@ interface Message {
 const INITIAL_MESSAGES: Message[] = [
   {
     role: 'assistant',
-    text: '¡Hola! Soy tu asistente de Globalance. Preguntame por la cotización del dólar, el euro o el peso argentino.',
+    text: '¡Hola! Soy tu asistente de Globalance. Pregúntame por la cotización del dólar, el euro o el peso argentino.',
   },
 ]
 
@@ -59,13 +59,13 @@ export default function Assistant() {
           )}
           <div ref={endRef} />
         </div>
-        <p className="assistant-chat__disclaimer">El asistente genera sus respuestas con inteligencia artificial. Verificá la información antes de tomar decisiones financieras.</p>
+        <p className="assistant-chat__disclaimer">El asistente genera sus respuestas con inteligencia artificial. Verifica la información antes de tomar decisiones financieras.</p>
         <form onSubmit={handleSubmit} className="assistant-chat__composer">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Preguntá, por ejemplo: ¿cuál es la cotización del dólar?"
+            placeholder="Pregunta, por ejemplo: ¿cuál es la cotización del dólar?"
             className="assistant-chat__input"
           />
           <button type="submit" disabled={loading} className="assistant-chat__send">

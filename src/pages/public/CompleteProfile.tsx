@@ -85,7 +85,7 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
     onSubmit: async (values) => {
       setErrorMessage('')
       if (!termsChecked || !privacyChecked) {
-        setErrorMessage('Debés aceptar los Términos y Condiciones y la Política de Privacidad para continuar.')
+        setErrorMessage('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.')
         scrollToConsent()
         return
       }
@@ -125,7 +125,7 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
 
   return (
     <AuthCard
-      title="Completá tus datos"
+      title="Completa tus datos"
       subtitle="Solo falta completar tu perfil para empezar a usar Globalance."
       errorMessage={errorMessage}
     >
@@ -136,7 +136,7 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
         </div>
 
         <p className="complete-profile__hint">
-          Estos datos son obligatorios para habilitar tu cuenta. Podés editarlos después desde tu perfil.
+          Estos datos son obligatorios para habilitar tu cuenta. Puedes editarlos después desde tu perfil.
         </p>
 
         <InputField
@@ -219,7 +219,7 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
 
         {fieldsComplete && !consentDone && (
           <p className="signup-panel__consent-hint" role="alert">
-            Debés aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.
+            Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.
           </p>
         )}
 
@@ -288,7 +288,7 @@ export default function CompleteProfile() {
 
   if (initializing || !ready) {
     return (
-      <AuthCard title="Completá tus datos">
+      <AuthCard title="Completa tus datos">
         <p className="complete-profile__hint">Cargando tu perfil…</p>
       </AuthCard>
     )

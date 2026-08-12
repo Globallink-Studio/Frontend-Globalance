@@ -630,7 +630,7 @@ export default function Contacts() {
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Eliminar categorías</h3>
             <p className="tx-modal__message">
-              Seleccioná las categorías que querés eliminar. Los contactos que las tengan quedarán
+              Selecciona las categorías que quieres eliminar. Los contactos que las tengan quedarán
               como «Sin categoría».
             </p>
             {categories.map((cat) => (
@@ -721,7 +721,7 @@ export default function Contacts() {
                     aria-haspopup="listbox"
                     aria-expanded={editCatMenuOpen}
                   >
-                    <span>{editCategoryValue || 'Elegí una categoría'}</span>
+                    <span>{editCategoryValue || 'Elige una categoría'}</span>
                     <ChevronDown className="contacts-select__chevron" />
                   </button>
                   {editCatMenuOpen && (
@@ -832,7 +832,7 @@ export default function Contacts() {
         <div className="tx-modal">
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Asignar categoría</h3>
-            <p className="tx-modal__message">Elegí la categoría de «{categoryFor.alias}»</p>
+            <p className="tx-modal__message">Elige la categoría de «{categoryFor.alias}»</p>
             <div className="contacts-select">
               <button
                 type="button"
@@ -903,7 +903,7 @@ export default function Contacts() {
         <div className="tx-modal">
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Eliminar contacto</h3>
-            <p className="tx-modal__message">¿Seguro que querés eliminar a «{deleting.alias}»?</p>
+            <p className="tx-modal__message">¿Seguro que quieres eliminar a «{deleting.alias}»?</p>
             <div className="tx-review__actions">
               <button
                 type="button"

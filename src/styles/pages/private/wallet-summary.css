@@ -100,6 +100,13 @@
   line-height: 1.1;
 }
 
+.wallet-banner__currency {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  letter-spacing: 0;
+}
+
 .wallet-banner__actions {
   display: flex;
   gap: 0.375rem;

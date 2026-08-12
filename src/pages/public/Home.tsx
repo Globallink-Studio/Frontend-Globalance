@@ -82,12 +82,12 @@ const faqs = [
   {
     question: '¿Cómo agrego dinero a mi billetera?',
     answer:
-      'Podés cargar saldo desde la sección Billetera usando tu tarjeta o una transferencia desde otra cuenta de Globalance. Elegí el método, ingresá el monto y confirmá la operación.',
+      'Puedes cargar saldo desde la sección Billetera usando tu tarjeta o una transferencia desde otra cuenta de Globalance. Elige el método, ingresa el monto y confirma la operación.',
   },
   {
     question: '¿Cómo envío dinero a otra persona?',
     answer:
-      'Ingresá a Billetera y tocá el botón de transferencia. Completá el alias o número de cuenta del destinatario, elegí la moneda y el monto, y confirmá.',
+      'Ingresa a Billetera y toca el botón de transferencia. Completa el alias o número de cuenta del destinatario, elige la moneda y el monto, y confirma.',
   },
   {
     question: '¿Cuánto tarda una transferencia?',
@@ -102,17 +102,17 @@ const faqs = [
   {
     question: '¿Cómo recupero el acceso a mi cuenta?',
     answer:
-      'Desde la pantalla de inicio de sesión usá la opción de recuperación de contraseña. También podés completar la verificación de identidad para restaurar el acceso a tu cuenta.',
+      'Desde la pantalla de inicio de sesión usa la opción de recuperación de contraseña. También puedes completar la verificación de identidad para restaurar el acceso a tu cuenta.',
   },
   {
     question: '¿Qué monedas soporta Globalance?',
     answer:
-      'Globalance soporta USD, EUR y ARS. Podés convertir entre ellas desde tu billetera al instante, con tipos de cambio actualizados.',
+      'Globalance soporta USD, EUR y ARS. Puedes convertir entre ellas desde tu billetera al instante, con tipos de cambio actualizados.',
   },
   {
     question: '¿Cómo contacto a soporte?',
     answer:
-      'Usá el Asistente IA desde tu panel para resolver dudas al instante, o escribinos por los canales de atención que figuran en la sección de contacto.',
+      'Usa el Asistente IA desde tu panel para resolver dudas al instante, o escribinos por los canales de atención que figuran en la sección de contacto.',
   },
 ]
 

@@ -138,7 +138,7 @@ export default function Transactions() {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-4 flex flex-wrap gap-2 sm:flex-nowrap sm:overflow-x-auto pb-1">
             {typeChips.map((chip) => (
               <button
                 key={chip.value}

@@ -62,6 +62,19 @@ function splitFullName(fullName: string): { first: string; last: string } {
   return { first: parts[0] ?? '', last: parts.slice(1).join(' ') }
 }
 
+function splitPersonName(
+  first: string,
+  last: string,
+  fallback: { first: string; last: string },
+): { first_name: string; last_name: string } {
+  const merged = first.trim()
+  if (!last && merged.includes(' ')) {
+    const parts = merged.split(/\s+/).filter(Boolean)
+    return { first_name: parts[0] ?? fallback.first, last_name: parts.slice(1).join(' ') }
+  }
+  return { first_name: first || fallback.first, last_name: last || fallback.last }
+}
+
 interface ApiWalletResponse {
   wallet?: { alias?: string | null }
 }
@@ -93,10 +106,11 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
 
   if (isPerson) {
     const fb = firebaseName ? splitFullName(firebaseName) : { first: '', last: '' }
+    const name = splitPersonName(firstName, lastName, fb)
     return {
       user_id: p.id,
-      first_name: firstName || fb.first,
-      last_name: lastName || fb.last,
+      first_name: name.first_name,
+      last_name: name.last_name,
       document: p.document ?? '',
       phone: p.phone ?? null,
       timezone: p.timezone ?? undefined,
@@ -133,7 +147,7 @@ export async function updateCurrentPersonProfile(patch: PersonProfilePatch): Pro
   const fb = firebaseName ? splitFullName(firebaseName) : { first: '', last: '' }
   const firstName = patch.first_name ?? current?.first_name ?? fb.first
   const lastName = patch.last_name ?? current?.last_name ?? fb.last
-  const alias = patch.alias ?? walletResp.wallet?.alias ?? ''
+  const alias = patch.alias?.trim() || walletResp.wallet?.alias || ''
   const displayCurrency =
     patch.displayCurrency ?? getCachedUser()?.display_currency ?? current?.display_currency ?? 'ARS'
   const timezone = patch.timezone ?? current?.timezone ?? undefined
@@ -141,9 +155,9 @@ export async function updateCurrentPersonProfile(patch: PersonProfilePatch): Pro
   const body: Record<string, string> = {
     firstName,
     lastName,
-    alias,
     displayCurrency,
   }
+  if (alias) body.alias = alias
   const phone = patch.phone?.trim() ?? current?.phone ?? ''
   if (phone) body.phone = phone
   if (timezone) body.timezone = timezone

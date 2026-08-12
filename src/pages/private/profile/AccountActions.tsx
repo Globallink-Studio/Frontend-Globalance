@@ -81,7 +81,7 @@ function PasswordModal({ open, onClose }: { open: boolean; onClose: () => void }
   const [touched, setTouched] = useState({ current: false, next: false, confirm: false })
   const [done, setDone] = useState(false)
 
-  const currentError = !touched.current ? '' : current.trim() === '' ? 'Ingresá tu contraseña actual.' : ''
+  const currentError = !touched.current ? '' : current.trim() === '' ? 'Ingresa tu contraseña actual.' : ''
   const nextError = !touched.next
     ? ''
     : next.length < 6
@@ -90,7 +90,7 @@ function PasswordModal({ open, onClose }: { open: boolean; onClose: () => void }
   const confirmError = !touched.confirm
     ? ''
     : confirm === ''
-      ? 'Confirmá la nueva contraseña.'
+      ? 'Confirma la nueva contraseña.'
       : confirm !== next
         ? 'Las contraseñas no coinciden.'
         : ''
@@ -184,7 +184,7 @@ function PasswordModal({ open, onClose }: { open: boolean; onClose: () => void }
       ) : (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            ¿Confirmás el cambio? Se cerrarán las demás sesiones y tendrás que usar la nueva
+            ¿Confirmas el cambio? Se cerrarán las demás sesiones y tendrás que usar la nueva
             contraseña la próxima vez que inicies sesión.
           </p>
           <div className="tx-review__actions">

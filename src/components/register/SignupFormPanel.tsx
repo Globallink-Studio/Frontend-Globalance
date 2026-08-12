@@ -41,7 +41,7 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
     const handleRegister = async (values: SignupFormValues) => {
         setErrorMessage('');
         if (!termsChecked || !privacyChecked) {
-            setErrorMessage('Debés aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
+            setErrorMessage('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
             scrollToConsent();
             return;
         }
@@ -95,7 +95,7 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
                     <p className="signup-panel__subtitle">
                         {isPersonal
                             ? "Completa tus datos para crear tu cuenta"
-                            : "Completá los datos de tu organización"}
+                            : "Completa los datos de tu organización"}
                     </p>
                 </div>
             </header>
@@ -231,7 +231,7 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
 
                 {fieldsComplete && !consentDone && (
                     <p className="signup-panel__consent-hint" role="alert">
-                        Debés aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.
+                        Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear tu cuenta.
                     </p>
                 )}
 

@@ -32,7 +32,7 @@ export default function PrivacyPolicyContent() {
       <section className="space-y-2">
         <h3 className="text-base font-bold">4. Base legal</h3>
         <p>
-          Tratamos tus datos personales con base en la relación contractual que mantenés con la
+          Tratamos tus datos personales con base en la relación contractual que mantienes con la
           plataforma, tu consentimiento expreso al aceptar esta Política de Privacidad y el
           cumplimiento de obligaciones legales aplicables.
         </p>
@@ -43,7 +43,7 @@ export default function PrivacyPolicyContent() {
         <p>
           Conservamos tus datos personales durante el tiempo que sea necesario para cumplir con
           las finalidades previstas, incluyendo el plazo de retención exigido por la normativa
-          vigente. Cuando dejás de utilizar el servicio, tus datos se eliminan o anonimizan
+          vigente. Cuando dejas de utilizar el servicio, tus datos se eliminan o anonimizan
           conforme a los plazos legales aplicables.
         </p>
       </section>
@@ -61,7 +61,7 @@ export default function PrivacyPolicyContent() {
       <section className="space-y-2">
         <h3 className="text-base font-bold">7. Derechos de los usuarios</h3>
         <p>
-          Podés ejercer los derechos de acceso, rectificación, actualización y supresión de tus
+          Puedes ejercer los derechos de acceso, rectificación, actualización y supresión de tus
           datos personales, así como solicitar información sobre el tratamiento realizado,
           escribiendo a soporte@globalance.app o a través de la sección de ajustes de tu cuenta.
         </p>

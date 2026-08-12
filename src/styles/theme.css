@@ -94,11 +94,11 @@
   );
   --gradient-mesh: radial-gradient(
       60% 60% at 12% 0%,
-      oklch(0.9 0.07 300 / 55%) 0%,
+      oklch(0.9 0.07 300 / 32%) 0%,
       transparent 70%
     ),
-    radial-gradient(50% 50% at 92% 8%, oklch(0.91 0.06 210 / 50%) 0%, transparent 70%),
-    radial-gradient(55% 55% at 70% 100%, oklch(0.93 0.06 150 / 45%) 0%, transparent 70%);
+    radial-gradient(50% 50% at 92% 8%, oklch(0.91 0.06 210 / 28%) 0%, transparent 70%),
+    radial-gradient(55% 55% at 70% 100%, oklch(0.93 0.06 150 / 26%) 0%, transparent 70%);
   --shadow-soft: 0 1px 2px oklch(0.22 0.012 285 / 6%), 0 12px 32px -16px oklch(0.22 0.012 285 / 18%);
   --glass-blur: 18px;
 }
@@ -152,11 +152,11 @@
   );
   --gradient-mesh: radial-gradient(
       60% 60% at 12% 0%,
-      oklch(0.62 0.12 300 / 38%) 0%,
+      oklch(0.62 0.12 300 / 22%) 0%,
       transparent 70%
     ),
-    radial-gradient(50% 50% at 92% 8%, oklch(0.6 0.11 210 / 32%) 0%, transparent 70%),
-    radial-gradient(55% 55% at 70% 100%, oklch(0.62 0.1 150 / 28%) 0%, transparent 70%);
+    radial-gradient(50% 50% at 92% 8%, oklch(0.6 0.11 210 / 18%) 0%, transparent 70%),
+    radial-gradient(55% 55% at 70% 100%, oklch(0.62 0.1 150 / 16%) 0%, transparent 70%);
   --shadow-soft: 0 1px 2px oklch(0.1 0.01 285 / 40%), 0 14px 34px -16px oklch(0.08 0.01 285 / 60%);
   --glass-blur: 20px;
 }

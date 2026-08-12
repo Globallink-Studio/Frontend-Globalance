@@ -293,7 +293,7 @@ export async function createMoneyRequest(input: {
   concept?: string
   payerEmail?: string
 }): Promise<Transaction> {
-  if (!input.recipient) throw new Error('Indicá a quién querés cobrarle')
+  if (!input.recipient) throw new Error('Indica a quién quieres cobrarle')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   if (getAuthMode() === 'firebase') {
