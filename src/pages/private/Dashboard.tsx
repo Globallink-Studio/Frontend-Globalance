@@ -24,6 +24,8 @@ const statusLabel: Record<string, string> = {
   completed: 'Completada',
   pending: 'Pendiente',
   failed: 'Fallida',
+  cancelled: 'Cancelada',
+  reversed: 'Revertida',
 }
 
 const formatAmount = (value: number, currency: string) => {

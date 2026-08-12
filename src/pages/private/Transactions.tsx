@@ -170,9 +170,9 @@ export default function Transactions() {
                 onChange={setStatus}
                 options={[
                   { value: '', label: 'Todos los estados' },
-                  ...(Object.entries(transactionStatusLabels) as [TransactionStatus, string][]).map(
-                    ([value, label]) => ({ value, label }),
-                  ),
+                  ...(Object.entries(transactionStatusLabels) as [TransactionStatus, string][])
+                    .filter(([value]) => value !== 'reversed')
+                    .map(([value, label]) => ({ value, label })),
                 ]}
               />
               <DatePicker
