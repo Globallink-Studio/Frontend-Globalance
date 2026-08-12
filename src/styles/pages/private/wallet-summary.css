@@ -177,6 +177,7 @@
   background-color: var(--card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
+  overflow: hidden;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -192,9 +193,10 @@
 }
 
 .wallet-currency-card__header {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 0.625rem;
+  align-items: start;
 }
 
 .wallet-currency-card__icon {
@@ -231,6 +233,7 @@
 }
 
 .wallet-currency-card__balance {
+  grid-column: 1 / -1;
   text-align: right;
 }
 
@@ -550,13 +553,9 @@
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .wallet-summary__grid {
     grid-template-columns: 1fr;
-  }
-
-  .wallet-currencies__grid {
-    grid-template-columns: 1fr 1fr;
   }
 
   .wallet-banner {
