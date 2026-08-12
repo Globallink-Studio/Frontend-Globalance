@@ -460,4 +460,12 @@
   .app-shell__content {
     padding: 1.5rem 1rem;
   }
+
+  .notifications-panel {
+    top: calc(4rem + 0.75rem) !important;
+    right: 0.75rem !important;
+    left: 0.75rem;
+    width: auto;
+    max-height: calc(100vh - 6rem);
+  }
 }
