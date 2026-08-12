@@ -80,6 +80,7 @@ function mapApiTransaction(tx: ApiTransaction): Transaction {
     created_at: tx.created_at,
     from_currency: tx.source_currency ?? undefined,
     to_currency: tx.target_currency ?? undefined,
+    direction: principal ? (principal.direction === 'debit' ? 'out' : 'in') : undefined,
   }
 }
 
@@ -168,6 +169,7 @@ export async function createTransfer(input: {
       description: `Transferencia a ${tx.destination_alias}`,
       status: tx.status as TransactionStatus,
       created_at: tx.created_at,
+      direction: 'out',
     }
   }
 
@@ -188,6 +190,7 @@ export async function createTransfer(input: {
     description: `Transferencia a ${input.recipient}`,
     status: 'pending',
     concept: input.concept,
+    direction: 'out',
   })
   await adjustBalance(wallet.id, input.currencyCode, -input.amount)
   await notifyCurrentUser(
@@ -207,6 +210,7 @@ export async function createTransfer(input: {
       amount: input.amount,
       description: `Transferencia recibida de ${wallet.alias}`,
       status: 'pending',
+      direction: 'in',
     })
     await notifyUser(
       input.recipientUserId,

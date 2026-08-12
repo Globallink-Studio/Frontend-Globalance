@@ -97,7 +97,7 @@ export default function AccountDetailModal({ open, item, onClose }: AccountDetai
             ) : (
               <ul className="account-detail__list">
                 {transactions.map((tx) => {
-                  const isPositive = tx.type === 'deposit' || tx.type === 'conversion'
+                  const isPositive = tx.type === 'deposit' || tx.type === 'conversion' || (tx.type === 'transfer' && tx.direction === 'in')
                   return (
                     <li key={tx.id} className="account-detail__item">
                       <p className="account-detail__item-description">{tx.description}</p>

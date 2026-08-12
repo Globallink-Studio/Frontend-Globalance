@@ -13,6 +13,7 @@ export interface Transaction {
   concept?: string
   from_currency?: string
   to_currency?: string
+  direction?: 'in' | 'out'
 }
 
 export const transactions: Transaction[] = [

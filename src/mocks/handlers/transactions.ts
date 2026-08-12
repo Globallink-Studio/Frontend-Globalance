@@ -29,6 +29,7 @@ export async function createTransaction(input: {
   concept?: string
   from_currency?: string
   to_currency?: string
+  direction?: 'in' | 'out'
 }): Promise<Transaction> {
   await delay()
   const tx: Transaction = {
@@ -43,6 +44,7 @@ export async function createTransaction(input: {
     concept: input.concept,
     from_currency: input.from_currency,
     to_currency: input.to_currency,
+    direction: input.direction,
   }
   saveMockTransactions([tx, ...getMockTransactions()])
   return tx

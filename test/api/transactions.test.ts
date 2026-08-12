@@ -677,6 +677,7 @@ describe('historial de transacciones — modo firebase (API real)', () => {
       amount: 50000,
       description: 'Depósito de sueldo',
       status: 'completed',
+      direction: 'in',
     })
     expect(txs[1]).toMatchObject({
       type: 'conversion',
@@ -684,6 +685,7 @@ describe('historial de transacciones — modo firebase (API real)', () => {
       amount: 80,
       from_currency: 'ARS',
       to_currency: 'USD',
+      direction: 'in',
     })
   })
 

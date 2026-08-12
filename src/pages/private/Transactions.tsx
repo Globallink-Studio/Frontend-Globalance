@@ -213,8 +213,8 @@ export default function Transactions() {
                     </thead>
                     <tbody>
                       {paged.map((t) => {
-                        const isIncome = t.type === 'deposit' || t.type === 'request'
-                        const isExpense = t.type === 'transfer' || t.type === 'withdrawal'
+                        const isIncome = t.type === 'deposit' || t.type === 'request' || (t.type === 'transfer' && t.direction === 'in')
+                        const isExpense = t.type === 'withdrawal' || (t.type === 'transfer' && t.direction !== 'in')
                         const sign = isExpense ? '-' : isIncome ? '+' : ''
                         return (
                           <tr key={t.id} className="tx-table__row" onClick={() => setSelected(t)}>

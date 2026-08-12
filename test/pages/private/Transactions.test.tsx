@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 
 import Transactions from '../../../src/pages/private/Transactions'
 import { seedDemoUser, seedDemoWallet, seedExtraTransactions } from '../../fixtures/db'
+import { getMockTransactions, saveMockTransactions } from '../../../src/mocks/storage'
+import type { Transaction } from '../../../src/mocks/data/transactions'
 
 describe('Transactions', () => {
   beforeEach(async () => {
@@ -97,6 +99,29 @@ describe('Transactions', () => {
     await user.type(screen.getByPlaceholderText('Buscar por descripción o concepto...'), 'inexistente-xyz')
 
     expect(screen.getByText('No hay movimientos para los filtros seleccionados.')).toBeInTheDocument()
+  })
+
+  test('muestra transferencia recibida como ingreso y la enviada como egreso', async () => {
+    const walletId = await seedDemoWallet()
+    const received: Transaction = {
+      id: '20000000-0000-4000-8000-0000000000aa',
+      wallet_id: walletId,
+      currency_code: 'ARS',
+      type: 'transfer',
+      amount: 1000,
+      description: 'Transferencia recibida',
+      status: 'completed',
+      created_at: '2026-07-26T12:00:00.000Z',
+      direction: 'in',
+    }
+    saveMockTransactions([received, ...getMockTransactions()])
+    render(<Transactions />)
+
+    const receivedRow = (await screen.findByText('Transferencia recibida')).closest('tr')!
+    expect(receivedRow.textContent).toContain('+1.000 ARS')
+
+    const sentRow = screen.getByText('Alquiler de julio').closest('tr')!
+    expect(sentRow.textContent).toContain('-12.000 ARS')
   })
 
   test('abre el modal al hacer clic en una fila', async () => {
