@@ -837,6 +837,16 @@
 @media (max-width: 768px) {
   .home-nav {
     padding: 0.875rem 1.25rem;
+    background-color: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .home-nav__drawer {
+    width: 100%;
+    background-color: var(--background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .home-nav__menu {
