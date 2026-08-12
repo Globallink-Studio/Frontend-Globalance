@@ -1,0 +1,26 @@
+export const timezones: string[] = [
+  'America/Argentina/Buenos_Aires',
+  'America/Argentina/Cordoba',
+  'America/Argentina/Mendoza',
+  'America/Asuncion',
+  'America/Montevideo',
+  'America/Santiago',
+  'America/Sao_Paulo',
+  'America/Bogota',
+  'America/Lima',
+  'America/Caracas',
+  'America/Mexico_City',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'Europe/Madrid',
+  'Europe/Paris',
+  'Europe/London',
+  'Europe/Berlin',
+  'Europe/Rome',
+  'Europe/Lisbon',
+  'UTC',
+]
+
+export const DEFAULT_TIMEZONE = 'America/Argentina/Buenos_Aires'

@@ -2,11 +2,13 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Modal from '../../../components/Modal'
 import { InputField } from '../../../components/register/InputField'
-import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentUser } from '../../../api/users'
+import Select from '../../../components/Select'
+import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentCompanyProfile, updateCurrentUser } from '../../../api/users'
 import { getFriendlyErrorMessage } from '../../../api/errors'
 import { getAuthMode } from '../../../api/auth'
 import { getCurrentWallet, updateCurrentWallet } from '../../../api/wallets'
 import { currencies } from '../../../mocks/data/currencies'
+import { timezones, DEFAULT_TIMEZONE } from '../../../mocks/data/timezones'
 import type { User } from '../../../mocks/data/users'
 import type { PersonProfile } from '../../../mocks/data/personProfiles'
 import type { CompanyProfile } from '../../../mocks/data/companyProfiles'
@@ -28,10 +30,21 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
   const [alias, setAlias] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [legalName, setLegalName] = useState('')
   const [documentNumber, setDocumentNumber] = useState('')
   const [phone, setPhone] = useState('')
   const [displayCurrency, setDisplayCurrency] = useState('ARS')
-  const [initial, setInitial] = useState({ alias: '', firstName: '', lastName: '', document: '', phone: '', displayCurrency: 'ARS' })
+  const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE)
+  const [initial, setInitial] = useState({
+    alias: '',
+    firstName: '',
+    lastName: '',
+    legalName: '',
+    document: '',
+    phone: '',
+    displayCurrency: 'ARS',
+    timezone: DEFAULT_TIMEZONE,
+  })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -42,35 +55,33 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
     Promise.all([getCurrentUser(), getCurrentUserProfile(), getCurrentWallet()]).then(([u, p, w]) => {
       setUser(u)
       setProfile(p)
-      const nextDocument = p && 'first_name' in p ? p.document ?? '' : ''
-      if (p) {
-        if ('first_name' in p) {
-          setFirstName(p.first_name)
-          setLastName(p.last_name)
-        }
-        setPhone(p.phone ?? '')
-      }
-      setDocumentNumber(nextDocument)
-      setWallet(w)
-
-      const nextCurrency = u?.display_currency ?? 'ARS'
+      const nextDocument = p?.document ?? ''
+      const nextPhone = p?.phone ?? ''
       const nextFirstName = p && 'first_name' in p ? p.first_name : ''
       const nextLastName = p && 'first_name' in p ? p.last_name : ''
-      const nextPhone = p?.phone ?? ''
+      const nextLegalName = p && 'legal_name' in p ? p.legal_name : ''
       const nextAlias = w?.alias ?? ''
+      const nextCurrency = u?.display_currency ?? 'ARS'
+      const nextTimezone = p?.timezone ?? DEFAULT_TIMEZONE
 
-      setAlias(nextAlias)
+      setDocumentNumber(nextDocument)
+      setPhone(nextPhone)
       setFirstName(nextFirstName)
       setLastName(nextLastName)
-      setPhone(nextPhone)
+      setLegalName(nextLegalName)
+      setAlias(nextAlias)
       setDisplayCurrency(nextCurrency)
+      setTimezone(nextTimezone)
+      setWallet(w)
       setInitial({
         alias: nextAlias,
         firstName: nextFirstName,
         lastName: nextLastName,
+        legalName: nextLegalName,
         document: nextDocument,
         phone: nextPhone,
         displayCurrency: nextCurrency,
+        timezone: nextTimezone,
       })
     })
   }, [open])
@@ -82,17 +93,19 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
     alias !== initial.alias ||
     firstName !== initial.firstName ||
     lastName !== initial.lastName ||
+    legalName !== initial.legalName ||
     documentNumber !== initial.document ||
     phone !== initial.phone ||
-    displayCurrency !== initial.displayCurrency
+    displayCurrency !== initial.displayCurrency ||
+    timezone !== initial.timezone
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isValid) return
     setError('')
 
-    if (getAuthMode() === 'firebase' && (documentNumber.trim().length < 5 || phone.trim().length < 7)) {
-      setError('Completá tu documento (mínimo 5 caracteres) y teléfono (mínimo 7 caracteres) para guardar los cambios.')
+    if (getAuthMode() === 'firebase' && phone.trim().length < 7) {
+      setError('Completá tu teléfono (mínimo 7 caracteres) para guardar los cambios.')
       return
     }
 
@@ -102,17 +115,27 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
 
     try {
       if (getAuthMode() === 'firebase') {
-        if (!profile || !isPerson) {
-          throw new Error('La edición del perfil de empresa todavía no está disponible en el backend')
+        if (!profile) {
+          throw new Error('No se pudo cargar el perfil.')
         }
-        await updateCurrentPersonProfile({
-          first_name: firstName.trim() || 'Usuario',
-          last_name: lastName.trim(),
-          document: documentNumber.trim(),
-          phone: phone.trim() || null,
-          alias: normalizedAlias,
-          displayCurrency,
-        })
+        if (isPerson) {
+          await updateCurrentPersonProfile({
+            first_name: firstName.trim() || 'Usuario',
+            last_name: lastName.trim(),
+            phone: phone.trim() || null,
+            alias: normalizedAlias,
+            displayCurrency,
+            timezone,
+          })
+        } else {
+          await updateCurrentCompanyProfile({
+            legal_name: legalName.trim(),
+            phone: phone.trim() || null,
+            alias: normalizedAlias,
+            displayCurrency,
+            timezone,
+          })
+        }
       } else {
         if (wallet) {
           await updateCurrentWallet({ alias: normalizedAlias })
@@ -121,7 +144,12 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
           await updateCurrentPersonProfile({
             first_name: firstName.trim() || 'Usuario',
             last_name: lastName.trim(),
-            document: documentNumber.trim() || 'DNI pendiente',
+            phone: phone.trim() || null,
+          })
+        }
+        if (profile && !isPerson) {
+          await updateCurrentCompanyProfile({
+            legal_name: legalName.trim(),
             phone: phone.trim() || null,
           })
         }
@@ -177,6 +205,13 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
                 ))}
               </div>
             </div>
+            <Select
+              id="timezone"
+              label="Zona horaria"
+              value={timezone}
+              onChange={setTimezone}
+              options={timezones.map((tz) => ({ value: tz, label: tz.replace(/_/g, ' ') }))}
+            />
             <p className="profile-edit__readonly">
               <span>Número de cuenta</span>
               <strong>{wallet?.account_number ?? '—'}</strong>
@@ -205,22 +240,21 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                 />
-                <InputField
-                  label="Documento"
-                  type="text"
-                  id="document"
-                  name="document"
-                  value={documentNumber}
-                  onChange={(e) => setDocumentNumber(e.target.value)}
-                  placeholder="DNI 30123456"
-                />
               </>
             ) : (
-              <p className="profile-edit__readonly">
-                <span>Nombre</span>
-                <strong>{profile ? (profile as CompanyProfile).legal_name : '—'}</strong>
-              </p>
+              <InputField
+                label="Razón social"
+                type="text"
+                id="legalName"
+                name="legalName"
+                value={legalName}
+                onChange={(e) => setLegalName(e.target.value)}
+              />
             )}
+            <p className="profile-edit__readonly">
+              <span>Documento</span>
+              <strong>{documentNumber || '—'}</strong>
+            </p>
             <InputField
               label="Teléfono"
               type="text"

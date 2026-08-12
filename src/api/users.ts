@@ -1,5 +1,5 @@
-import { getUsers, getUserById, getUserByEmail, updatePersonProfile, updateUser } from '../mocks/handlers/users'
-import { getMockPersonProfiles, getMockCompanyProfiles } from '../mocks/storage'
+import { getUsers, getUserById, getUserByEmail, updatePersonProfile, updateCompanyProfile, updateUser } from '../mocks/handlers/users'
+import { getMockPersonProfiles, getMockCompanyProfiles, addMockPersonProfile } from '../mocks/storage'
 import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
@@ -52,6 +52,9 @@ interface ApiUserProfile {
   first_name?: string | null
   last_name?: string | null
   legal_name?: string | null
+  document?: string | null
+  phone?: string | null
+  timezone?: string | null
 }
 
 function splitFullName(fullName: string): { first: string; last: string } {
@@ -94,15 +97,17 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
       user_id: p.id,
       first_name: firstName || fb.first,
       last_name: lastName || fb.last,
-      document: '',
-      phone: null,
+      document: p.document ?? '',
+      phone: p.phone ?? null,
+      timezone: p.timezone ?? undefined,
     }
   }
   return {
     user_id: p.id,
     legal_name: legalName || personName,
-    document: '',
-    phone: null,
+    document: p.document ?? '',
+    phone: p.phone ?? null,
+    timezone: p.timezone ?? undefined,
   }
 }
 
@@ -131,18 +136,17 @@ export async function updateCurrentPersonProfile(patch: PersonProfilePatch): Pro
   const alias = patch.alias ?? walletResp.wallet?.alias ?? ''
   const displayCurrency =
     patch.displayCurrency ?? getCachedUser()?.display_currency ?? current?.display_currency ?? 'ARS'
+  const timezone = patch.timezone ?? current?.timezone ?? undefined
 
   const body: Record<string, string> = {
-    userType: 'person',
     firstName,
     lastName,
     alias,
     displayCurrency,
   }
-  const document = patch.document?.trim() ?? ''
-  const phone = patch.phone?.trim() ?? ''
-  if (document) body.document = document
+  const phone = patch.phone?.trim() ?? current?.phone ?? ''
   if (phone) body.phone = phone
+  if (timezone) body.timezone = timezone
 
   await fetchApi<{ data: { message: string } }>('/users/profile', {
     method: 'PATCH',
@@ -153,8 +157,56 @@ export async function updateCurrentPersonProfile(patch: PersonProfilePatch): Pro
     user_id: userId,
     first_name: firstName,
     last_name: lastName,
-    document,
+    document: current?.document ?? '',
     phone: phone || null,
+    timezone,
+  }
+}
+
+export type CompanyProfilePatch = Partial<CompanyProfile> & { alias?: string; displayCurrency?: string }
+
+export async function updateCurrentCompanyProfile(patch: CompanyProfilePatch): Promise<CompanyProfile | undefined> {
+  if (getAuthMode() === 'mock') {
+    const user = await getCurrentUser()
+    if (!user || user.user_type !== 'company') return undefined
+    return updateCompanyProfile(user.id, patch)
+  }
+
+  const [profileResp, walletResp] = await Promise.all([
+    fetchApi<{ data: ApiUserProfile }>('/users/profile'),
+    fetchApi<ApiWalletResponse>('/wallet'),
+  ])
+  const current = profileResp.data
+  const fallbackUser = await getCurrentUser()
+  const userId = current?.id ?? fallbackUser?.id
+  if (!userId) return undefined
+
+  const legalName = patch.legal_name ?? current?.legal_name ?? ''
+  const alias = patch.alias ?? walletResp.wallet?.alias ?? ''
+  const displayCurrency =
+    patch.displayCurrency ?? getCachedUser()?.display_currency ?? current?.display_currency ?? 'ARS'
+  const timezone = patch.timezone ?? current?.timezone ?? undefined
+
+  const body: Record<string, string> = {
+    legalName,
+    alias,
+    displayCurrency,
+  }
+  const phone = patch.phone?.trim() ?? current?.phone ?? ''
+  if (phone) body.phone = phone
+  if (timezone) body.timezone = timezone
+
+  await fetchApi<{ data: { message: string } }>('/users/profile', {
+    method: 'PATCH',
+    body,
+  })
+
+  return {
+    user_id: userId,
+    legal_name: legalName,
+    document: current?.document ?? '',
+    phone: phone || null,
+    timezone,
   }
 }
 
@@ -177,12 +229,60 @@ export interface CompleteGoogleProfileInput {
   alias: string
 }
 
+export interface CreatePersonProfileInput {
+  first_name: string
+  last_name: string
+  document: string
+  phone: string
+  alias: string
+  display_currency: string
+  timezone?: string
+}
+
+export async function createCurrentUserPersonProfile(input: CreatePersonProfileInput): Promise<User | undefined> {
+  if (getAuthMode() === 'mock') {
+    const user = await getCurrentUser()
+    if (!user) return undefined
+    addMockPersonProfile({
+      user_id: user.id,
+      first_name: input.first_name,
+      last_name: input.last_name,
+      document: input.document,
+      phone: input.phone,
+    })
+    return user
+  }
+
+  const user = await getCurrentUser()
+  await fetchApi<{ data: { message: string } }>('/users/profile', {
+    method: 'POST',
+    body: {
+      userType: 'person',
+      firstName: input.first_name,
+      lastName: input.last_name,
+      document: input.document,
+      phone: input.phone,
+      alias: input.alias,
+      displayCurrency: input.display_currency,
+      ...(input.timezone ? { timezone: input.timezone } : {}),
+    },
+  })
+  return user
+}
+
 export async function completeGoogleProfile(patch: CompleteGoogleProfileInput): Promise<User | undefined> {
   if (getAuthMode() === 'mock') {
     throw new Error('El alta con Google no está disponible en modo mock')
   }
   const user = await syncWithGoogleAccount()
-  await updateCurrentPersonProfile(patch)
+  await createCurrentUserPersonProfile({
+    first_name: patch.first_name,
+    last_name: patch.last_name,
+    document: patch.document,
+    phone: patch.phone,
+    alias: patch.alias,
+    display_currency: user?.display_currency ?? getCachedUser()?.display_currency ?? 'ARS',
+  })
   return user
 }
 

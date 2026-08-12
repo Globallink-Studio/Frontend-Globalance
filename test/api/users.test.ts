@@ -1,4 +1,4 @@
-import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile } from '../../src/api/users'
+import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentCompanyProfile, createCurrentUserPersonProfile } from '../../src/api/users'
 import { refreshCachedUser, logout } from '../../src/api/auth'
 import { fetchApi } from '../../src/api/fetchApi'
 import { seedDemoUser } from '../fixtures/db'
@@ -191,7 +191,7 @@ describe('users API — modo firebase (API real)', () => {
     await expect(getCurrentUserProfile()).rejects.toThrow('Network error')
   })
 
-  test('updateCurrentPersonProfile envía el perfil completo a PATCH /users/profile', async () => {
+  test('updateCurrentPersonProfile envía los campos editables a PATCH /users/profile sin documento ni userType', async () => {
     const user: User = {
       id: '11111111-1111-4111-8111-111111111111',
       firebase_uid: 'firebase-uid-test',
@@ -211,6 +211,8 @@ describe('users API — modo firebase (API real)', () => {
           display_currency: 'ARS',
           first_name: 'Sofía',
           last_name: 'Martínez',
+          document: 'DNI 40123456',
+          phone: '+54 11 5555-0101',
         },
       })
       .mockResolvedValueOnce({ wallet: { alias: 'sofia.martinez' } })
@@ -219,10 +221,10 @@ describe('users API — modo firebase (API real)', () => {
     const updated = await updateCurrentPersonProfile({
       first_name: 'Sofi',
       last_name: 'Martínez',
-      document: 'DNI 40123456',
       phone: '+54 11 5555-0101',
       alias: 'sofia.nueva',
       displayCurrency: 'USD',
+      timezone: 'America/Argentina/Buenos_Aires',
     })
 
     expect(mockFetch).toHaveBeenNthCalledWith(1, '/users/profile')
@@ -230,13 +232,12 @@ describe('users API — modo firebase (API real)', () => {
     expect(mockFetch).toHaveBeenNthCalledWith(3, '/users/profile', {
       method: 'PATCH',
       body: {
-        userType: 'person',
         firstName: 'Sofi',
         lastName: 'Martínez',
-        document: 'DNI 40123456',
         phone: '+54 11 5555-0101',
         alias: 'sofia.nueva',
         displayCurrency: 'USD',
+        timezone: 'America/Argentina/Buenos_Aires',
       },
     })
     expect(updated).toMatchObject({
@@ -293,5 +294,124 @@ describe('users API — modo firebase (API real)', () => {
   test('updateCurrentPersonProfile propaga los errores de la API', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'))
     await expect(updateCurrentPersonProfile({ first_name: 'Sofi' })).rejects.toThrow('Network error')
+  })
+
+  test('createCurrentUserPersonProfile crea el perfil con POST /users/profile (onboarding)', async () => {
+    const user: User = {
+      id: '11111111-1111-4111-8111-111111111111',
+      firebase_uid: 'firebase-uid-test',
+      email: 'sofia@test.com',
+      user_type: null,
+      display_currency: 'ARS',
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      last_access_at: null,
+    }
+    refreshCachedUser(user)
+    mockFetch.mockResolvedValueOnce({ data: { message: 'Perfil completado correctamente.' } })
+
+    const created = await createCurrentUserPersonProfile({
+      first_name: 'Sofía',
+      last_name: 'Martínez',
+      document: 'DNI 40123456',
+      phone: '+54 11 5555-0101',
+      alias: 'sofia.martinez',
+      display_currency: 'ARS',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith('/users/profile', {
+      method: 'POST',
+      body: {
+        userType: 'person',
+        firstName: 'Sofía',
+        lastName: 'Martínez',
+        document: 'DNI 40123456',
+        phone: '+54 11 5555-0101',
+        alias: 'sofia.martinez',
+        displayCurrency: 'ARS',
+      },
+    })
+    expect(created).toBeDefined()
+  })
+
+  test('createCurrentUserPersonProfile envía timezone solo si se pasa', async () => {
+    const user: User = {
+      id: '11111111-1111-4111-8111-111111111111',
+      firebase_uid: 'firebase-uid-test',
+      email: 'sofia@test.com',
+      user_type: null,
+      display_currency: 'ARS',
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      last_access_at: null,
+    }
+    refreshCachedUser(user)
+    mockFetch.mockResolvedValueOnce({ data: { message: 'Perfil completado correctamente.' } })
+
+    await createCurrentUserPersonProfile({
+      first_name: 'Sofía',
+      last_name: 'Martínez',
+      document: 'DNI 40123456',
+      phone: '+54 11 5555-0101',
+      alias: 'sofia.martinez',
+      display_currency: 'ARS',
+      timezone: 'America/Argentina/Buenos_Aires',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith('/users/profile', {
+      method: 'POST',
+      body: expect.objectContaining({
+        timezone: 'America/Argentina/Buenos_Aires',
+      }),
+    })
+  })
+
+  test('updateCurrentCompanyProfile envía legalName y campos editables a PATCH /users/profile', async () => {
+    const user: User = {
+      id: '55555555-5555-4555-8555-555555555555',
+      firebase_uid: 'firebase-uid-test',
+      email: 'empresa@test.com',
+      user_type: 'company',
+      display_currency: 'ARS',
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      last_access_at: null,
+    }
+    refreshCachedUser(user)
+    mockFetch
+      .mockResolvedValueOnce({
+        data: {
+          id: '55555555-5555-4555-8555-555555555555',
+          user_type: 'company',
+          display_currency: 'ARS',
+          legal_name: 'Globallink Studio S.R.L.',
+          document: 'CUIT 30-71234567-8',
+          phone: '+54 11 5555-0201',
+        },
+      })
+      .mockResolvedValueOnce({ wallet: { alias: 'globalance.empresa' } })
+      .mockResolvedValueOnce({ data: { message: 'Perfil actualizado correctamente.' } })
+
+    const updated = await updateCurrentCompanyProfile({
+      legal_name: 'Globallink Studio S.A.',
+      phone: '+54 11 5555-0201',
+      alias: 'globalance.empresa',
+      displayCurrency: 'USD',
+    })
+
+    expect(mockFetch).toHaveBeenNthCalledWith(3, '/users/profile', {
+      method: 'PATCH',
+      body: {
+        legalName: 'Globallink Studio S.A.',
+        phone: '+54 11 5555-0201',
+        alias: 'globalance.empresa',
+        displayCurrency: 'USD',
+      },
+    })
+    expect(updated).toMatchObject({
+      user_id: '55555555-5555-4555-8555-555555555555',
+      legal_name: 'Globallink Studio S.A.',
+      document: 'CUIT 30-71234567-8',
+    })
   })
 })

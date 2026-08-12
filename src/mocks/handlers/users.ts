@@ -1,7 +1,15 @@
 import { delay } from '../delay'
 import type { User } from '../data/users'
 import type { PersonProfile } from '../data/personProfiles'
-import { getMockUsers, getMockPersonProfiles, updateMockUser, updateMockPersonProfile } from '../storage'
+import type { CompanyProfile } from '../data/companyProfiles'
+import {
+  getMockUsers,
+  getMockPersonProfiles,
+  getMockCompanyProfiles,
+  updateMockUser,
+  updateMockPersonProfile,
+  updateMockCompanyProfile,
+} from '../storage'
 
 export async function getUsers(): Promise<User[]> {
   await delay()
@@ -34,5 +42,16 @@ export async function updatePersonProfile(
   const current = getMockPersonProfiles().find((p) => p.user_id === userId)
   if (!current) return undefined
   updateMockPersonProfile(userId, patch)
+  return { ...current, ...patch }
+}
+
+export async function updateCompanyProfile(
+  userId: string,
+  patch: Partial<CompanyProfile>,
+): Promise<CompanyProfile | undefined> {
+  await delay()
+  const current = getMockCompanyProfiles().find((c) => c.user_id === userId)
+  if (!current) return undefined
+  updateMockCompanyProfile(userId, patch)
   return { ...current, ...patch }
 }
