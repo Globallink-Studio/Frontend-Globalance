@@ -1,5 +1,6 @@
 import type { User } from './data/users'
 import type { PersonProfile } from './data/personProfiles'
+import type { CompanyProfile } from './data/companyProfiles'
 import type { Wallet } from './data/wallets'
 import type { Balance } from './data/balances'
 import type { Card } from './data/cards'
@@ -12,6 +13,7 @@ import type { PaymentRequest } from './data/paymentRequests'
 
 const USERS_KEY = 'globalance.mock.users'
 const PERSON_PROFILES_KEY = 'globalance.mock.personProfiles'
+const COMPANY_PROFILES_KEY = 'globalance.mock.companyProfiles'
 const WALLETS_KEY = 'globalance.mock.wallets'
 const BALANCES_KEY = 'globalance.mock.balances'
 const CARDS_KEY = 'globalance.mock.cards'
@@ -64,6 +66,18 @@ export function addMockPersonProfile(profile: PersonProfile): void {
 
 export function updateMockPersonProfile(userId: string, patch: Partial<PersonProfile>): void {
   saveAll(PERSON_PROFILES_KEY, getMockPersonProfiles().map((p) => (p.user_id === userId ? { ...p, ...patch } : p)))
+}
+
+export function getMockCompanyProfiles(): CompanyProfile[] {
+  return readAll<CompanyProfile>(COMPANY_PROFILES_KEY)
+}
+
+export function addMockCompanyProfile(profile: CompanyProfile): void {
+  saveAll(COMPANY_PROFILES_KEY, [...getMockCompanyProfiles(), profile])
+}
+
+export function updateMockCompanyProfile(userId: string, patch: Partial<CompanyProfile>): void {
+  saveAll(COMPANY_PROFILES_KEY, getMockCompanyProfiles().map((c) => (c.user_id === userId ? { ...c, ...patch } : c)))
 }
 
 export function getMockWallets(): Wallet[] {

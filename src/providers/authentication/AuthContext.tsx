@@ -8,7 +8,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<'authenticated' | 'pending'>
-  register: (input: { fullName: string; email: string; password: string }) => Promise<void>
+  register: (input: { fullName: string; email: string; password: string; userType?: 'person' | 'company' }) => Promise<void>
   logout: () => Promise<void>
   completeGoogleProfile: (patch: CompleteGoogleProfileInput) => Promise<void>
 }

@@ -1,4 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
 import { getCurrentUser, getCurrentUserProfile } from '../../../api/users'
 import { getFirebaseDisplayName } from '../../../api/auth'
 import { getCurrentWallet } from '../../../api/wallets'
@@ -16,14 +18,11 @@ const statusLabel: Record<string, string> = {
   blocked: 'Bloqueada',
 }
 
-const prefItems = [
-  { key: 'notifications', label: 'Notificaciones' },
+const comingSoonPrefs = [
   { key: 'receivedPayments', label: 'Cobros recibidos' },
   { key: 'currencyUpdates', label: 'Actualizaciones de monedas' },
   { key: 'weeklySummary', label: 'Resumen semanal' },
 ] as const
-
-type PrefKey = (typeof prefItems)[number]['key']
 
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -48,12 +47,6 @@ export default function PersonalData() {
   const [wallet, setWallet] = useState<Wallet | undefined>()
   const [editOpen, setEditOpen] = useState(false)
   const { enabled: notificationsEnabled, setEnabled: setNotificationsEnabled } = useNotificationPrefs()
-  const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>({
-    notifications: notificationsEnabled,
-    receivedPayments: true,
-    currencyUpdates: true,
-    weeklySummary: false,
-  })
 
   useEffect(() => {
     getCurrentUser().then(setUser)
@@ -61,15 +54,10 @@ export default function PersonalData() {
     getCurrentWallet().then(setWallet)
   }, [])
 
-  useEffect(() => {
-    setPrefs((prev) => ({ ...prev, notifications: notificationsEnabled }))
-  }, [notificationsEnabled])
-
-  const togglePref = (key: PrefKey) => {
-    if (key === 'notifications') {
-      setNotificationsEnabled(!prefs.notifications)
-    }
-    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }))
+  const reload = () => {
+    getCurrentUser().then(setUser)
+    getCurrentUserProfile().then(setProfile)
+    getCurrentWallet().then(setWallet)
   }
 
   const isPerson = !!profile && 'first_name' in profile
@@ -125,8 +113,8 @@ export default function PersonalData() {
             <div className="profile-stack">
               {profile && (
                 <section className="profile-card">
-                  <h2 className="profile-card__title">Información personal</h2>
-                  <InfoRow label="Nombre">{displayName || '—'}</InfoRow>
+                  <h2 className="profile-card__title">{isPerson ? 'Información personal' : 'Datos de la empresa'}</h2>
+                  <InfoRow label={isPerson ? 'Nombre' : 'Razón social'}>{displayName || '—'}</InfoRow>
                   <InfoRow label="Email">{user?.email ?? '—'}</InfoRow>
                   <InfoRow label="Teléfono">
                     {profile.phone ? (
@@ -144,16 +132,44 @@ export default function PersonalData() {
               )}
 
               <section className="profile-card">
-                <h2 className="profile-card__title">Preferencias de usuario</h2>
+                <h2 className="profile-card__title">Notificaciones</h2>
                 <ul className="profile-prefs__list">
-                  {prefItems.map((pref) => (
+                  <li>
+                    <button
+                      type="button"
+                      className="profile-prefs__row"
+                      onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                    >
+                      <span className="profile-prefs__label">Recibir notificaciones</span>
+                      <span
+                        className={`profile-switch${notificationsEnabled ? ' profile-switch--on' : ''}`}
+                        aria-hidden="true"
+                      >
+                        <span className="profile-switch__thumb" />
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+                <Link to="/dashboard/notifications" className="profile-prefs__link">
+                  Ver todas las notificaciones
+                  <ArrowRight className="profile-prefs__link-icon" />
+                </Link>
+              </section>
+
+              <section className="profile-card">
+                <h2 className="profile-card__title">Preferencias</h2>
+                <ul className="profile-prefs__list">
+                  {comingSoonPrefs.map((pref) => (
                     <li key={pref.key}>
-                      <button type="button" className="profile-prefs__row" onClick={() => togglePref(pref.key)}>
-                        <span className="profile-prefs__label">{pref.label}</span>
-                        <span className={`profile-switch${prefs[pref.key] ? ' profile-switch--on' : ''}`} aria-hidden="true">
+                      <div className="profile-prefs__row profile-prefs__row--disabled" aria-disabled="true">
+                        <span className="profile-prefs__label">
+                          {pref.label}
+                          <span className="profile-prefs__badge">Próximamente</span>
+                        </span>
+                        <span className="profile-switch" aria-hidden="true">
                           <span className="profile-switch__thumb" />
                         </span>
-                      </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -165,7 +181,7 @@ export default function PersonalData() {
         <AccountActions onEditProfile={() => setEditOpen(true)} />
       </div>
 
-      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => setEditOpen(false)} />
+      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => { setEditOpen(false); reload() }} />
     </div>
   )
 }

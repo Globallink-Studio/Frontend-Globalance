@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.status
   }
 
-  const register = async (input: { fullName: string; email: string; password: string }) => {
+  const register = async (input: { fullName: string; email: string; password: string; userType?: 'person' | 'company' }) => {
     const u = await apiRegister(input)
     setUser(u)
   }

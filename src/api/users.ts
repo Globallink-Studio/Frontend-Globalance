@@ -1,5 +1,5 @@
 import { getUsers, getUserById, getUserByEmail, updatePersonProfile, updateUser } from '../mocks/handlers/users'
-import { getMockPersonProfiles } from '../mocks/storage'
+import { getMockPersonProfiles, getMockCompanyProfiles } from '../mocks/storage'
 import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
@@ -70,7 +70,7 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
     if (user.user_type === 'person') {
       return getMockPersonProfiles().find((p) => p.user_id === user.id)
     }
-    return companyProfiles.find((c) => c.user_id === user.id)
+    return getMockCompanyProfiles().find((c) => c.user_id === user.id) ?? companyProfiles.find((c) => c.user_id === user.id)
   }
   const resp = await fetchApi<{ data: ApiUserProfile }>('/users/profile')
   const p = resp.data

@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Download,
   Plus,
   Repeat,
@@ -50,6 +51,7 @@ export default function WalletSummary() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [quotes, setQuotes] = useState<ExchangeRate[]>([])
   const [activeCardIndex, setActiveCardIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
   const [depositOpen, setDepositOpen] = useState(false)
   const [depositStep, setDepositStep] = useState(1)
   const [requestOpen, setRequestOpen] = useState(false)
@@ -194,7 +196,21 @@ export default function WalletSummary() {
               </div>
 
               <div className="wallet-cards__carousel">
-                <div className="wallet-cards__stack">
+                <div
+                  className="wallet-cards__stack"
+                  onTouchStart={(e) => {
+                    touchStartX.current = e.touches[0].clientX
+                  }}
+                  onTouchEnd={(e) => {
+                    if (touchStartX.current === null) return
+                    const dx = e.changedTouches[0].clientX - touchStartX.current
+                    touchStartX.current = null
+                    if (Math.abs(dx) < 40) return
+                    setActiveCardIndex((i) =>
+                      dx < 0 ? (i + 1) % cards.length : (i - 1 + cards.length) % cards.length,
+                    )
+                  }}
+                >
                   {cards.map((card, index) => {
                     const isActive = index === activeCardIndex
                     const diff = index - activeCardIndex
@@ -253,16 +269,26 @@ export default function WalletSummary() {
           {paymentMethods.length > 0 && (
             <section className="wallet-card wallet-retiros">
               <h2 className="wallet-card__title">Retiros</h2>
-              <ul className="wallet-retiros__list">
-                {paymentMethods.map((pm) => (
-                  <li key={pm.id} className="wallet-retiro">
-                    <span className="wallet-retiro__name">{pm.name}</span>
-                    <span className="wallet-retiro__detail">
-                      {pm.last_four ? `···${pm.last_four}` : 'Sin vincular'} · {pm.currency_name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <div className="wallet-retiros__wrap">
+                <div className="wallet-retiros__blur">
+                  <ul className="wallet-retiros__list">
+                    {paymentMethods.map((pm) => (
+                      <li key={pm.id} className="wallet-retiro">
+                        <span className="wallet-retiro__name">{pm.name}</span>
+                        <span className="wallet-retiro__detail">
+                          {pm.last_four ? `···${pm.last_four}` : 'Sin vincular'} · {pm.currency_name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="wallet-retiros__overlay">
+                  <span className="wallet-retiros__coming">
+                    <Clock className="wallet-retiros__coming-icon" />
+                    Próximamente
+                  </span>
+                </div>
+              </div>
             </section>
           )}
         </aside>

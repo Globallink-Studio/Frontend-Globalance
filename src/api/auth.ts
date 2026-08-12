@@ -98,8 +98,12 @@ function requireFirebase() {
   return auth
 }
 
-async function syncUser(token: string): Promise<User> {
-  const body = await fetchApi<SyncResponse>('/auth/sync', { method: 'POST', token })
+async function syncUser(token: string, userType?: 'person' | 'company'): Promise<User> {
+  const body = await fetchApi<SyncResponse>('/auth/sync', {
+    method: 'POST',
+    token,
+    ...(userType ? { body: { userType } } : {}),
+  })
   const data = body.data
   const apiUser = 'wallet' in data ? data.user : data
   return mapUser(apiUser)
@@ -144,9 +148,9 @@ function applySession(user: User): void {
   setCurrentUser(user.id)
 }
 
-async function signInWithToken(firebaseUser: FirebaseUser): Promise<User> {
+async function signInWithToken(firebaseUser: FirebaseUser, userType?: 'person' | 'company'): Promise<User> {
   const token = await getIdToken(firebaseUser)
-  const user = await syncUser(token)
+  const user = await syncUser(token, userType)
   applySession(user)
   return user
 }
@@ -211,9 +215,14 @@ export async function loginWithGoogle(): Promise<GoogleLoginResult> {
   }
 }
 
-export async function register(input: { fullName: string; email: string; password: string }): Promise<User> {
+export async function register(input: {
+  fullName: string
+  email: string
+  password: string
+  userType?: 'person' | 'company'
+}): Promise<User> {
   if (getAuthMode() === 'mock') {
-    const user = await mockRegister({ fullName: input.fullName, email: input.email })
+    const user = await mockRegister({ fullName: input.fullName, email: input.email, userType: input.userType })
     applySession(user)
     return user
   }
@@ -223,7 +232,7 @@ export async function register(input: { fullName: string; email: string; passwor
     if (input.fullName) {
       await updateProfile(credential.user, { displayName: input.fullName })
     }
-    return await signInWithToken(credential.user)
+    return await signInWithToken(credential.user, input.userType)
   } catch (error) {
     throw new Error(getAuthErrorMessage(error))
   }

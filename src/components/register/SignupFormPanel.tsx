@@ -46,7 +46,7 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
         }
         const fullName = isPersonal ? `${values.firstName} ${values.lastName}`.trim() : values.legalName.trim();
         try {
-            await register({ fullName, email: values.email, password: values.password });
+            await register({ fullName, email: values.email, password: values.password, userType: isPersonal ? 'person' : 'company' });
             navigate('/dashboard');
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
