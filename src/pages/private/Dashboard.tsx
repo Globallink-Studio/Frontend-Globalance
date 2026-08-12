@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -30,6 +31,7 @@ const formatAmount = (value: number, currency: string) => {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const { aiSummary } = dashboardMock
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [baseMetrics, setBaseMetrics] = useState<Metric[]>([])
@@ -123,7 +125,7 @@ export default function Dashboard() {
             <h2 className="dashboard-card__title">Asistente IA</h2>
           </div>
           <p className="dashboard-ai__summary">{aiSummary}</p>
-          <button type="button" className="dashboard-ai__button">
+          <button type="button" className="dashboard-ai__button" onClick={() => navigate('/dashboard/assistant')}>
             Consultar a mi asistente
           </button>
         </section>
