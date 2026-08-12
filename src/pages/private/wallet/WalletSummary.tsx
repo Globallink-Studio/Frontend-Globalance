@@ -576,7 +576,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         currencyCode,
         amount: value,
         concept: concept.trim() || undefined,
-        payerEmail: contact.email,
+        payerEmail: contact.email ?? undefined,
       })
       onDone(`Solicitud de ${value.toLocaleString('es-AR')} ${currencyCode} enviada a ${contact.alias}`)
     } catch (err) {
