@@ -549,22 +549,24 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
 
   const value = Number(amount)
   const contact = contacts.find((c) => c.id === contactId)
-  const isValid = Boolean(contact && contact.email) && value > 0
+  const recipientFilled = Boolean(contactId)
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!isValid) return
+    onError('')
+    if (!recipientFilled) {
+      onError('Elegí un contacto para continuar')
+      return
+    }
+    if (!(value > 0)) {
+      onError('Ingresá un monto válido para continuar')
+      return
+    }
     setStep(2)
   }
 
   const handleConfirm = async () => {
     if (!contact) return
-    if (!contact.email) {
-      setContactId('')
-      setStep(1)
-      onError('El contacto no tiene un correo cargado para cobrarle')
-      return
-    }
     onError('')
     setSending(true)
     try {
@@ -596,6 +598,16 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
             <dt className="tx-review__label">Cobrarle a</dt>
             <dd className="tx-review__value">{contact?.alias}</dd>
           </div>
+          {contact && (
+            <div className="tx-review__row">
+              <dt className="tx-review__label">
+                {contact.contact_type === 'account_number' || contact.account ? 'Número de cuenta' : 'Alias'}
+              </dt>
+              <dd className="tx-review__value">
+                {contact.contact_value ?? contact.account ?? contact.alias ?? ''}
+              </dd>
+            </div>
+          )}
           <div className="tx-review__row">
             <dt className="tx-review__label">Moneda</dt>
             <dd className="tx-review__value">{currencyCode}</dd>
@@ -683,7 +695,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         />
       </div>
 
-      <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">
+      <button type="submit" className="tx-button tx-button--primary tx-button--block">
         Continuar
       </button>
     </form>
