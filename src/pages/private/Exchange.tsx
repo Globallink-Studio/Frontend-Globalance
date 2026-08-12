@@ -3,6 +3,7 @@ import { DollarSign, Euro, TrendingUp, TrendingDown, RefreshCw } from 'lucide-re
 import { getQuotes, refreshExchangeRates } from '../../api/exchangeRates'
 import { getCurrentBalances } from '../../api/balances'
 import { createConversion } from '../../api/transactions'
+import { getFriendlyErrorMessage } from '../../api/errors'
 import ConvertForm, { type ConvertData } from '../../components/ConvertForm'
 import RateChart from '../../components/RateChart'
 import type { ExchangeRate } from '../../mocks/data/exchangeRates'
@@ -32,7 +33,7 @@ export default function Exchange() {
       setQuotes(q)
       setBalances(b)
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar las cotizaciones')
+      setLoadError(getFriendlyErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -70,7 +71,7 @@ export default function Exchange() {
       setMessage(`Convertidos ${pending.amount} ${pending.fromCurrency} a ${pending.toCurrency}`)
       setResetKey((k) => k + 1)
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Error al convertir')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -85,7 +86,7 @@ export default function Exchange() {
       setRefreshKey((k) => k + 1)
       setRefreshMessage('Cotizaciones actualizadas')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudieron actualizar las cotizaciones')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setRefreshing(false)
     }

@@ -17,6 +17,7 @@ import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getCurrentContacts } from '../../../api/contacts'
+import { getFriendlyErrorMessage } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
 import Select from '../../../components/Select'
@@ -432,7 +433,7 @@ function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSe
     } catch (err) {
       setAmount('')
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar el depósito')
+      onError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -578,7 +579,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
       setAmount('')
       setConcept('')
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar la solicitud')
+      onError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -710,7 +711,7 @@ function ConvertWizard({ summary, quotes, step, setStep, onDone, onError, sendin
     } catch (err) {
       setData(null)
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar la conversión')
+      onError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }

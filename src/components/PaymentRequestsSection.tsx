@@ -6,6 +6,7 @@ import {
   paymentRequestStatusLabels,
   type PaymentRequestScope,
 } from '../api/paymentRequests'
+import { getFriendlyErrorMessage } from '../api/errors'
 import type { PaymentRequest, PaymentRequestStatus } from '../mocks/data/paymentRequests'
 import '../styles/pages/private/transactions.css'
 
@@ -28,7 +29,7 @@ export default function PaymentRequestsSection() {
     setErrorMessage(null)
     listPaymentRequests(s)
       .then(setRequests)
-      .catch((err) => setErrorMessage(err instanceof Error ? err.message : 'No se pudieron cargar las solicitudes'))
+      .catch((err) => setErrorMessage(getFriendlyErrorMessage(err)))
       .finally(() => setLoading(false))
   }, [])
 
@@ -43,7 +44,7 @@ export default function PaymentRequestsSection() {
       await payPaymentRequest(paymentToken)
       load(scope)
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo pagar la solicitud')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setActioning(null)
     }
@@ -56,7 +57,7 @@ export default function PaymentRequestsSection() {
       await cancelPaymentRequest(id)
       load(scope)
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo cancelar la solicitud')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setActioning(null)
     }

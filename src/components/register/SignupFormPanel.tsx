@@ -11,6 +11,7 @@ import {
     validateSignupForm,
     type SignupFormValues,
 } from "../../utils/authValidation";
+import { getFriendlyErrorMessage } from "../../api/errors";
 import "../../styles/pages/public/signup.css";
 
 interface SignupFormPanelProps {
@@ -49,7 +50,7 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
             await register({ fullName, email: values.email, password: values.password, userType: isPersonal ? 'person' : 'company' });
             navigate('/dashboard');
         } catch (err) {
-            setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
+            setErrorMessage(getFriendlyErrorMessage(err));
         }
     };
 

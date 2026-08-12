@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { getCurrentCards, addCard, blockCard, unblockCard, deleteCard } from '../../../api/cards'
+import { getFriendlyErrorMessage } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import Select from '../../../components/Select'
 import type { Card } from '../../../mocks/data/cards'
@@ -62,7 +63,7 @@ export default function Cards() {
       setConfirm(null)
       await loadCards()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo completar la acción sobre la tarjeta')
+      setError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -215,7 +216,7 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
       await addCard({ brand: brand as Card['brand'], holder, expiry, last_four: lastFour })
       onDone()
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'No se pudo agregar la tarjeta')
+      onError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }

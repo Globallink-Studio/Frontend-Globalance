@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Modal from '../../../components/Modal'
 import { InputField } from '../../../components/register/InputField'
 import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentUser } from '../../../api/users'
+import { getFriendlyErrorMessage } from '../../../api/errors'
 import { getAuthMode } from '../../../api/auth'
 import { getCurrentWallet, updateCurrentWallet } from '../../../api/wallets'
 import { currencies } from '../../../mocks/data/currencies'
@@ -131,7 +132,7 @@ export default function EditProfileModal({ open, onClose, onSaved }: EditProfile
       onSaved()
       navigate('/dashboard/profile', { replace: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocurrió un error al guardar los cambios.')
+      setError(getFriendlyErrorMessage(err))
     } finally {
       setSaving(false)
     }

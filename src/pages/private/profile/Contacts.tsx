@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { getCurrentContacts, createContact, deleteContact, setContactFavorite, setContactCategory } from '../../../api/contacts'
 import { getCategories, addCategory, deleteCategory, renameCategory } from '../../../api/contactCategories'
+import { getFriendlyErrorMessage } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import TransferWizard from '../../../components/TransferWizard'
 import Pagination from '../../../components/Pagination'
@@ -129,7 +130,7 @@ export default function Contacts() {
       setFormOpen(false)
       await load()
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el contacto')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setSaving(false)
     }
@@ -144,7 +145,7 @@ export default function Contacts() {
       setMessage('Contacto eliminado')
       await load()
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo eliminar el contacto')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -155,7 +156,7 @@ export default function Contacts() {
       await setContactFavorite(c.id, favorite)
       setContacts((prev) => prev.map((x) => (x.id === c.id ? { ...x, favorite } : x)))
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo actualizar el favorito')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -177,7 +178,7 @@ export default function Contacts() {
       setCategoryFor(null)
       setMessage(value ? 'Categoría asignada' : 'Categoría quitada')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo asignar la categoría')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -192,7 +193,7 @@ export default function Contacts() {
       setFilter(newCategory)
       setMessage('Categoría creada')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo crear la categoría')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -219,7 +220,7 @@ export default function Contacts() {
       setFilter((f) => (f === editCategoryValue ? name : f))
       setMessage('Categoría renombrada')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo renombrar la categoría')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -236,7 +237,7 @@ export default function Contacts() {
       setMessage('Categorías eliminadas')
       await load()
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudieron eliminar las categorías')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setDeletingCats(false)
     }

@@ -6,6 +6,7 @@ import LegalConsent from '../../components/register/LegalConsent'
 import { useAuth } from '../../providers/authentication/AuthContext'
 import { useAuthForm } from '../../hooks/useAuthForm'
 import { getCurrentUser, getCurrentUserProfile } from '../../api/users'
+import { getFriendlyErrorMessage } from '../../api/errors'
 import { isProfileCompleted, markProfileCompleted } from '../../utils/profileCompletion'
 import type { User } from '../../mocks/data/users'
 import '../../styles/pages/public/auth-common.css'
@@ -99,7 +100,7 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
         markProfileCompleted(uid)
         navigate('/dashboard')
       } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : 'Ocurrió un error al guardar tus datos.')
+        setErrorMessage(getFriendlyErrorMessage(err))
       }
     },
   })

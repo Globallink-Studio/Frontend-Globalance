@@ -1,6 +1,7 @@
 import { getContactsByUserId, createContact as createMockContact, updateContact as updateMockContact, removeContact } from '../mocks/handlers/contacts'
 import { getAuthMode, getCurrentUserId } from './auth'
 import { fetchApi } from './fetchApi'
+import { ApiError } from './errors'
 import { applyContactMeta, removeContactMeta, setContactMeta } from './contactMeta'
 import type { Contact } from '../mocks/data/contacts'
 
@@ -55,14 +56,25 @@ export async function createContact(input: {
   if (!input.name.trim()) throw new Error('Indicá un nombre para el contacto')
   const userId = getCurrentUserId()
   if (getAuthMode() === 'firebase') {
-    const resp = await fetchApi<{ contact: ApiContact }>('/contacts', {
-      method: 'POST',
-      body: {
-        name: input.name.trim().slice(0, 50),
-        type: input.contactType,
-        value: input.contactValue.trim(),
-      },
-    })
+    let resp: { contact: ApiContact }
+    try {
+      resp = await fetchApi<{ contact: ApiContact }>('/contacts', {
+        method: 'POST',
+        body: {
+          name: input.name.trim().slice(0, 50),
+          type: input.contactType,
+          value: input.contactValue.trim(),
+        },
+      })
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        const target = input.contactType === 'alias' ? 'alias' : 'número de cuenta'
+        throw new Error(
+          `No existe ninguna cuenta Globalance con ese ${target}. Revisá el dato e intentá de nuevo.`,
+        )
+      }
+      throw err
+    }
     const contact = mapApiContact(resp.contact)
     return userId ? applyContactMeta(userId, [contact])[0] : contact
   }

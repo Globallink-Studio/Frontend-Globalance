@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createTransfer } from '../api/transactions'
+import { getFriendlyErrorMessage } from '../api/errors'
 import { getCurrentBalances } from '../api/balances'
 import { getWalletByAlias } from '../mocks/handlers/wallets'
 import Select from './Select'
@@ -107,7 +108,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
     } catch (err) {
       setReview(null)
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar la transferencia')
+      onError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
