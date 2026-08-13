@@ -1,5 +1,5 @@
 import { getUsers, getUserById, getUserByEmail, updatePersonProfile, updateCompanyProfile, updateUser } from '../mocks/handlers/users'
-import { getMockPersonProfiles, getMockCompanyProfiles, addMockPersonProfile } from '../mocks/storage'
+import { getMockPersonProfiles, getMockCompanyProfiles, addMockPersonProfile, addMockCompanyProfile } from '../mocks/storage'
 import { companyProfiles } from '../mocks/data/companyProfiles'
 import type { User } from '../mocks/data/users'
 import type { PersonProfile } from '../mocks/data/personProfiles'
@@ -274,6 +274,44 @@ export async function createCurrentUserPersonProfile(input: CreatePersonProfileI
       userType: 'person',
       firstName: input.first_name,
       lastName: input.last_name,
+      document: input.document,
+      phone: input.phone,
+      alias: input.alias,
+      displayCurrency: input.display_currency,
+      ...(input.timezone ? { timezone: input.timezone } : {}),
+    },
+  })
+  return user
+}
+
+export interface CreateCompanyProfileInput {
+  legal_name: string
+  document: string
+  phone: string
+  alias: string
+  display_currency: string
+  timezone?: string
+}
+
+export async function createCurrentUserCompanyProfile(input: CreateCompanyProfileInput): Promise<User | undefined> {
+  if (getAuthMode() === 'mock') {
+    const user = await getCurrentUser()
+    if (!user) return undefined
+    addMockCompanyProfile({
+      user_id: user.id,
+      legal_name: input.legal_name,
+      document: input.document,
+      phone: input.phone,
+    })
+    return user
+  }
+
+  const user = await getCurrentUser()
+  await fetchApi<{ data: { message: string } }>('/users/profile', {
+    method: 'POST',
+    body: {
+      userType: 'company',
+      legalName: input.legal_name,
       document: input.document,
       phone: input.phone,
       alias: input.alias,

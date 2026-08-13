@@ -6,6 +6,14 @@ interface TransactionListProps {
   compact?: boolean
 }
 
+function transactionSign(t: Transaction): string {
+  const isExpense =
+    t.type === 'withdrawal' || (t.type === 'transfer' && t.direction !== 'in')
+  if (isExpense) return '-'
+  const isIncome = t.type === 'deposit' || t.type === 'request' || (t.type === 'transfer' && t.direction === 'in')
+  return isIncome ? '+' : ''
+}
+
 export default function TransactionList({ transactions, compact = false }: TransactionListProps) {
   if (transactions.length === 0) {
     return <p className="text-sm text-muted-foreground">Sin transacciones.</p>
@@ -24,6 +32,7 @@ export default function TransactionList({ transactions, compact = false }: Trans
               </p>
             </div>
             <p className="tx-list__amount">
+              {transactionSign(t)}
               {t.amount.toLocaleString('es-AR')} {t.currency_code}
             </p>
           </li>
@@ -44,6 +53,7 @@ export default function TransactionList({ transactions, compact = false }: Trans
             </p>
           </div>
           <p className="text-sm font-semibold">
+            {transactionSign(t)}
             {t.amount.toLocaleString('es-AR')} {t.currency_code}
           </p>
         </li>

@@ -304,7 +304,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
     expect(tx.status).toBe('pending')
   })
 
-  test('exige el correo del pagador antes de llamar a la API', async () => {
+  test('exige un identificador del pagador antes de llamar a la API', async () => {
     await expect(
       createMoneyRequest({
         recipient: 'juan.cash',
@@ -312,8 +312,58 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
         currencyCode: 'USD',
         amount: 150,
       }),
-    ).rejects.toThrow('Se necesita el correo del pagador')
+    ).rejects.toThrow('Se necesita el correo, alias o número de cuenta del pagador')
     expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test('crea la solicitud vía POST /payment-requests usando el alias del pagador', async () => {
+    mockFetch.mockResolvedValue({ message: 'Solicitud de cobro creada correctamente', paymentRequest: apiPaymentRequest })
+
+    const tx = await createMoneyRequest({
+      recipient: 'Juan Pérez',
+      recipientUserId: JUAN_USER_ID,
+      currencyCode: 'USD',
+      amount: 150,
+      payerAlias: 'juan.cash',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/payment-requests',
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          payerAlias: 'juan.cash',
+          currency: 'USD',
+          amount: '150',
+        },
+      }),
+    )
+    expect(tx.type).toBe('request')
+    expect(tx.description).toBe('Solicitud de cobro a juan@ejemplo.com')
+  })
+
+  test('crea la solicitud vía POST /payment-requests usando el número de cuenta del pagador', async () => {
+    mockFetch.mockResolvedValue({ message: 'Solicitud de cobro creada correctamente', paymentRequest: apiPaymentRequest })
+
+    await createMoneyRequest({
+      recipient: 'Juan Pérez',
+      recipientUserId: JUAN_USER_ID,
+      currencyCode: 'USD',
+      amount: 150,
+      payerAccountNumber: 'GLB-1234ABCD',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/payment-requests',
+      expect.objectContaining({
+        method: 'POST',
+        body: {
+          payerAccountNumber: 'GLB-1234ABCD',
+          currency: 'USD',
+          amount: '150',
+        },
+      }),
+    )
   })
 
   test('propaga los errores de la API', async () => {
@@ -748,6 +798,65 @@ describe('historial de transacciones — modo firebase (API real)', () => {
   test('propaga los errores de la API', async () => {
     mockFetch.mockRejectedValue(new Error('Network error'))
     await expect(getCurrentTransactions()).rejects.toThrow('Network error')
+  })
+
+  test('mapea la dirección de las transferencias según la wallet del usuario', async () => {
+    const transferSent = {
+      id: '30000000-0000-4000-8000-000000000003',
+      type: 'transfer',
+      status: 'completed',
+      description: 'Transferencia enviada',
+      created_at: '2026-08-03T11:00:00.000Z',
+      completed_at: '2026-08-03T11:00:01.000Z',
+      source_currency: 'ARS',
+      target_currency: null,
+      applied_rate: null,
+      rate_provider: null,
+      rate_fetched_at: null,
+      destination_wallet_id: 'otra-wallet',
+      recipient_name: 'Juan',
+      funding_method: null,
+      movements: [
+        {
+          direction: 'debit',
+          concept: 'principal',
+          currency: 'ARS',
+          amount: '5000',
+          balance_before: '10000',
+          balance_after: '5000',
+          created_at: '2026-08-03T11:00:01.000Z',
+        },
+        {
+          direction: 'credit',
+          concept: 'principal',
+          currency: 'ARS',
+          amount: '5000',
+          balance_before: '0',
+          balance_after: '5000',
+          created_at: '2026-08-03T11:00:01.000Z',
+        },
+      ],
+    }
+    const transferReceived = {
+      ...transferSent,
+      id: '30000000-0000-4000-8000-000000000004',
+      description: 'Transferencia recibida',
+      destination_wallet_id: 'wallet-demo',
+    }
+    mockFetch.mockImplementation((path) => {
+      if (path === '/wallet') {
+        return Promise.resolve({ user: {}, wallet: { id: 'wallet-demo' }, balances: [] })
+      }
+      return Promise.resolve({
+        transactions: [transferSent, transferReceived],
+        pagination: { limit: 100, offset: 0, returned: 2 },
+      })
+    })
+
+    const txs = await getCurrentTransactions()
+
+    expect(txs.find((t) => t.id === transferSent.id)?.direction).toBe('out')
+    expect(txs.find((t) => t.id === transferReceived.id)?.direction).toBe('in')
   })
 })
 

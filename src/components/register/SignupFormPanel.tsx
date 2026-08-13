@@ -12,6 +12,12 @@ import {
     type SignupFormValues,
 } from "../../utils/authValidation";
 import { getFriendlyErrorMessage } from "../../api/errors";
+import { getAuthMode } from "../../api/auth";
+import {
+    createCurrentUserPersonProfile,
+    createCurrentUserCompanyProfile,
+} from "../../api/users";
+import { generateAlias } from "../../utils/alias";
 import "../../styles/pages/public/signup.css";
 
 interface SignupFormPanelProps {
@@ -48,6 +54,26 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
         const fullName = isPersonal ? `${values.firstName} ${values.lastName}`.trim() : values.legalName.trim();
         try {
             await register({ fullName, email: values.email, password: values.password, userType: isPersonal ? 'person' : 'company' });
+            if (getAuthMode() === 'firebase') {
+                if (isPersonal) {
+                    await createCurrentUserPersonProfile({
+                        first_name: values.firstName.trim(),
+                        last_name: values.lastName.trim(),
+                        document: values.document.trim(),
+                        phone: values.phone.trim(),
+                        alias: generateAlias(values.firstName, values.lastName),
+                        display_currency: 'ARS',
+                    });
+                } else {
+                    await createCurrentUserCompanyProfile({
+                        legal_name: values.legalName.trim(),
+                        document: values.document.trim(),
+                        phone: values.phone.trim(),
+                        alias: generateAlias(values.legalName, ''),
+                        display_currency: 'ARS',
+                    });
+                }
+            }
             navigate('/dashboard');
         } catch (err) {
             setErrorMessage(getFriendlyErrorMessage(err));
@@ -173,6 +199,9 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
                     onBlur={handleBlur}
                     placeholder="+54 11 5555-0101"
                     autoComplete="tel"
+                    required
+                    error={errors.phone}
+                    valid={isChecked('phone') && !errors.phone}
                 />
 
                 <InputField

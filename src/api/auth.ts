@@ -304,6 +304,10 @@ export function subscribeToAuth(listener: AuthSessionListener): () => void {
     firebaseUserExists()
       .then((exists) => {
         if (!exists) {
+          if (getCurrentUserId()) {
+            restoreExistingSession()
+            return
+          }
           cachedUser = null
           clearCurrentUser()
           listener(null)

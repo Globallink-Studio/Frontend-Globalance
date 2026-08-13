@@ -624,7 +624,10 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         currencyCode,
         amount: value,
         concept: concept.trim() || undefined,
-        payerEmail: contact.email ?? undefined,
+        ...(contact.email ? { payerEmail: contact.email } : {}),
+        ...(contact.contact_type === 'account_number'
+          ? { payerAccountNumber: contact.contact_value ?? contact.account ?? undefined }
+          : { payerAlias: contact.contact_value ?? contact.account ?? contact.alias ?? undefined }),
       })
       onDone(`Solicitud de ${value.toLocaleString('es-AR')} ${currencyCode} enviada a ${contact.alias}`)
     } catch (err) {

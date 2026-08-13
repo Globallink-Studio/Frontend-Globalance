@@ -1,4 +1,4 @@
-import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentCompanyProfile, createCurrentUserPersonProfile } from '../../src/api/users'
+import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentCompanyProfile, createCurrentUserPersonProfile, createCurrentUserCompanyProfile } from '../../src/api/users'
 import { refreshCachedUser, logout } from '../../src/api/auth'
 import { fetchApi } from '../../src/api/fetchApi'
 import { seedDemoUser } from '../fixtures/db'
@@ -432,6 +432,42 @@ describe('users API — modo firebase (API real)', () => {
         timezone: 'America/Argentina/Buenos_Aires',
       }),
     })
+  })
+
+  test('createCurrentUserCompanyProfile crea el perfil de empresa con POST /users/profile', async () => {
+    const user: User = {
+      id: '55555555-5555-4555-8555-555555555555',
+      firebase_uid: 'firebase-uid-test',
+      email: 'empresa@test.com',
+      user_type: 'company',
+      display_currency: 'ARS',
+      status: 'active',
+      created_at: '2026-01-01T00:00:00.000Z',
+      last_access_at: null,
+    }
+    refreshCachedUser(user)
+    mockFetch.mockResolvedValueOnce({ data: { message: 'Perfil completado correctamente.' } })
+
+    const created = await createCurrentUserCompanyProfile({
+      legal_name: 'Globallink Studio S.R.L.',
+      document: 'CUIT 30-71234567-8',
+      phone: '+54 11 5555-0201',
+      alias: 'globalance.empresa',
+      display_currency: 'ARS',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith('/users/profile', {
+      method: 'POST',
+      body: {
+        userType: 'company',
+        legalName: 'Globallink Studio S.R.L.',
+        document: 'CUIT 30-71234567-8',
+        phone: '+54 11 5555-0201',
+        alias: 'globalance.empresa',
+        displayCurrency: 'ARS',
+      },
+    })
+    expect(created).toBeDefined()
   })
 
   test('updateCurrentCompanyProfile envía legalName y campos editables a PATCH /users/profile', async () => {

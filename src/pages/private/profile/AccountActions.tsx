@@ -4,6 +4,7 @@ import { User, FileText, KeyRound, Trash2, Check, ShieldCheck } from 'lucide-rea
 import Modal from '../../../components/Modal'
 import { InputField } from '../../../components/register/InputField'
 import { deleteAccount } from '../../../api/users'
+import { ApiError } from '../../../api/errors'
 import { useAuth } from '../../../providers/authentication/AuthContext'
 import TermsContent from './TermsContent'
 import PrivacyPolicyContent from './PrivacyPolicyContent'
@@ -257,6 +258,8 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
       const message = err instanceof Error ? err.message : 'No se pudo eliminar la cuenta'
       if (message.includes('ACCOUNT_HAS_FUNDS') || message.includes('saldo')) {
         setError('No podés eliminar la cuenta porque tenés saldo disponible. Transferí o convertí tus fondos primero.')
+      } else if (err instanceof ApiError && err.status === 404) {
+        setError('No encontramos tu perfil para eliminar. Cerrá sesión y volvé a iniciarla para intentar de nuevo.')
       } else {
         setError(message)
       }

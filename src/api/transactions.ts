@@ -65,12 +65,20 @@ function apiTypeToLocal(type: ApiTransaction['type']): TransactionType {
   }
 }
 
-function mapApiTransaction(tx: ApiTransaction): Transaction {
+function mapApiTransaction(tx: ApiTransaction, currentWalletId?: string): Transaction {
   const principal =
     tx.movements.find((m) => m.concept === 'principal' && m.direction === 'credit') ??
     tx.movements.find((m) => m.concept === 'principal') ??
     tx.movements.find((m) => m.direction === 'credit') ??
     tx.movements[0]
+  let direction: 'in' | 'out' | undefined
+  if (tx.type === 'transfer') {
+    direction = Boolean(currentWalletId) && tx.destination_wallet_id === currentWalletId ? 'in' : 'out'
+  } else if (tx.type === 'income') {
+    direction = 'in'
+  } else {
+    direction = principal ? (principal.direction === 'debit' ? 'out' : 'in') : undefined
+  }
   return {
     id: tx.id,
     wallet_id: '',
@@ -82,8 +90,13 @@ function mapApiTransaction(tx: ApiTransaction): Transaction {
     created_at: tx.created_at,
     from_currency: tx.source_currency ?? undefined,
     to_currency: tx.target_currency ?? undefined,
-    direction: principal ? (principal.direction === 'debit' ? 'out' : 'in') : undefined,
+    direction,
   }
+}
+
+async function getCurrentWalletId(): Promise<string | undefined> {
+  const wallet = await getCurrentWallet()
+  return wallet?.id
 }
 
 async function getCurrentWalletTransactions(): Promise<Transaction[]> {
@@ -95,8 +108,11 @@ async function getCurrentWalletTransactions(): Promise<Transaction[]> {
       .filter((t) => t.wallet_id === wallet.id)
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
   }
-  const resp = await fetchApi<ApiTransactionsResponse>('/transactions?limit=100')
-  return resp.transactions.map(mapApiTransaction)
+  const [walletId, resp] = await Promise.all([
+    getCurrentWalletId(),
+    fetchApi<ApiTransactionsResponse>('/transactions?limit=100'),
+  ])
+  return resp.transactions.map((t) => mapApiTransaction(t, walletId))
 }
 
 export async function getCurrentTransactions(): Promise<Transaction[]> {
@@ -109,8 +125,11 @@ export async function getRecentTransactions(limit = 5): Promise<Transaction[]> {
     return all.slice(0, limit)
   }
   const safeLimit = Math.min(Math.max(limit, 1), 100)
-  const resp = await fetchApi<ApiTransactionsResponse>(`/transactions?limit=${safeLimit}`)
-  return resp.transactions.map(mapApiTransaction)
+  const [walletId, resp] = await Promise.all([
+    getCurrentWalletId(),
+    fetchApi<ApiTransactionsResponse>(`/transactions?limit=${safeLimit}`),
+  ])
+  return resp.transactions.map((t) => mapApiTransaction(t, walletId))
 }
 
 export async function getTransactionsByType(type: TransactionType): Promise<Transaction[]> {
@@ -304,16 +323,21 @@ export async function createMoneyRequest(input: {
   amount: number
   concept?: string
   payerEmail?: string
+  payerAlias?: string
+  payerAccountNumber?: string
 }): Promise<Transaction> {
   if (!input.recipient) throw new Error('Indica a quién quieres cobrarle')
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   if (getAuthMode() === 'firebase') {
-    if (!input.payerEmail) throw new Error('Se necesita el correo del pagador')
+    const hasPayer = Boolean(input.payerEmail || input.payerAlias || input.payerAccountNumber)
+    if (!hasPayer) throw new Error('Se necesita el correo, alias o número de cuenta del pagador')
     const resp = await fetchApi<ApiPaymentRequestResponse>('/payment-requests', {
       method: 'POST',
       body: {
-        payerEmail: input.payerEmail,
+        ...(input.payerEmail ? { payerEmail: input.payerEmail } : {}),
+        ...(input.payerAlias ? { payerAlias: input.payerAlias } : {}),
+        ...(input.payerAccountNumber ? { payerAccountNumber: input.payerAccountNumber } : {}),
         currency: input.currencyCode,
         amount: String(input.amount),
       },

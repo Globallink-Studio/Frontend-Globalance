@@ -8,6 +8,7 @@ import { useAuthForm } from '../../hooks/useAuthForm'
 import { getCurrentUser, getCurrentUserProfile } from '../../api/users'
 import { getFriendlyErrorMessage } from '../../api/errors'
 import { isProfileCompleted, markProfileCompleted } from '../../utils/profileCompletion'
+import { generateAlias } from '../../utils/alias'
 import type { User } from '../../mocks/data/users'
 import '../../styles/pages/public/auth-common.css'
 import '../../styles/pages/public/signup.css'
@@ -24,28 +25,6 @@ const initialValues: CompleteProfileValues = {
   lastName: '',
   document: '',
   phone: '',
-}
-
-const ALIAS_CHARSET = 'abcdefghijklmnopqrstuvwxyz0123456789'
-
-function randomAliasSuffix(length: number): string {
-  let out = ''
-  for (let i = 0; i < length; i++) {
-    out += ALIAS_CHARSET[Math.floor(Math.random() * ALIAS_CHARSET.length)]
-  }
-  return out
-}
-
-function generateAlias(firstName: string, lastName: string): string {
-  const base = `${firstName}.${lastName}`
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '.')
-    .replace(/^\.+|\.+$/g, '')
-  const candidate = `${base || 'usuario'}.${randomAliasSuffix(4)}`
-  const trimmed = candidate.replace(/\.{2,}/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 30)
-  return trimmed.length >= 6 ? trimmed : trimmed + randomAliasSuffix(6 - trimmed.length)
 }
 
 function validateField(field: keyof CompleteProfileValues, values: CompleteProfileValues): string | undefined {

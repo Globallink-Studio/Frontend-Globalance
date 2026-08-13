@@ -155,7 +155,7 @@ describe('Transactions', () => {
     saveMockTransactions([received, ...getMockTransactions()])
     render(<Transactions />)
 
-    const receivedRow = (await screen.findByText('Transferencia recibida')).closest('tr')!
+    const receivedRow = (await screen.findAllByText('Transferencia recibida'))[0].closest('tr')!
     expect(receivedRow.textContent).toContain('+1.000 ARS')
 
     const sentRow = screen.getByText('Alquiler de julio').closest('tr')!

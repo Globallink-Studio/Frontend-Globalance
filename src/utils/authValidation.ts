@@ -58,8 +58,11 @@ export function validateSignupField(
       return undefined
     case 'document':
       if (!values.document.trim()) return 'El documento es obligatorio.'
+      if (values.document.trim().length < 5) return 'El documento debe tener al menos 5 caracteres.'
       return undefined
     case 'phone':
+      if (!values.phone.trim()) return 'El teléfono es obligatorio.'
+      if (values.phone.trim().length < 7) return 'El teléfono debe tener al menos 7 caracteres.'
       return undefined
   }
 }

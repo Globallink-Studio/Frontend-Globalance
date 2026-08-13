@@ -22,11 +22,18 @@ const typeLabels: Record<string, string> = {
 }
 
 const categoryLabels: Record<string, string> = {
-  transfer: 'Retiro',
+  transfer: 'Transferencia',
   deposit: 'Ingreso',
   conversion: 'Cambio',
   request: 'Solicitud',
   withdrawal: 'Retiro',
+}
+
+const categoryLabelFor = (t: Transaction): string => {
+  if (t.type === 'transfer') {
+    return t.direction === 'in' ? 'Transferencia recibida' : 'Transferencia enviada'
+  }
+  return categoryLabels[t.type] ?? t.type
 }
 
 const currencies = ['USD', 'EUR', 'ARS']
@@ -239,7 +246,7 @@ export default function Transactions() {
                               )}
                             </td>
                             <td>
-                              <span className="tx-table__concept">{categoryLabels[t.type] ?? t.type}</span>
+                              <span className="tx-table__concept">{categoryLabelFor(t)}</span>
                             </td>
                             <td>
                               <span className="tx-table__currency">{t.currency_code}</span>
