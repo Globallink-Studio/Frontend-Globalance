@@ -17,7 +17,6 @@ type CompleteProfileValues = {
   lastName: string
   document: string
   phone: string
-  alias: string
 }
 
 const initialValues: CompleteProfileValues = {
@@ -25,10 +24,29 @@ const initialValues: CompleteProfileValues = {
   lastName: '',
   document: '',
   phone: '',
-  alias: '',
 }
 
-const ALIAS_REGEX = /^[a-z0-9.-]+$/
+const ALIAS_CHARSET = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+function randomAliasSuffix(length: number): string {
+  let out = ''
+  for (let i = 0; i < length; i++) {
+    out += ALIAS_CHARSET[Math.floor(Math.random() * ALIAS_CHARSET.length)]
+  }
+  return out
+}
+
+function generateAlias(firstName: string, lastName: string): string {
+  const base = `${firstName}.${lastName}`
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+  const candidate = `${base || 'usuario'}.${randomAliasSuffix(4)}`
+  const trimmed = candidate.replace(/\.{2,}/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 30)
+  return trimmed.length >= 6 ? trimmed : trimmed + randomAliasSuffix(6 - trimmed.length)
+}
 
 function validateField(field: keyof CompleteProfileValues, values: CompleteProfileValues): string | undefined {
   switch (field) {
@@ -46,18 +64,11 @@ function validateField(field: keyof CompleteProfileValues, values: CompleteProfi
       if (!values.phone.trim()) return 'El teléfono es obligatorio.'
       if (values.phone.trim().length < 7) return 'El teléfono debe tener al menos 7 caracteres.'
       return undefined
-    case 'alias':
-      if (!values.alias.trim()) return 'El alias es obligatorio.'
-      if (values.alias.trim().length < 6) return 'El alias debe tener al menos 6 caracteres.'
-      if (!ALIAS_REGEX.test(values.alias.trim())) {
-        return 'El alias solo admite minúsculas, números, puntos y guiones.'
-      }
-      return undefined
   }
 }
 
 function validateForm(values: CompleteProfileValues): Partial<Record<keyof CompleteProfileValues, string>> {
-  const fields: (keyof CompleteProfileValues)[] = ['firstName', 'lastName', 'document', 'phone', 'alias']
+  const fields: (keyof CompleteProfileValues)[] = ['firstName', 'lastName', 'document', 'phone']
   return fields.reduce<Partial<Record<keyof CompleteProfileValues, string>>>((acc, field) => {
     const error = validateField(field, values)
     if (error) acc[field] = error
@@ -95,7 +106,7 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
           last_name: values.lastName.trim(),
           document: values.document.trim(),
           phone: values.phone.trim(),
-          alias: values.alias.trim(),
+          alias: generateAlias(values.firstName, values.lastName),
         })
         markProfileCompleted(uid)
         navigate('/dashboard')
@@ -195,20 +206,6 @@ function ProfileForm({ initial, email, uid }: { initial: CompleteProfileValues; 
           error={errors.phone}
           valid={isChecked('phone') && !errors.phone}
         />
-        <InputField
-          label="Alias"
-          type="text"
-          id="alias"
-          name="alias"
-          value={values.alias}
-          onChange={handleChangeResetsError}
-          onBlur={handleBlur}
-          placeholder="juan.perez"
-          autoComplete="off"
-          required
-          error={errors.alias}
-          valid={isChecked('alias') && !errors.alias}
-        />
 
         <LegalConsent
           termsChecked={termsChecked}
@@ -272,7 +269,6 @@ export default function CompleteProfile() {
             lastName: p.last_name,
             document: '',
             phone: '',
-            alias: '',
           })
         }
       } catch {
