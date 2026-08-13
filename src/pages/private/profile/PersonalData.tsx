@@ -46,6 +46,7 @@ export default function PersonalData() {
   const [profile, setProfile] = useState<PersonProfile | CompanyProfile | undefined>()
   const [wallet, setWallet] = useState<Wallet | undefined>()
   const [editOpen, setEditOpen] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
   const { enabled: notificationsEnabled, setEnabled: setNotificationsEnabled } = useNotificationPrefs()
 
   useEffect(() => {
@@ -53,6 +54,12 @@ export default function PersonalData() {
     getCurrentUserProfile().then(setProfile)
     getCurrentWallet().then(setWallet)
   }, [])
+
+  useEffect(() => {
+    if (!message) return
+    const t = setTimeout(() => setMessage(null), 4000)
+    return () => clearTimeout(t)
+  }, [message])
 
   const reload = () => {
     getCurrentUser().then(setUser)
@@ -190,7 +197,12 @@ export default function PersonalData() {
         </div>
       </div>
 
-      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => { setEditOpen(false); reload() }} />
+      <EditProfileModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => { setEditOpen(false); reload(); setMessage('Se ha actualizado tu perfil') }}
+      />
+      {message && <div className="tx-toast">{message}</div>}
     </div>
   )
 }
