@@ -192,6 +192,12 @@ export default function Transactions() {
             </div>
           )}
 
+          {type === 'request' && (
+            <div className="mt-6">
+              <PaymentRequestsSection />
+            </div>
+          )}
+
           {filtered.length === 0 ? (
             <p className="mt-6 text-sm text-muted-foreground">
               No hay movimientos para los filtros seleccionados.
@@ -263,10 +269,6 @@ export default function Transactions() {
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </>
           )}
-
-          <div className="mt-6">
-            <PaymentRequestsSection />
-          </div>
       </div>
 
       <TransactionDetailModal transaction={selected} onClose={() => setSelected(null)} />

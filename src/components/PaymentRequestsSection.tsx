@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  cancelPaymentRequest,
   listPaymentRequests,
-  payPaymentRequest,
   paymentRequestStatusLabels,
   type PaymentRequestScope,
 } from '../api/paymentRequests'
@@ -17,11 +15,14 @@ function statusClass(status: PaymentRequestStatus): string {
   return 'tx-status--processing'
 }
 
+const UPCOMING_MESSAGE =
+  'Próximamente añadiremos la funcionalidad para que puedas pagar y/o cancelar tus solicitudes de cobro.'
+
 export default function PaymentRequestsSection() {
   const [scope, setScope] = useState<PaymentRequestScope>('received')
   const [requests, setRequests] = useState<PaymentRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [actioning, setActioning] = useState<string | null>(null)
+  const [upcomingOpen, setUpcomingOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const load = useCallback((s: PaymentRequestScope) => {
@@ -36,32 +37,6 @@ export default function PaymentRequestsSection() {
   useEffect(() => {
     load(scope)
   }, [scope, load])
-
-  const handlePay = async (paymentToken: string) => {
-    setActioning(paymentToken)
-    setErrorMessage(null)
-    try {
-      await payPaymentRequest(paymentToken)
-      load(scope)
-    } catch (err) {
-      setErrorMessage(getFriendlyErrorMessage(err))
-    } finally {
-      setActioning(null)
-    }
-  }
-
-  const handleCancel = async (id: string) => {
-    setActioning(id)
-    setErrorMessage(null)
-    try {
-      await cancelPaymentRequest(id)
-      load(scope)
-    } catch (err) {
-      setErrorMessage(getFriendlyErrorMessage(err))
-    } finally {
-      setActioning(null)
-    }
-  }
 
   return (
     <section className="tx-card">
@@ -122,20 +97,18 @@ export default function PaymentRequestsSection() {
                   <button
                     type="button"
                     className="tx-button tx-button--primary"
-                    disabled={actioning === pr.payment_token}
-                    onClick={() => handlePay(pr.payment_token)}
+                    onClick={() => setUpcomingOpen(true)}
                   >
-                    {actioning === pr.payment_token ? 'Pagando...' : 'Pagar'}
+                    Pagar
                   </button>
                 )}
                 {isPending && scope === 'sent' && (
                   <button
                     type="button"
                     className="tx-button tx-button--secondary"
-                    disabled={actioning === pr.id}
-                    onClick={() => handleCancel(pr.id)}
+                    onClick={() => setUpcomingOpen(true)}
                   >
-                    {actioning === pr.id ? 'Cancelando...' : 'Cancelar'}
+                    Cancelar
                   </button>
                 )}
               </div>
@@ -143,6 +116,22 @@ export default function PaymentRequestsSection() {
           )
         })}
       </ul>
+
+      {upcomingOpen && (
+        <div className="tx-modal">
+          <div className="tx-modal__card">
+            <h3 className="tx-modal__title">Próximamente</h3>
+            <p className="tx-modal__message">{UPCOMING_MESSAGE}</p>
+            <button
+              type="button"
+              className="tx-button tx-button--primary tx-button--block"
+              onClick={() => setUpcomingOpen(false)}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="tx-modal">

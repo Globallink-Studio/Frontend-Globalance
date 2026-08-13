@@ -101,6 +101,44 @@ describe('Transactions', () => {
     expect(screen.getByText('No hay movimientos para los filtros seleccionados.')).toBeInTheDocument()
   })
 
+  test('muestra la card de Solicitudes de cobro solo al filtrar por Solicitudes', async () => {
+    const user = userEvent.setup()
+    render(<Transactions />)
+
+    await screen.findByText('Depósito de sueldo')
+
+    expect(screen.queryByText('Solicitudes de cobro')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Solicitudes' }))
+
+    expect(screen.getByText('Solicitudes de cobro')).toBeInTheDocument()
+  })
+
+  test('muestra mensaje Próximamente al hacer clic en Pagar', async () => {
+    const user = userEvent.setup()
+    render(<Transactions />)
+
+    await screen.findByText('Depósito de sueldo')
+
+    await user.click(screen.getByRole('button', { name: 'Solicitudes' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Pagar' }))
+
+    expect(
+      await screen.findByText(
+        'Próximamente añadiremos la funcionalidad para que puedas pagar y/o cancelar tus solicitudes de cobro.',
+      ),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Entendido' }))
+
+    expect(
+      screen.queryByText(
+        'Próximamente añadiremos la funcionalidad para que puedas pagar y/o cancelar tus solicitudes de cobro.',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
   test('muestra transferencia recibida como ingreso y la enviada como egreso', async () => {
     const walletId = await seedDemoWallet()
     const received: Transaction = {
