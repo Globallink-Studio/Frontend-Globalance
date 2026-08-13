@@ -477,6 +477,27 @@ input[type='number'].tx-amount::-webkit-inner-spin-button {
   white-space: nowrap;
 }
 
+@media (max-width: 40rem) {
+  .tx-list__item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.625rem;
+  }
+
+  .tx-list__description {
+    overflow-wrap: anywhere;
+  }
+
+  .tx-list__right {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .tx-list__right .tx-button {
+    flex: 1;
+  }
+}
+
 /* ── Detalle de transacción (modal) ──────────────────────────────── */
 .tx-detail__amount {
   display: flex;
