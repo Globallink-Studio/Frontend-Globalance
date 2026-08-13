@@ -40,7 +40,16 @@ export async function fetchApi<T>(
   }
 
   if (response.status === 401) throw new UnauthorizedError()
-  if (!response.ok) throw new ApiError(response.status)
+  if (!response.ok) {
+    let serverMessage: string | undefined
+    try {
+      const body = (await response.json()) as { message?: string; error?: string; detail?: string } | null
+      serverMessage = body?.message ?? body?.error ?? body?.detail
+    } catch {
+      serverMessage = undefined
+    }
+    throw new ApiError(response.status, serverMessage, serverMessage !== undefined)
+  }
 
   return (await response.json()) as T
 }
