@@ -19,9 +19,9 @@ export class UnauthorizedError extends ApiError {
 
 export async function fetchApi<T>(
   path: string,
-  options: { method?: string; body?: unknown; token?: string } = {},
+  options: { method?: string; body?: unknown; token?: string; headers?: Record<string, string> } = {},
 ): Promise<T> {
-  const { method = 'GET', body, token } = options
+  const { method = 'GET', body, token, headers } = options
   const effectiveToken = token ?? (authTokenGetter ? await authTokenGetter() : undefined)
 
   let response: Response
@@ -31,6 +31,7 @@ export async function fetchApi<T>(
       headers: {
         'Content-Type': 'application/json',
         ...(effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {}),
+        ...headers,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
@@ -39,7 +40,23 @@ export async function fetchApi<T>(
   }
 
   if (response.status === 401) throw new UnauthorizedError()
-  if (!response.ok) throw new ApiError(response.status)
+  if (!response.ok) {
+    let serverMessage: string | undefined
+    try {
+      const body = (await response.json()) as
+        | { message?: unknown; error?: unknown; detail?: unknown }
+        | null
+      const error = body?.error
+      const raw = body?.message ?? error ?? body?.detail
+      if (typeof raw === 'string') serverMessage = raw
+      else if (error && typeof error === 'object' && typeof (error as { message?: unknown }).message === 'string') {
+        serverMessage = (error as { message: string }).message
+      }
+    } catch {
+      serverMessage = undefined
+    }
+    throw new ApiError(response.status, serverMessage, serverMessage !== undefined)
+  }
 
   return (await response.json()) as T
 }

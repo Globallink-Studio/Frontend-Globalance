@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeftRight, Banknote, HandCoins, RefreshCw, Info, X } from 'lucide-react'
 import { useNotifications } from '../../hooks/useNotifications'
+import { useNotificationPrefs } from '../../hooks/useNotificationPrefs'
 import type { NotificationType } from '../../mocks/data/notifications'
 import '../../styles/components/notifications.css'
 
@@ -33,6 +34,7 @@ const formatDate = (iso: string) =>
 
 export default function NotificationsList({ fromBell = false }: { fromBell?: boolean } = {}) {
   const { notifications, unreadCount, markRead, remove, markAllRead } = useNotifications()
+  const { enabled } = useNotificationPrefs()
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const navigate = useNavigate()
   const location = useLocation()
@@ -58,7 +60,8 @@ export default function NotificationsList({ fromBell = false }: { fromBell?: boo
     }
   }, [flashId, fromBell])
 
-  const visible = notifications.filter((n) => filter === 'all' || !n.read)
+  const shown = fromBell && !enabled ? [] : notifications
+  const visible = shown.filter((n) => filter === 'all' || !n.read)
   const limited = fromBell ? visible.slice(0, 5) : visible
 
   const groups = limited.reduce<{ label: string; items: typeof limited }[]>((acc, n) => {
@@ -113,7 +116,11 @@ export default function NotificationsList({ fromBell = false }: { fromBell?: boo
       <div className="notifications-list">
         {groups.length === 0 ? (
           <div className="notifications-list__empty">
-            {filter === 'unread' ? 'No tenés notificaciones sin leer.' : 'No tenés notificaciones.'}
+            {fromBell && !enabled
+              ? 'Las notificaciones están desactivadas en tus preferencias.'
+              : filter === 'unread'
+                ? 'No tienes notificaciones sin leer.'
+                : 'No tienes notificaciones.'}
           </div>
         ) : (
           groups.map((group) => (

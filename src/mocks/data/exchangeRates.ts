@@ -8,6 +8,9 @@ export interface ExchangeRate {
   prev_buy_price: number
   prev_sell_price: number
   updated_at: string
+  provider?: string
+  fetched_at?: string
+  expires_at?: string
 }
 
 export interface ExchangeRatePoint {

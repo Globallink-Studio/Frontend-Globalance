@@ -13,6 +13,7 @@ export interface Transaction {
   concept?: string
   from_currency?: string
   to_currency?: string
+  direction?: 'in' | 'out'
 }
 
 export const transactions: Transaction[] = [
@@ -80,6 +81,39 @@ export const transactions: Transaction[] = [
     created_at: '2026-07-29T14:20:00.000Z',
     from_currency: 'USD',
     to_currency: 'EUR',
+  },
+  {
+    id: '20000000-0000-4000-8000-000000000004d',
+    wallet_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    currency_code: 'ARS',
+    type: 'deposit',
+    amount: 5000,
+    description: 'Depósito cancelado',
+    status: 'cancelled',
+    created_at: '2026-07-31T10:00:00.000Z',
+  },
+  {
+    id: '20000000-0000-4000-8000-000000000004e',
+    wallet_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    currency_code: 'ARS',
+    type: 'transfer',
+    amount: 20000,
+    description: 'Transferencia cancelada',
+    status: 'cancelled',
+    created_at: '2026-07-30T21:45:00.000Z',
+    concept: 'Alquiler de agosto',
+  },
+  {
+    id: '20000000-0000-4000-8000-000000000004f',
+    wallet_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    currency_code: 'USD',
+    type: 'conversion',
+    amount: 250,
+    description: 'Conversión cancelada',
+    status: 'cancelled',
+    created_at: '2026-07-30T22:00:00.000Z',
+    from_currency: 'EUR',
+    to_currency: 'USD',
   },
   {
     id: '20000000-0000-4000-8000-000000000005',

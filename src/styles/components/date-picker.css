@@ -181,3 +181,10 @@
   color: var(--ring);
   background-color: var(--surface);
 }
+
+@media (max-width: 768px) {
+  .dp__popover {
+    min-width: 0;
+    width: 100%;
+  }
+}

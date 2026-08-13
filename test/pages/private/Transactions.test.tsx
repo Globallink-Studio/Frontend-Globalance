@@ -1,17 +1,19 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-import History from '../../../src/pages/private/History'
+import Transactions from '../../../src/pages/private/Transactions'
 import { seedDemoUser, seedDemoWallet, seedExtraTransactions } from '../../fixtures/db'
+import { getMockTransactions, saveMockTransactions } from '../../../src/mocks/storage'
+import type { Transaction } from '../../../src/mocks/data/transactions'
 
-describe('History', () => {
+describe('Transactions', () => {
   beforeEach(async () => {
     localStorage.clear()
     await seedDemoUser()
   })
 
   test('muestra la tabla con las seis columnas y las transacciones del usuario', async () => {
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -26,7 +28,7 @@ describe('History', () => {
 
   test('filtra por búsqueda de descripción o concepto', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -38,7 +40,7 @@ describe('History', () => {
 
   test('filtra con los chips de tipo', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -50,7 +52,7 @@ describe('History', () => {
 
   test('filtra por moneda y estado con los filtros avanzados', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -75,7 +77,7 @@ describe('History', () => {
     const walletId = await seedDemoWallet()
     await seedExtraTransactions(walletId, 15)
 
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Movimiento extra 15')
 
@@ -90,7 +92,7 @@ describe('History', () => {
 
   test('muestra mensaje de vacío cuando no hay coincidencias', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     await screen.findByText('Depósito de sueldo')
 
@@ -99,9 +101,70 @@ describe('History', () => {
     expect(screen.getByText('No hay movimientos para los filtros seleccionados.')).toBeInTheDocument()
   })
 
+  test('muestra la card de Solicitudes de cobro solo al filtrar por Solicitudes', async () => {
+    const user = userEvent.setup()
+    render(<Transactions />)
+
+    await screen.findByText('Depósito de sueldo')
+
+    expect(screen.queryByText('Solicitudes de cobro')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Solicitudes' }))
+
+    expect(screen.getByText('Solicitudes de cobro')).toBeInTheDocument()
+  })
+
+  test('muestra mensaje Próximamente al hacer clic en Pagar', async () => {
+    const user = userEvent.setup()
+    render(<Transactions />)
+
+    await screen.findByText('Depósito de sueldo')
+
+    await user.click(screen.getByRole('button', { name: 'Solicitudes' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Pagar' }))
+
+    expect(
+      await screen.findByText(
+        'Próximamente añadiremos la funcionalidad para que puedas pagar y/o cancelar tus solicitudes de cobro.',
+      ),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Entendido' }))
+
+    expect(
+      screen.queryByText(
+        'Próximamente añadiremos la funcionalidad para que puedas pagar y/o cancelar tus solicitudes de cobro.',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
+  test('muestra transferencia recibida como ingreso y la enviada como egreso', async () => {
+    const walletId = await seedDemoWallet()
+    const received: Transaction = {
+      id: '20000000-0000-4000-8000-0000000000aa',
+      wallet_id: walletId,
+      currency_code: 'ARS',
+      type: 'transfer',
+      amount: 1000,
+      description: 'Transferencia recibida',
+      status: 'completed',
+      created_at: '2026-07-26T12:00:00.000Z',
+      direction: 'in',
+    }
+    saveMockTransactions([received, ...getMockTransactions()])
+    render(<Transactions />)
+
+    const receivedRow = (await screen.findAllByText('Transferencia recibida'))[0].closest('tr')!
+    expect(receivedRow.textContent).toContain('+1.000 ARS')
+
+    const sentRow = screen.getByText('Alquiler de julio').closest('tr')!
+    expect(sentRow.textContent).toContain('-12.000 ARS')
+  })
+
   test('abre el modal al hacer clic en una fila', async () => {
     const user = userEvent.setup()
-    render(<History />)
+    render(<Transactions />)
 
     const row = await screen.findByText('Pago de alquiler')
     await user.click(row)

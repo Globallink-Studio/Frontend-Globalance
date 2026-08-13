@@ -7,6 +7,7 @@ import { useAuth } from "../../providers/authentication/AuthContext";
 import { useAuthForm } from "../../hooks/useAuthForm";
 import { validateSigninField, validateSigninForm, type SigninFormValues } from "../../utils/authValidation";
 import "../../styles/pages/public/auth-common.css";
+import { getFriendlyErrorMessage } from "../../api/errors";
 
 export default function SigninAuth() {
     const navigate = useNavigate()
@@ -20,7 +21,7 @@ export default function SigninAuth() {
             await login(values.email, values.password);
             navigate('/dashboard');
         } catch (err) {
-            setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión');
+            setErrorMessage(getFriendlyErrorMessage(err));
         }
     };
 
@@ -42,10 +43,10 @@ export default function SigninAuth() {
         setErrorMessage('');
         setGoogleLoading(true);
         try {
-            await loginWithGoogle();
-            navigate('/dashboard');
+            const status = await loginWithGoogle();
+            navigate(status === 'pending' ? '/complete-profile' : '/dashboard');
         } catch (err) {
-            setErrorMessage(err instanceof Error ? err.message : 'Error al iniciar sesión con Google');
+            setErrorMessage(getFriendlyErrorMessage(err));
         } finally {
             setGoogleLoading(false);
         }

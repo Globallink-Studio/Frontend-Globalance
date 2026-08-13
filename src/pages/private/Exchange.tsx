@@ -3,6 +3,7 @@ import { DollarSign, Euro, TrendingUp, TrendingDown, RefreshCw } from 'lucide-re
 import { getQuotes, refreshExchangeRates } from '../../api/exchangeRates'
 import { getCurrentBalances } from '../../api/balances'
 import { createConversion } from '../../api/transactions'
+import { getFriendlyErrorMessage } from '../../api/errors'
 import ConvertForm, { type ConvertData } from '../../components/ConvertForm'
 import RateChart from '../../components/RateChart'
 import type { ExchangeRate } from '../../mocks/data/exchangeRates'
@@ -21,10 +22,25 @@ export default function Exchange() {
   const [pending, setPending] = useState<ConvertData | null>(null)
   const [resetKey, setResetKey] = useState(0)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const loadExchangeData = async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const [q, b] = await Promise.all([getQuotes(), getCurrentBalances()])
+      setQuotes(q)
+      setBalances(b)
+    } catch (err) {
+      setLoadError(getFriendlyErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    getQuotes().then(setQuotes)
-    getCurrentBalances().then(setBalances)
+    void loadExchangeData()
   }, [])
 
   useEffect(() => {
@@ -55,7 +71,7 @@ export default function Exchange() {
       setMessage(`Convertidos ${pending.amount} ${pending.fromCurrency} a ${pending.toCurrency}`)
       setResetKey((k) => k + 1)
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Error al convertir')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -70,7 +86,7 @@ export default function Exchange() {
       setRefreshKey((k) => k + 1)
       setRefreshMessage('Cotizaciones actualizadas')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudieron actualizar las cotizaciones')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setRefreshing(false)
     }
@@ -92,6 +108,32 @@ export default function Exchange() {
 
       {refreshMessage && <div className="tx-toast">{refreshMessage}</div>}
 
+      {loadError && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <p>{loadError}</p>
+          <button
+            type="button"
+            onClick={loadExchangeData}
+            className="rounded-full border border-destructive/30 bg-transparent px-3 py-1 text-xs font-medium text-destructive transition-colors hover:bg-surface"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+          Cargando cotizaciones…
+        </div>
+      )}
+
+      {!loading && !loadError && quotes.length === 0 && (
+        <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+          No hay cotizaciones disponibles por el momento.
+        </div>
+      )}
+
+      {!loading && quotes.length > 0 && (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {quotes.map((q) => {
           const Icon = q.currency_code === 'EUR' ? Euro : DollarSign
@@ -139,10 +181,26 @@ export default function Exchange() {
                   </span>
                 </div>
               </div>
+
+              {q.provider && q.fetched_at && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Fuente: {q.provider}
+                    <span className="mx-1.5 text-border">·</span>
+                    {new Date(q.fetched_at).toLocaleString('es-AR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              )}
             </div>
           )
         })}
-      </div>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="tx-card lg:col-span-1">
@@ -151,7 +209,7 @@ export default function Exchange() {
             balances={balances}
             quotes={quotes}
             submitLabel="Confirmar conversión"
-            disabled={sending}
+            disabled={sending || loading}
             resetKey={resetKey}
             onValidSubmit={handleValidSubmit}
             onError={setErrorMessage}
@@ -172,14 +230,10 @@ export default function Exchange() {
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Confirmar conversión</h3>
             <p className="tx-modal__message">
-              ¿Confirmás la conversión de {pending.amount.toLocaleString('es-AR')} {pending.fromCurrency} a{' '}
+              ¿Confirmas la conversión de {pending.amount.toLocaleString('es-AR')} {pending.fromCurrency} a{' '}
               {pending.result > 0 ? pending.result.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : '—'} {pending.toCurrency}?
             </p>
-            {pending.result > 0 && (
-              <p className="tx-modal__message">
-                Se descontará una comisión del 0,4% ({(pending.result * 0.004).toLocaleString('es-AR')} {pending.toCurrency}).
-              </p>
-            )}
+
             <div className="tx-review__actions">
               <button
                 type="button"

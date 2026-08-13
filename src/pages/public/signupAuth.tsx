@@ -36,7 +36,7 @@ export default function SignupAuth() {
     const panelTitle = isPersonal ? "Cuenta Personal" : "Cuenta Empresa";
     const panelSubtitle = isPersonal
         ? "Completa tus datos para crear tu cuenta"
-        : "Completá los datos de tu organización";
+        : "Completa los datos de tu organización";
     const panelIcon = isPersonal
         ? <User className="auth-modal__icon-svg" />
         : <Building2 className="auth-modal__icon-svg" />;

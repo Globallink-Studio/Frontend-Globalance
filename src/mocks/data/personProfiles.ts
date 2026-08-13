@@ -4,6 +4,7 @@ export interface PersonProfile {
   last_name: string
   document: string
   phone: string | null
+  timezone?: string
 }
 
 export const personProfiles: PersonProfile[] = [

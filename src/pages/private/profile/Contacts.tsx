@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Users,
   Search,
   Plus,
-  Star,
   MoreHorizontal,
   ArrowUpRight,
-  Clock,
   User,
   Pencil,
   Trash2,
   ChevronDown,
+  Star,
+  Tag,
 } from 'lucide-react'
-import { getCurrentContacts, createContact, updateContact, deleteContact } from '../../../api/contacts'
+import { getCurrentContacts, createContact, deleteContact, setContactFavorite, setContactCategory } from '../../../api/contacts'
 import { getCategories, addCategory, deleteCategory, renameCategory } from '../../../api/contactCategories'
+import { getFriendlyErrorMessage } from '../../../api/errors'
+import Modal from '../../../components/Modal'
+import TransferWizard from '../../../components/TransferWizard'
 import Pagination from '../../../components/Pagination'
 import type { Contact } from '../../../mocks/data/contacts'
 import '../../../styles/pages/private/profile.css'
@@ -29,19 +31,21 @@ function getInitials(name: string): string {
   return name.trim().charAt(0).toUpperCase()
 }
 
-type FilterKey = 'all' | 'favorites' | 'recent' | string
+type FilterKey = 'all' | string
 
 export default function Contacts() {
-  const navigate = useNavigate()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<FilterKey>('all')
+  const [favOnly, setFavOnly] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Contact | null>(null)
   const [viewing, setViewing] = useState<Contact | null>(null)
   const [deleting, setDeleting] = useState<Contact | null>(null)
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [categoryFor, setCategoryFor] = useState<Contact | null>(null)
+  const [categoryForValue, setCategoryForValue] = useState('')
+  const [catAssignOpen, setCatAssignOpen] = useState(false)
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
   const [newCategory, setNewCategory] = useState('')
   const [catMenuOpen, setCatMenuOpen] = useState(false)
@@ -50,23 +54,23 @@ export default function Contacts() {
   const [editCategoryName, setEditCategoryName] = useState('')
   const [editCategoryValue, setEditCategoryValue] = useState('')
   const [editCatMenuOpen, setEditCatMenuOpen] = useState(false)
-  const [formCatMenuOpen, setFormCatMenuOpen] = useState(false)
   const [selectedCats, setSelectedCats] = useState<string[]>([])
   const [confirmCats, setConfirmCats] = useState<string[] | null>(null)
   const [deletingCats, setDeletingCats] = useState(false)
   const [alias, setAlias] = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
-  const [category, setCategory] = useState('')
-  const [description, setDescription] = useState('')
-  const [account, setAccount] = useState('')
+  const [contactType, setContactType] = useState<'alias' | 'account_number'>('alias')
+  const [contactValue, setContactValue] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [transferStep, setTransferStep] = useState(1)
+  const [transferContactId, setTransferContactId] = useState<string | undefined>(undefined)
+  const [transferError, setTransferError] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
 
   const catMenuRef = useRef<HTMLDivElement>(null)
-  const formCatMenuRef = useRef<HTMLDivElement>(null)
   const editCatMenuRef = useRef<HTMLDivElement>(null)
   const menuForRef = useRef<string | null>(null)
 
@@ -77,7 +81,6 @@ export default function Contacts() {
   useEffect(() => {
     const closeMenus = (e: MouseEvent) => {
       if (catMenuRef.current && !catMenuRef.current.contains(e.target as Node)) setCatMenuOpen(false)
-      if (formCatMenuRef.current && !formCatMenuRef.current.contains(e.target as Node)) setFormCatMenuOpen(false)
       if (editCatMenuRef.current && !editCatMenuRef.current.contains(e.target as Node)) setEditCatMenuOpen(false)
       const openId = menuForRef.current
       if (openId) {
@@ -106,39 +109,11 @@ export default function Contacts() {
   }, [message])
 
   const openCreate = () => {
-    setEditing(null)
     setAlias('')
-    setPhone('')
-    setEmail('')
-    setCategory('')
-    setDescription('')
-    setAccount('')
-    setFormCatMenuOpen(false)
+    setContactType('alias')
+    setContactValue('')
     setErrorMessage(null)
     setFormOpen(true)
-  }
-
-  const openEdit = (contact: Contact) => {
-    setEditing(contact)
-    setAlias(contact.alias)
-    setPhone(contact.phone ?? '')
-    setEmail(contact.email ?? '')
-    setCategory(contact.category ?? '')
-    setDescription(contact.description ?? '')
-    setAccount(contact.account ?? '')
-    setFormCatMenuOpen(false)
-    setErrorMessage(null)
-    setMenuFor(null)
-    setFormOpen(true)
-  }
-
-  const toggleFavorite = async (contact: Contact) => {
-    try {
-      await updateContact(contact.id, { favorite: !contact.favorite })
-      await load()
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo actualizar el favorito')
-    }
   }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -146,32 +121,16 @@ export default function Contacts() {
     setErrorMessage(null)
     setSaving(true)
     try {
-      const payload = {
-        alias: alias.trim(),
-        phone: phone.trim() || null,
-        email: email.trim() || null,
-        category: category.trim() || null,
-        description: description.trim() || null,
-        account: account.trim() || null,
-      }
-      if (editing) {
-        await updateContact(editing.id, {
-          alias: alias.trim(),
-          phone: phone.trim() || null,
-          email: email.trim() || null,
-          category: category.trim() || null,
-          description: description.trim() || null,
-          account: account.trim() || null,
-        })
-        setMessage('Contacto actualizado')
-      } else {
-        await createContact({ recipientUserId: crypto.randomUUID(), ...payload })
-        setMessage('Contacto agregado')
-      }
+      await createContact({
+        name: alias.trim(),
+        contactType,
+        contactValue: contactValue.trim(),
+      })
+      setMessage('Contacto agregado')
       setFormOpen(false)
       await load()
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo guardar el contacto')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setSaving(false)
     }
@@ -186,7 +145,40 @@ export default function Contacts() {
       setMessage('Contacto eliminado')
       await load()
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo eliminar el contacto')
+      setErrorMessage(getFriendlyErrorMessage(err))
+    }
+  }
+
+  const handleToggleFavorite = async (c: Contact) => {
+    setErrorMessage(null)
+    const favorite = !c.favorite
+    try {
+      await setContactFavorite(c.id, favorite)
+      setContacts((prev) => prev.map((x) => (x.id === c.id ? { ...x, favorite } : x)))
+    } catch (err) {
+      setErrorMessage(getFriendlyErrorMessage(err))
+    }
+  }
+
+  const openAssignCategory = (c: Contact) => {
+    setCategoryFor(c)
+    setCategoryForValue(c.category ?? '')
+    setCatAssignOpen(false)
+    setMenuFor(null)
+    setErrorMessage(null)
+  }
+
+  const handleAssignCategory = async () => {
+    if (!categoryFor) return
+    setErrorMessage(null)
+    const value = categoryForValue === '' ? null : categoryForValue
+    try {
+      await setContactCategory(categoryFor.id, value)
+      setContacts((prev) => prev.map((x) => (x.id === categoryFor.id ? { ...x, category: value } : x)))
+      setCategoryFor(null)
+      setMessage(value ? 'Categoría asignada' : 'Categoría quitada')
+    } catch (err) {
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -194,15 +186,14 @@ export default function Contacts() {
     e.preventDefault()
     setErrorMessage(null)
     try {
-      const name = await addCategory(newCategory)
+      await addCategory(newCategory)
       await load()
       setCategoryModalOpen(false)
       setNewCategory('')
-      setCategory(name)
-      setFilter(name)
+      setFilter(newCategory)
       setMessage('Categoría creada')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo crear la categoría')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -229,7 +220,7 @@ export default function Contacts() {
       setFilter((f) => (f === editCategoryValue ? name : f))
       setMessage('Categoría renombrada')
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudo renombrar la categoría')
+      setErrorMessage(getFriendlyErrorMessage(err))
     }
   }
 
@@ -246,7 +237,7 @@ export default function Contacts() {
       setMessage('Categorías eliminadas')
       await load()
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'No se pudieron eliminar las categorías')
+      setErrorMessage(getFriendlyErrorMessage(err))
     } finally {
       setDeletingCats(false)
     }
@@ -254,51 +245,33 @@ export default function Contacts() {
 
   const visible = useMemo(() => {
     let list = [...contacts]
-    if (filter === 'favorites') list = list.filter((c) => c.favorite)
-    else if (filter === 'recent') list.sort((a, b) => b.created_at.localeCompare(a.created_at))
-    else if (filter !== 'all') list = list.filter((c) => c.category === filter)
+    if (filter !== 'all') list = list.filter((c) => c.category === filter)
+    if (favOnly) list = list.filter((c) => c.favorite)
 
     if (query.trim()) {
       const q = query.trim().toLowerCase()
       list = list.filter(
         (c) =>
           c.alias.toLowerCase().includes(q) ||
-          (c.account ?? '').toLowerCase().includes(q) ||
-          (c.email ?? '').toLowerCase().includes(q),
+          (c.contact_value ?? '').toLowerCase().includes(q),
       )
     }
 
-    if (filter !== 'recent') {
-      list.sort((a, b) => {
-        const fav = Number(b.favorite) - Number(a.favorite)
-        if (fav !== 0) return fav
-        return a.alias.localeCompare(b.alias, 'es', { sensitivity: 'base' })
-      })
-    }
+    list.sort((a, b) => a.alias.localeCompare(b.alias, 'es', { sensitivity: 'base' }))
 
     return list
-  }, [contacts, filter, query])
+  }, [contacts, filter, query, favOnly])
 
   const totalPages = Math.max(1, Math.ceil(visible.length / CONTACTS_PER_PAGE))
   const paged = visible.slice((page - 1) * CONTACTS_PER_PAGE, page * CONTACTS_PER_PAGE)
 
   useEffect(() => {
     setPage(1)
-  }, [filter, query])
+  }, [filter, query, favOnly])
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
   }, [page, totalPages])
-
-  const favoritesCount = contacts.filter((c) => c.favorite).length
-  const recentActivity = useMemo(
-    () =>
-      [...contacts]
-        .filter((c) => c.last_activity)
-        .sort((a, b) => (b.last_activity ?? '').localeCompare(a.last_activity ?? ''))
-        .slice(0, 3),
-    [contacts],
-  )
 
   return (
     <div className="profile-page">
@@ -316,91 +289,94 @@ export default function Contacts() {
           </div>
 
           <div className="mt-4 contacts-filterbar">
-              <div className="contacts-filters">
+            <div className="contacts-filters">
+              <button
+                type="button"
+                onClick={() => {
+                  setFilter('all')
+                  setFavOnly(false)
+                }}
+                className={`contacts-chip${filter === 'all' && !favOnly ? ' contacts-chip--active' : ''}`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFavOnly(!favOnly)
+                  setFilter('all')
+                }}
+                className={`contacts-chip${favOnly ? ' contacts-chip--active' : ''}`}
+              >
+                <Star />
+                Favoritos
+              </button>
+              {categories.map((cat) => (
                 <button
+                  key={cat}
                   type="button"
-                  onClick={() => setFilter('all')}
-                  className={`contacts-chip${filter === 'all' ? ' contacts-chip--active' : ''}`}
+                  onClick={() => {
+                    setFilter(filter === cat ? 'all' : cat)
+                    setFavOnly(false)
+                  }}
+                  className={`contacts-chip${filter === cat ? ' contacts-chip--active' : ''}`}
                 >
-                  Todos
+                  {cat}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter('favorites')}
-                  className={`contacts-chip${filter === 'favorites' ? ' contacts-chip--active' : ''}`}
-                >
-                  Favoritos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter('recent')}
-                  className={`contacts-chip${filter === 'recent' ? ' contacts-chip--active' : ''}`}
-                >
-                  Recientes
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setFilter(filter === cat ? 'all' : cat)}
-                    className={`contacts-chip${filter === cat ? ' contacts-chip--active' : ''}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-              <div className="contacts-menu-wrap" ref={catMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setCatMenuOpen(!catMenuOpen)}
-                  className="contacts-chip contacts-chip--icon"
-                  aria-label="Opciones de categorías"
-                  aria-expanded={catMenuOpen}
-                >
-                  <MoreHorizontal />
-                </button>
-                {catMenuOpen && (
-                  <div className="contacts-menu">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoryModalOpen(true)
-                        setCatMenuOpen(false)
-                      }}
-                      className="contacts-menu__btn btn-hover-edit"
-                    >
-                      <Plus />
-                      Añadir categoría
-                    </button>
-                    <button
-                      type="button"
-                      disabled={categories.length === 0}
-                      onClick={() => {
-                        openEditCategory()
-                        setCatMenuOpen(false)
-                      }}
-                      className="contacts-menu__btn btn-hover-edit"
-                    >
-                      <Pencil />
-                      Editar categoría
-                    </button>
-                    <button
-                      type="button"
-                      disabled={categories.length === 0}
-                      onClick={() => {
-                        setSelectedCats([])
-                        setDeleteCatOpen(true)
-                        setCatMenuOpen(false)
-                      }}
-                      className="contacts-menu__btn btn-hover-danger"
-                    >
-                      <Trash2 />
-                      Eliminar categoría
-                    </button>
-                  </div>
-                )}
-              </div>
+              ))}
             </div>
+            <div className="contacts-menu-wrap" ref={catMenuRef}>
+              <button
+                type="button"
+                onClick={() => setCatMenuOpen(!catMenuOpen)}
+                className="contacts-chip contacts-chip--icon"
+                aria-label="Opciones de categorías"
+                aria-expanded={catMenuOpen}
+              >
+                <MoreHorizontal />
+              </button>
+              {catMenuOpen && (
+                <div className="contacts-menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoryModalOpen(true)
+                      setCatMenuOpen(false)
+                    }}
+                    className="contacts-menu__btn btn-hover-edit"
+                  >
+                    <Plus />
+                    Añadir categoría
+                  </button>
+                  <button
+                    type="button"
+                    disabled={categories.length === 0}
+                    onClick={() => {
+                      openEditCategory()
+                      setCatMenuOpen(false)
+                    }}
+                    className="contacts-menu__btn btn-hover-edit"
+                  >
+                    <Pencil />
+                    Editar categoría
+                  </button>
+                  <button
+                    type="button"
+                    disabled={categories.length === 0}
+                    onClick={() => {
+                      setSelectedCats([])
+                      setDeleteCatOpen(true)
+                      setCatMenuOpen(false)
+                    }}
+                    className="contacts-menu__btn btn-hover-danger"
+                  >
+                    <Trash2 />
+                    Eliminar categoría
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
           {visible.length === 0 ? (
             <p className="mt-6 text-sm text-muted-foreground">Sin contactos que coincidan.</p>
@@ -417,42 +393,36 @@ export default function Contacts() {
                         <p>{c.alias}</p>
                         <button
                           type="button"
-                          onClick={() => toggleFavorite(c)}
+                          onClick={() => handleToggleFavorite(c)}
                           className={`contacts-card__star${c.favorite ? ' contacts-card__star--active' : ''}`}
-                          title={c.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
+                          aria-label={c.favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                           aria-pressed={c.favorite}
-                          aria-label={c.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
                         >
                           <Star />
                         </button>
                       </div>
                       <p className="contacts-card__role">
                         {c.category ? c.category : 'Sin categoría'}
-                        {c.description ? ` • ${c.description}` : ''}
                       </p>
                       <div className="contacts-card__badges">
-                        {c.email && <span className="contacts-badge">{c.email}</span>}
-                        {c.account && (
-                          <span className="contacts-badge">
-                            {c.account}
-                            {c.currency_code ? ` · ${c.currency_code}` : ''}
-                          </span>
-                        )}
+                        <span className="contacts-badge">
+                          {c.contact_type === 'account_number'
+                            ? `N° cuenta ${c.contact_value ?? c.account ?? ''}`
+                            : `Alias ${c.contact_value ?? c.alias}`}
+                        </span>
                       </div>
-                    </div>
-                    <div className="contacts-card__side">
-                      <span className="contacts-card__amount">{c.last_amount ?? '—'}</span>
-                      <span className="contacts-card__recent">
-                        <Clock />
-                        {c.last_activity ?? 'Sin actividad'}
-                      </span>
                     </div>
                   </div>
 
                   <div className="contacts-card__actions">
                     <button
                       type="button"
-                      onClick={() => navigate('/dashboard/transactions/transfers')}
+                      onClick={() => {
+                        setTransferContactId(c.id)
+                        setTransferStep(1)
+                        setTransferError(null)
+                        setTransferOpen(true)
+                      }}
                       className="contacts-action"
                     >
                       <ArrowUpRight />
@@ -473,8 +443,13 @@ export default function Contacts() {
                       </button>
                       {menuFor === c.id && (
                         <div className="contacts-menu">
-                          <button type="button" onClick={() => openEdit(c)} className="contacts-menu__btn btn-hover-edit">
-                            Editar
+                          <button
+                            type="button"
+                            onClick={() => openAssignCategory(c)}
+                            className="contacts-menu__btn btn-hover-edit"
+                          >
+                            <Tag />
+                            Asignar categoría
                           </button>
                           <button
                             type="button"
@@ -510,10 +485,6 @@ export default function Contacts() {
                 <span className="text-lg font-semibold">{contacts.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Favoritos</span>
-                <span className="text-sm font-medium">{favoritesCount}</span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Categorías</span>
                 <span className="text-sm font-medium">{categories.length}</span>
               </div>
@@ -525,7 +496,12 @@ export default function Contacts() {
             <div className="mt-3 contacts-quick">
               <button
                 type="button"
-                onClick={() => navigate('/dashboard/transactions/transfers')}
+                onClick={() => {
+                  setTransferContactId(undefined)
+                  setTransferStep(1)
+                  setTransferError(null)
+                  setTransferOpen(true)
+                }}
                 className="contacts-quick__btn"
               >
                 <ArrowUpRight />
@@ -537,37 +513,16 @@ export default function Contacts() {
               </button>
             </div>
           </section>
-
-          <section className="profile-card">
-            <h2 className="profile-card__title">Última actividad</h2>
-            <div className="mt-3 contacts-activity">
-              {recentActivity.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin actividad reciente.</p>
-              ) : (
-                recentActivity.map((c) => (
-                  <div key={c.id} className="contacts-activity__item">
-                    <div className="contacts-activity__main">
-                      <p className="contacts-activity__name">{c.alias}</p>
-                      <p className="contacts-activity__desc">
-                        Último movimiento {c.last_amount ? `· ${c.last_amount}` : ''}
-                      </p>
-                    </div>
-                    <span className="contacts-activity__time">{c.last_activity}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
         </aside>
       </div>
 
       {formOpen && (
         <div className="tx-modal">
           <div className="tx-modal__card">
-            <h3 className="tx-modal__title">{editing ? 'Editar contacto' : 'Añadir contacto'}</h3>
+            <h3 className="tx-modal__title">Añadir contacto</h3>
             <form onSubmit={handleSubmit} className="tx-form">
               <div className="tx-form__field">
-                <label htmlFor="contact-alias" className="tx-form__label">Alias</label>
+                <label htmlFor="contact-alias" className="tx-form__label">Nombre de contacto</label>
                 <input
                   id="contact-alias"
                   type="text"
@@ -579,93 +534,42 @@ export default function Contacts() {
                 />
               </div>
               <div className="tx-form__field">
-                <label htmlFor="contact-phone" className="tx-form__label">Teléfono</label>
-                <input
-                  id="contact-phone"
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+54 11 5555-0000"
-                  className="tx-form__control"
-                />
-              </div>
-              <div className="tx-form__field">
-                <label htmlFor="contact-category" className="tx-form__label">Categoría</label>
-                <div className="contacts-select" ref={formCatMenuRef}>
-                  <button
-                    type="button"
-                    id="contact-category"
-                    onClick={() => setFormCatMenuOpen(!formCatMenuOpen)}
-                    className="tx-form__control contacts-select__trigger"
-                    aria-haspopup="listbox"
-                    aria-expanded={formCatMenuOpen}
-                  >
-                    <span>{category || 'Sin categoría'}</span>
-                    <ChevronDown className="contacts-select__chevron" />
-                  </button>
-                  {formCatMenuOpen && (
-                    <ul className="contacts-menu contacts-select__menu" role="listbox">
-                      <li role="option" aria-selected={category === ''}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCategory('')
-                            setFormCatMenuOpen(false)
-                          }}
-                          className="contacts-menu__btn"
-                        >
-                          Sin categoría
-                        </button>
-                      </li>
-                      {categories.map((cat) => (
-                        <li key={cat} role="option" aria-selected={cat === category}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCategory(cat)
-                              setFormCatMenuOpen(false)
-                            }}
-                            className="contacts-menu__btn"
-                          >
-                            {cat}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <p className="tx-form__label">Tipo de identificación</p>
+                <div className="tx-form__options">
+                  <label className="tx-form__option">
+                    <input
+                      type="radio"
+                      name="contactType"
+                      value="alias"
+                      checked={contactType === 'alias'}
+                      onChange={() => setContactType('alias')}
+                    />
+                    Alias
+                  </label>
+                  <label className="tx-form__option">
+                    <input
+                      type="radio"
+                      name="contactType"
+                      value="account_number"
+                      checked={contactType === 'account_number'}
+                      onChange={() => setContactType('account_number')}
+                    />
+                    N° de cuenta
+                  </label>
                 </div>
               </div>
               <div className="tx-form__field">
-                <label htmlFor="contact-description" className="tx-form__label">Descripción</label>
+                <label htmlFor="contact-value" className="tx-form__label">
+                  {contactType === 'alias' ? 'Alias del destinatario' : 'Número de cuenta'}
+                </label>
                 <input
-                  id="contact-description"
+                  id="contact-value"
                   type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="cliente, proveedor, amigo..."
+                  value={contactValue}
+                  onChange={(e) => setContactValue(e.target.value)}
+                  placeholder={contactType === 'alias' ? 'juan.cash' : '0000000002'}
                   className="tx-form__control"
-                />
-              </div>
-              <div className="tx-form__field">
-                <label htmlFor="contact-email" className="tx-form__label">Correo electrónico</label>
-                <input
-                  id="contact-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="usuario@ejemplo.com"
-                  className="tx-form__control"
-                />
-              </div>
-              <div className="tx-form__field">
-                <label htmlFor="contact-account" className="tx-form__label">Cuenta</label>
-                <input
-                  id="contact-account"
-                  type="text"
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
-                  placeholder="Número de cuenta registrado"
-                  className="tx-form__control"
+                  required
                 />
               </div>
               {errorMessage && <p className="profile-edit__error" role="alert">{errorMessage}</p>}
@@ -678,8 +582,12 @@ export default function Contacts() {
                 >
                   Cancelar
                 </button>
-                <button type="submit" disabled={saving || alias.trim() === ''} className="profile-edit__btn profile-edit__btn--primary">
-                  {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Añadir contacto'}
+                <button
+                  type="submit"
+                  disabled={saving || alias.trim() === '' || contactValue.trim() === ''}
+                  className="profile-edit__btn profile-edit__btn--primary"
+                >
+                  {saving ? 'Guardando...' : 'Añadir contacto'}
                 </button>
               </div>
             </form>
@@ -731,7 +639,7 @@ export default function Contacts() {
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Eliminar categorías</h3>
             <p className="tx-modal__message">
-              Seleccioná las categorías que querés eliminar. Los contactos que las tengan quedarán
+              Selecciona las categorías que quieres eliminar. Los contactos que las tengan quedarán
               como «Sin categoría».
             </p>
             {categories.map((cat) => (
@@ -822,7 +730,7 @@ export default function Contacts() {
                     aria-haspopup="listbox"
                     aria-expanded={editCatMenuOpen}
                   >
-                    <span>{editCategoryValue || 'Elegí una categoría'}</span>
+                    <span>{editCategoryValue || 'Elige una categoría'}</span>
                     <ChevronDown className="contacts-select__chevron" />
                   </button>
                   {editCatMenuOpen && (
@@ -883,42 +791,38 @@ export default function Contacts() {
       {viewing && (
         <div className="tx-modal">
           <div className="tx-modal__card">
-            <h3 className="tx-modal__title">Planilla de {viewing.alias}</h3>
+            <h3 className="tx-modal__title">Perfil de {viewing.alias}</h3>
             <dl className="tx-review__rows">
               <div className="tx-review__row">
-                <dt className="tx-review__label">Alias</dt>
+                <dt className="tx-review__label">Nombre</dt>
                 <dd className="tx-review__value">{viewing.alias}</dd>
               </div>
               <div className="tx-review__row">
-                <dt className="tx-review__label">Teléfono</dt>
-                <dd className="tx-review__value">{viewing.phone ?? '—'}</dd>
+                <dt className="tx-review__label">Tipo</dt>
+                <dd className="tx-review__value">
+                  {viewing.contact_type === 'account_number' ? 'Número de cuenta' : 'Alias'}
+                </dd>
               </div>
               <div className="tx-review__row">
-                <dt className="tx-review__label">Correo electrónico</dt>
-                <dd className="tx-review__value">{viewing.email ?? '—'}</dd>
+                <dt className="tx-review__label">Valor</dt>
+                <dd className="tx-review__value">
+                  {viewing.contact_type === 'account_number'
+                    ? viewing.contact_value ?? viewing.account ?? '—'
+                    : viewing.contact_value ?? viewing.alias}
+                </dd>
               </div>
               <div className="tx-review__row">
                 <dt className="tx-review__label">Categoría</dt>
                 <dd className="tx-review__value">
                   {viewing.category ? viewing.category : 'Sin categoría'}
-                  {viewing.description ? ` • ${viewing.description}` : ''}
                 </dd>
-              </div>
-              <div className="tx-review__row">
-                <dt className="tx-review__label">Cuenta</dt>
-                <dd className="tx-review__value">
-                  {viewing.account ?? '—'}
-                  {viewing.currency_code ? ` · ${viewing.currency_code}` : ''}
-                </dd>
-              </div>
-              <div className="tx-review__row">
-                <dt className="tx-review__label">Favorito</dt>
-                <dd className="tx-review__value">{viewing.favorite ? 'Sí' : 'No'}</dd>
               </div>
               <div className="tx-review__row">
                 <dt className="tx-review__label">Agregado el</dt>
                 <dd className="tx-review__value">
-                  {new Date(viewing.created_at).toLocaleDateString('es-AR')}
+                  {viewing.created_at
+                    ? new Date(viewing.created_at).toLocaleDateString('es-AR')
+                    : '—'}
                 </dd>
               </div>
             </dl>
@@ -933,11 +837,82 @@ export default function Contacts() {
         </div>
       )}
 
+      {categoryFor && (
+        <div className="tx-modal">
+          <div className="tx-modal__card">
+            <h3 className="tx-modal__title">Asignar categoría</h3>
+            <p className="tx-modal__message">Elige la categoría de «{categoryFor.alias}»</p>
+            <div className="contacts-select">
+              <button
+                type="button"
+                onClick={() => setCatAssignOpen(!catAssignOpen)}
+                className="tx-form__control contacts-select__trigger"
+                aria-haspopup="listbox"
+                aria-expanded={catAssignOpen}
+              >
+                <span>{categoryForValue || 'Sin categoría'}</span>
+                <ChevronDown className="contacts-select__chevron" />
+              </button>
+              {catAssignOpen && (
+                <ul className="contacts-menu contacts-select__menu" role="listbox">
+                  <li role="option" aria-selected={categoryForValue === ''}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCategoryForValue('')
+                        setCatAssignOpen(false)
+                      }}
+                      className="contacts-menu__btn"
+                    >
+                      Sin categoría
+                    </button>
+                  </li>
+                  {categories.map((cat) => (
+                    <li key={cat} role="option" aria-selected={cat === categoryForValue}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategoryForValue(cat)
+                          setCatAssignOpen(false)
+                        }}
+                        className="contacts-menu__btn"
+                      >
+                        {cat}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {errorMessage && <p className="profile-edit__error" role="alert">{errorMessage}</p>}
+            <div className="tx-review__actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setCategoryFor(null)
+                  setErrorMessage(null)
+                }}
+                className="profile-edit__btn profile-edit__btn--ghost"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAssignCategory}
+                className="profile-edit__btn profile-edit__btn--primary"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleting && (
         <div className="tx-modal">
           <div className="tx-modal__card">
             <h3 className="tx-modal__title">Eliminar contacto</h3>
-            <p className="tx-modal__message">¿Seguro que querés eliminar a «{deleting.alias}»?</p>
+            <p className="tx-modal__message">¿Seguro que quieres eliminar a «{deleting.alias}»?</p>
             <div className="tx-review__actions">
               <button
                 type="button"
@@ -954,6 +929,39 @@ export default function Contacts() {
                 Eliminar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      <Modal open={transferOpen} onClose={() => setTransferOpen(false)} title="Transferir" step={transferStep} totalSteps={2}>
+        <TransferWizard
+          contacts={contacts}
+          step={transferStep}
+          setStep={setTransferStep}
+          initialContactId={transferContactId}
+          onDone={(msg) => {
+            setTransferOpen(false)
+            setTransferStep(1)
+            setMessage(msg)
+          }}
+          onError={(error) => setTransferError(typeof error === 'string' ? error : getFriendlyErrorMessage(error))}
+          sending={sending}
+          setSending={setSending}
+        />
+      </Modal>
+
+      {transferError && (
+        <div className="tx-modal">
+          <div className="tx-modal__card">
+            <h3 className="tx-modal__title">No se pudo realizar la operación</h3>
+            <p className="tx-modal__message">{transferError}</p>
+            <button
+              type="button"
+              onClick={() => setTransferError(null)}
+              className="tx-button tx-button--primary tx-button--block"
+            >
+              Confirmar
+            </button>
           </div>
         </div>
       )}

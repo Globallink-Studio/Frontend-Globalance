@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
 import { convertCurrency } from '../api/exchangeRates'
 import Select from './Select'
@@ -37,17 +37,34 @@ export default function ConvertForm({
   const [amount, setAmount] = useState('')
   const [result, setResult] = useState('')
   const [activeField, setActiveField] = useState<'from' | 'to'>('from')
+  const [quoteError, setQuoteError] = useState<string | null>(null)
+  const requestSeq = useRef(0)
 
   const roundStr = (n: number) => String(Math.round(n * 100) / 100)
+
+  const requestQuote = (fn: () => Promise<number>, apply: (r: number) => void) => {
+    const id = ++requestSeq.current
+    setQuoteError(null)
+    fn()
+      .then((r) => {
+        if (requestSeq.current !== id) return
+        apply(r)
+      })
+      .catch(() => {
+        if (requestSeq.current !== id) return
+        setQuoteError('No se pudo obtener la cotización. Revisa tu conexión e intenta de nuevo.')
+      })
+  }
 
   const handleFromChange = (v: string) => {
     setActiveField('from')
     setAmount(v)
     const val = Number(v)
     if (val > 0 && fromCurrency !== toCurrency) {
-      convertCurrency(fromCurrency, toCurrency, val).then((r) => setResult(roundStr(r)))
+      requestQuote(() => convertCurrency(fromCurrency, toCurrency, val), (r) => setResult(roundStr(r)))
     } else {
       setResult('')
+      setQuoteError(null)
     }
   }
 
@@ -56,9 +73,10 @@ export default function ConvertForm({
     setResult(v)
     const val = Number(v)
     if (val > 0 && fromCurrency !== toCurrency) {
-      convertCurrency(toCurrency, fromCurrency, val).then((r) => setAmount(roundStr(r)))
+      requestQuote(() => convertCurrency(toCurrency, fromCurrency, val), (r) => setAmount(roundStr(r)))
     } else {
       setAmount('')
+      setQuoteError(null)
     }
   }
 
@@ -77,19 +95,21 @@ export default function ConvertForm({
     }
     if (activeField === 'from') {
       const val = Number(amount)
-      if (val > 0) convertCurrency(fromCurrency, toCurrency, val).then((r) => setResult(roundStr(r)))
+      if (val > 0) requestQuote(() => convertCurrency(fromCurrency, toCurrency, val), (r) => setResult(roundStr(r)))
     } else {
       const val = Number(result)
-      if (val > 0) convertCurrency(toCurrency, fromCurrency, val).then((r) => setAmount(roundStr(r)))
+      if (val > 0) requestQuote(() => convertCurrency(toCurrency, fromCurrency, val), (r) => setAmount(roundStr(r)))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromCurrency, toCurrency])
 
   useEffect(() => {
     if (resetKey === 0) return
+    requestSeq.current += 1
     setAmount('')
     setResult('')
     setActiveField('from')
+    setQuoteError(null)
   }, [resetKey])
 
   const fromBalance = balances.find((b) => b.currency_code === fromCurrency)
@@ -102,8 +122,8 @@ export default function ConvertForm({
         insufficient
           ? 'Saldo insuficiente para realizar la conversión'
           : fromCurrency === toCurrency
-            ? 'Elegí una moneda de destino distinta'
-            : 'Ingresá un monto válido para continuar'
+            ? 'Elige una moneda de destino distinta'
+            : 'Ingresa un monto válido para continuar'
       )
       return
     }
@@ -185,11 +205,15 @@ export default function ConvertForm({
             : '—'}
         </p>
         {Number(result) > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Comisión (0,4%): -{(Number(result) * 0.004).toLocaleString('es-AR', { maximumFractionDigits: 2 })} {toCurrency}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Comisión: Próximamente</p>
         )}
       </div>
+
+      {quoteError && (
+        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
+          {quoteError}
+        </p>
+      )}
 
       <button
         type="button"

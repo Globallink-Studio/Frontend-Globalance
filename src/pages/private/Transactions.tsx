@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Filter, RotateCcw, Search } from 'lucide-react'
 import { getRecentTransactions, transactionStatusLabels } from '../../api/transactions'
+import { transactionSign } from '../../utils/transactionSign'
 import Select from '../../components/Select'
 import DatePicker from '../../components/DatePicker'
 import Pagination from '../../components/Pagination'
 import TransactionDetailModal from '../../components/TransactionDetailModal'
+import PaymentRequestsSection from '../../components/PaymentRequestsSection'
 import type { Transaction, TransactionStatus } from '../../mocks/data/transactions'
 import '../../styles/pages/private/transactions.css'
 import '../../styles/pages/private/profile.css'
@@ -21,18 +23,25 @@ const typeLabels: Record<string, string> = {
 }
 
 const categoryLabels: Record<string, string> = {
-  transfer: 'Retiro',
+  transfer: 'Transferencia',
   deposit: 'Ingreso',
   conversion: 'Cambio',
   request: 'Solicitud',
   withdrawal: 'Retiro',
 }
 
+const categoryLabelFor = (t: Transaction): string => {
+  if (t.type === 'transfer') {
+    return t.direction === 'in' ? 'Transferencia recibida' : 'Transferencia enviada'
+  }
+  return categoryLabels[t.type] ?? t.type
+}
+
 const currencies = ['USD', 'EUR', 'ARS']
 
 const formatMoney = (amount: number, currency: string) => `${amount.toLocaleString('es-AR')} ${currency}`
 
-export default function History() {
+export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [type, setType] = useState('')
   const [currency, setCurrency] = useState('')
@@ -137,7 +146,7 @@ export default function History() {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-4 flex flex-wrap gap-2 sm:flex-nowrap sm:overflow-x-auto pb-1">
             {typeChips.map((chip) => (
               <button
                 key={chip.value}
@@ -169,9 +178,9 @@ export default function History() {
                 onChange={setStatus}
                 options={[
                   { value: '', label: 'Todos los estados' },
-                  ...(Object.entries(transactionStatusLabels) as [TransactionStatus, string][]).map(
-                    ([value, label]) => ({ value, label }),
-                  ),
+                  ...(Object.entries(transactionStatusLabels) as [TransactionStatus, string][])
+                    .filter(([value]) => value !== 'reversed')
+                    .map(([value, label]) => ({ value, label })),
                 ]}
               />
               <DatePicker
@@ -188,6 +197,12 @@ export default function History() {
                 onChange={setTo}
                 placeholder="Elegir fecha"
               />
+            </div>
+          )}
+
+          {type === 'request' && (
+            <div className="mt-6">
+              <PaymentRequestsSection />
             </div>
           )}
 
@@ -212,9 +227,7 @@ export default function History() {
                     </thead>
                     <tbody>
                       {paged.map((t) => {
-                        const isIncome = t.type === 'deposit' || t.type === 'request'
-                        const isExpense = t.type === 'transfer' || t.type === 'withdrawal'
-                        const sign = isExpense ? '-' : isIncome ? '+' : ''
+                        const sign = transactionSign(t)
                         return (
                           <tr key={t.id} className="tx-table__row" onClick={() => setSelected(t)}>
                             <td className="tx-table__date">
@@ -232,7 +245,7 @@ export default function History() {
                               )}
                             </td>
                             <td>
-                              <span className="tx-table__concept">{categoryLabels[t.type] ?? t.type}</span>
+                              <span className="tx-table__concept">{categoryLabelFor(t)}</span>
                             </td>
                             <td>
                               <span className="tx-table__currency">{t.currency_code}</span>
@@ -240,7 +253,7 @@ export default function History() {
                             <td>
                               <span
                                 className={`tx-table__amount${
-                                  isIncome ? ' tx-table__amount--income' : ''
+                                  sign === '+' ? ' tx-table__amount--income' : ''
                                 }`}
                               >
                                 {sign}

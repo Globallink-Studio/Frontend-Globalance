@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { getRateHistory } from '../api/exchangeRates'
-import type { ExchangeRatePoint } from '../mocks/data/exchangeRates'
+import type { RateHistoryPoint } from '../api/exchangeRates'
 import '../styles/components/rate-chart.css'
 
 const DAYS = 30
@@ -34,10 +34,10 @@ function ChartTooltip({ active, label, payload }: { active?: boolean; label?: st
   )
 }
 
-function asPoints(history: ExchangeRatePoint[], ratioTo?: number): { label: string; value: number }[] {
+function asPoints(history: RateHistoryPoint[]): { label: string; value: number }[] {
   return history.map((p) => ({
     label: p.date.slice(5),
-    value: ratioTo !== undefined ? Math.round((p.buy_price / ratioTo) * 10000) / 10000 : p.buy_price,
+    value: p.rate,
   }))
 }
 
@@ -49,18 +49,9 @@ export default function RateChart({ refreshKey = 0 }: { refreshKey?: number }) {
 
   useEffect(() => {
     let cancelled = false
-    if (quote === 'ARS') {
-      getRateHistory(base, DAYS).then((history) => {
-        if (cancelled) return
-        setPoints(asPoints(history))
-      })
-      return () => {
-        cancelled = true
-      }
-    }
-    Promise.all([getRateHistory(base, DAYS), getRateHistory(quote, DAYS)]).then(([a, b]) => {
+    getRateHistory(base, quote, DAYS).then((history) => {
       if (cancelled) return
-      setPoints(asPoints(a).map((p, i) => ({ ...p, value: Math.round((a[i].buy_price / (b[i]?.buy_price ?? 1)) * 10000) / 10000 })))
+      setPoints(asPoints(history))
     })
     return () => {
       cancelled = true
@@ -68,6 +59,8 @@ export default function RateChart({ refreshKey = 0 }: { refreshKey?: number }) {
   }, [base, quote, refreshKey])
 
   const data = useMemo(() => points, [points])
+
+  const isEmpty = data.length === 0
 
   const first = data[0]?.value ?? 0
   const last = data[data.length - 1]?.value ?? 0
@@ -102,56 +95,64 @@ export default function RateChart({ refreshKey = 0 }: { refreshKey?: number }) {
       </div>
 
       <div className="rate-chart__value-row">
-        <span className="rate-chart__value">{formattedLast}</span>
-        <span
-          className={`rate-chart__delta${up ? ' rate-chart__delta--up' : down ? ' rate-chart__delta--down' : ' rate-chart__delta--flat'}`}
-        >
-          {up && <TrendingUp className="size-3" />}
-          {down && <TrendingDown className="size-3" />}
-          {rounded === 0 ? 'Estable' : `${rounded > 0 ? '+' : ''}${fmt(rounded)}%`}
-        </span>
+        <span className="rate-chart__value">{isEmpty ? '—' : formattedLast}</span>
+        {!isEmpty && (
+          <span
+            className={`rate-chart__delta${up ? ' rate-chart__delta--up' : down ? ' rate-chart__delta--down' : ' rate-chart__delta--flat'}`}
+          >
+            {up && <TrendingUp className="size-3" />}
+            {down && <TrendingDown className="size-3" />}
+            {rounded === 0 ? 'Estable' : `${rounded > 0 ? '+' : ''}${fmt(rounded)}%`}
+          </span>
+        )}
       </div>
 
-      <div className="rate-chart__plot">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-                <stop offset="100%" stopColor={color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="var(--border)" strokeDasharray="4 8" vertical={false} />
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-              tickLine={false}
-              axisLine={false}
-              interval="preserveStartEnd"
-              minTickGap={40}
-            />
-            <YAxis
-              domain={['dataMin', 'dataMax']}
-              tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-              tickLine={false}
-              axisLine={false}
-              width={52}
-              tickFormatter={(v: number) => (v < 10 ? v.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : fmt(v))}
-            />
-            <Tooltip
-              content={<ChartTooltip />}
-              cursor={{ stroke: 'var(--border)' }}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={2.5}
-              fill={`url(#${gradId})`}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      {isEmpty ? (
+        <div className="rate-chart__empty">
+          El histórico de tasas estará disponible próximamente.
+        </div>
+      ) : (
+        <div className="rate-chart__plot">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="var(--border)" strokeDasharray="4 8" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+                minTickGap={40}
+              />
+              <YAxis
+                domain={['dataMin', 'dataMax']}
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                tickLine={false}
+                axisLine={false}
+                width={52}
+                tickFormatter={(v: number) => (v < 10 ? v.toLocaleString('es-AR', { maximumFractionDigits: 2 }) : fmt(v))}
+              />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: 'var(--border)' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={color}
+                strokeWidth={2.5}
+                fill={`url(#${gradId})`}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }

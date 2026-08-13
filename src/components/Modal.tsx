@@ -10,9 +10,10 @@ interface ModalProps {
   step: number
   totalSteps: number
   children: ReactNode
+  panelClassName?: string
 }
 
-export default function Modal({ open, onClose, title, step, totalSteps, children }: ModalProps) {
+export default function Modal({ open, onClose, title, step, totalSteps, children, panelClassName }: ModalProps) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -31,7 +32,7 @@ export default function Modal({ open, onClose, title, step, totalSteps, children
   return createPortal(
     <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
       <div className="modal__overlay" onClick={onClose} />
-      <div className="modal__panel">
+      <div className={`modal__panel${panelClassName ? ` ${panelClassName}` : ''}`}>
         <div className="modal__header">
           <div className="modal__header-text">
             <h2 className="modal__title">{title}</h2>

@@ -97,7 +97,7 @@ export default function AccountDetailModal({ open, item, onClose }: AccountDetai
             ) : (
               <ul className="account-detail__list">
                 {transactions.map((tx) => {
-                  const isPositive = tx.type === 'deposit' || tx.type === 'conversion'
+                  const isPositive = tx.type === 'deposit' || tx.type === 'conversion' || (tx.type === 'transfer' && tx.direction === 'in')
                   return (
                     <li key={tx.id} className="account-detail__item">
                       <p className="account-detail__item-description">{tx.description}</p>
@@ -110,7 +110,7 @@ export default function AccountDetailModal({ open, item, onClose }: AccountDetai
                 })}
               </ul>
             )}
-            <Link to="/dashboard/history" className="account-detail__link" onClick={onClose}>
+            <Link to="/dashboard/transactions" className="account-detail__link" onClick={onClose}>
               Ver todo el historial
               <ArrowRight className="account-detail__link-icon" />
             </Link>

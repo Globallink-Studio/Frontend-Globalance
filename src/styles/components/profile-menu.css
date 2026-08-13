@@ -1,0 +1,88 @@
+.app-topbar__profile {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.app-topbar__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 9999px;
+  background-image: var(--gradient-iridescent);
+  color: oklch(0.26 0.02 285);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.app-topbar__avatar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--muted-foreground) 40%, transparent);
+}
+
+.profile-menu {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 13rem;
+  padding: 0.375rem;
+  background-color: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-soft);
+  z-index: 60;
+}
+
+.profile-menu__item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: transparent;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.profile-menu__item:hover {
+  background-color: var(--surface);
+}
+
+.profile-menu__icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.profile-menu__divider {
+  height: 1px;
+  margin: 0.25rem 0;
+  background-color: var(--border);
+}
+
+.profile-menu__item--danger {
+  color: var(--destructive);
+}
+
+.profile-menu__item--danger .profile-menu__icon {
+  color: var(--destructive);
+}
+
+.profile-menu__item--danger:hover {
+  background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+}

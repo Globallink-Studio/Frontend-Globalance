@@ -1,5 +1,6 @@
 import type { Transaction } from '../mocks/data/transactions'
 import { transactionStatusLabels } from '../api/transactions'
+import { transactionSign } from '../utils/transactionSign'
 
 interface TransactionListProps {
   transactions: Transaction[]
@@ -24,6 +25,7 @@ export default function TransactionList({ transactions, compact = false }: Trans
               </p>
             </div>
             <p className="tx-list__amount">
+              {transactionSign(t)}
               {t.amount.toLocaleString('es-AR')} {t.currency_code}
             </p>
           </li>
@@ -44,6 +46,7 @@ export default function TransactionList({ transactions, compact = false }: Trans
             </p>
           </div>
           <p className="text-sm font-semibold">
+            {transactionSign(t)}
             {t.amount.toLocaleString('es-AR')} {t.currency_code}
           </p>
         </li>

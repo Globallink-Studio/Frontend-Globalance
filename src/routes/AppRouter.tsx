@@ -1,15 +1,10 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import DashboardLayout from '../components/layout/DashboardLayout'
 import Home from '../pages/public/Home'
 import Dashboard from '../pages/private/Dashboard'
 import WalletSummary from '../pages/private/wallet/WalletSummary'
-import TransactionsLayout from '../pages/private/transactions/TransactionsLayout'
-import TransactionsSummary from '../pages/private/transactions/TransactionsSummary'
-import History from '../pages/private/History'
-import Transfers from '../pages/private/transactions/Transfers'
-import Deposits from '../pages/private/transactions/Deposits'
-import MoneyRequests from '../pages/private/transactions/MoneyRequests'
+import Transactions from '../pages/private/Transactions'
 import GroupsLayout from '../pages/private/groups/GroupsLayout'
 import MyGroups from '../pages/private/groups/MyGroups'
 import CreateGroup from '../pages/private/groups/CreateGroup'
@@ -22,14 +17,15 @@ import GroupSettings from '../pages/private/groups/group/GroupSettings'
 import Exchange from '../pages/private/Exchange'
 import ProfileLayout from '../pages/private/profile/ProfileLayout'
 import PersonalData from '../pages/private/profile/PersonalData'
-import EditProfile from '../pages/private/profile/EditProfile'
 import Cards from '../pages/private/profile/Cards'
 import ProfileContacts from '../pages/private/profile/Contacts'
 import NotificationsSettings from '../pages/private/profile/NotificationsSettings'
-import Settings from '../pages/private/profile/Settings'
+import TermsAndConditions from '../pages/private/profile/TermsAndConditions'
+import PrivacyPolicy from '../pages/private/profile/PrivacyPolicy'
 import Assistant from '../pages/private/Assistant'
 import SigninAuth from '../pages/public/signinAuth'
 import SignupAuth from '../pages/public/signupAuth'
+import CompleteProfile from '../pages/public/CompleteProfile'
 
 export default function AppRouter() {
   return (
@@ -39,6 +35,7 @@ export default function AppRouter() {
         <Route path="/" element={<Home />} />
         <Route path="/signin" element={<SigninAuth />} />
         <Route path="/signup" element={<SignupAuth />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
 
         {/* Private */}
         <Route path="/dashboard" element={<ProtectedRoute />}>
@@ -49,15 +46,8 @@ export default function AppRouter() {
           <Route path="wallet" element={<WalletSummary />} />
 
           {/* Transactions */}
-          <Route path="transactions" element={<TransactionsLayout />}>
-            <Route index element={<TransactionsSummary />} />
-            <Route path="transfers" element={<Transfers />} />
-            <Route path="deposits" element={<Deposits />} />
-            <Route path="requests" element={<MoneyRequests />} />
-          </Route>
-
-          {/* History */}
-          <Route path="history" element={<History />} />
+          <Route path="transactions" element={<Transactions />} />
+          <Route path="history" element={<Navigate to="/dashboard/transactions" replace />} />
 
           {/* Groups */}
           <Route path="groups" element={<GroupsLayout />}>
@@ -79,14 +69,14 @@ export default function AppRouter() {
           <Route path="contacts" element={<ProfileContacts />} />
           <Route path="notifications" element={<NotificationsSettings />} />
 
-          {/* Cards & Settings */}
+          {/* Cards */}
           <Route path="cards" element={<Cards />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="terms" element={<TermsAndConditions />} />
+          <Route path="privacy" element={<PrivacyPolicy />} />
 
           {/* Profile */}
           <Route path="profile" element={<ProfileLayout />}>
             <Route index element={<PersonalData />} />
-            <Route path="edit" element={<EditProfile />} />
           </Route>
 
           {/* Assistant */}

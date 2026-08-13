@@ -13,7 +13,7 @@ import { login as mockLogin, logout as mockLogout, register as mockRegister } fr
 import { getUserById } from '../mocks/handlers/users'
 import { provisionDemoData } from '../mocks/provision'
 import { fetchApi, setAuthTokenGetter } from './fetchApi'
-import { getFriendlyErrorMessage } from './errors'
+import { ApiError, getFriendlyErrorMessage } from './errors'
 import { auth } from '../firebase/firebase'
 import type { User } from '../mocks/data/users'
 
@@ -94,12 +94,16 @@ function mapUser(apiUser: ApiUser): User {
 }
 
 function requireFirebase() {
-  if (!auth) throw new Error('Firebase no configurado. Revisá las variables VITE_FIREBASE_* en .env')
+  if (!auth) throw new Error('Firebase no configurado. Revisa las variables VITE_FIREBASE_* en .env')
   return auth
 }
 
-async function syncUser(token: string): Promise<User> {
-  const body = await fetchApi<SyncResponse>('/auth/sync', { method: 'POST', token })
+async function syncUser(token: string, userType?: 'person' | 'company'): Promise<User> {
+  const body = await fetchApi<SyncResponse>('/auth/sync', {
+    method: 'POST',
+    token,
+    ...(userType ? { body: { userType } } : {}),
+  })
   const data = body.data
   const apiUser = 'wallet' in data ? data.user : data
   return mapUser(apiUser)
@@ -119,11 +123,11 @@ function getFirebaseErrorMessage(error: unknown): string {
     case 'auth/weak-password':
       return 'La contraseña debe tener al menos 6 caracteres'
     case 'auth/popup-closed-by-user':
-      return 'Ventana de Google cerrada. Intentá de nuevo'
+      return 'Ventana de Google cerrada. Intenta de nuevo'
     case 'auth/cancelled-popup-request':
       return 'Solicitud cancelada'
     case 'auth/network-request-failed':
-      return 'Sin conexión. Intentá de nuevo'
+      return 'Sin conexión. Intenta de nuevo'
     default:
       return error instanceof Error ? error.message : 'Error de autenticación'
   }
@@ -144,9 +148,9 @@ function applySession(user: User): void {
   setCurrentUser(user.id)
 }
 
-async function signInWithToken(firebaseUser: FirebaseUser): Promise<User> {
+async function signInWithToken(firebaseUser: FirebaseUser, userType?: 'person' | 'company'): Promise<User> {
   const token = await getIdToken(firebaseUser)
-  const user = await syncUser(token)
+  const user = await syncUser(token, userType)
   applySession(user)
   return user
 }
@@ -168,22 +172,57 @@ export async function login(email: string, password: string): Promise<User> {
   }
 }
 
-export async function loginWithGoogle(): Promise<User> {
+export type GoogleLoginResult = { status: 'authenticated'; user: User } | { status: 'pending' }
+
+async function firebaseUserExists(): Promise<boolean> {
+  try {
+    const profile = await fetchApi<{ data: { id?: string } | null }>('/users/profile')
+    if (profile?.data?.id) return true
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error
+  }
+  try {
+    const wallet = await fetchApi<{ data?: { id?: string } | null }>('/wallet')
+    if (wallet?.data?.id) return true
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error
+  }
+  return false
+}
+
+export async function syncWithGoogleAccount(): Promise<User> {
+  const fb = requireFirebase()
+  const firebaseUser = fb.currentUser
+  if (!firebaseUser) throw new Error('No hay una sesión de Google activa')
+  const token = await getIdToken(firebaseUser)
+  const user = await syncUser(token)
+  applySession(user)
+  return user
+}
+
+export async function loginWithGoogle(): Promise<GoogleLoginResult> {
   if (getAuthMode() === 'mock') {
     throw new Error('El login con Google no está disponible en modo mock')
   }
   try {
     const fb = requireFirebase()
     const credential = await signInWithPopup(fb, new GoogleAuthProvider())
-    return await signInWithToken(credential.user)
+    if (!(await firebaseUserExists())) return { status: 'pending' }
+    const user = await signInWithToken(credential.user)
+    return { status: 'authenticated', user }
   } catch (error) {
     throw new Error(getAuthErrorMessage(error))
   }
 }
 
-export async function register(input: { fullName: string; email: string; password: string }): Promise<User> {
+export async function register(input: {
+  fullName: string
+  email: string
+  password: string
+  userType?: 'person' | 'company'
+}): Promise<User> {
   if (getAuthMode() === 'mock') {
-    const user = await mockRegister({ fullName: input.fullName, email: input.email })
+    const user = await mockRegister({ fullName: input.fullName, email: input.email, userType: input.userType })
     applySession(user)
     return user
   }
@@ -193,20 +232,35 @@ export async function register(input: { fullName: string; email: string; passwor
     if (input.fullName) {
       await updateProfile(credential.user, { displayName: input.fullName })
     }
-    return await signInWithToken(credential.user)
+    return await signInWithToken(credential.user, input.userType)
   } catch (error) {
     throw new Error(getAuthErrorMessage(error))
   }
 }
 
-export async function logout(): Promise<void> {
-  if (getAuthMode() === 'mock') {
-    await mockLogout()
-  } else if (auth) {
-    await signOut(auth)
+const NOTIFICATION_PREFS_KEY = 'globalance:notification-prefs'
+
+function clearSessionStorage(): void {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i)
+    if (key && key.startsWith('globalance.') && key !== NOTIFICATION_PREFS_KEY) {
+      localStorage.removeItem(key)
+    }
   }
-  cachedUser = null
-  clearCurrentUser()
+}
+
+export async function logout(): Promise<void> {
+  try {
+    if (getAuthMode() === 'mock') {
+      await mockLogout()
+    } else if (auth) {
+      await signOut(auth)
+    }
+  } finally {
+    cachedUser = null
+    clearCurrentUser()
+    clearSessionStorage()
+  }
 }
 
 // --- Sesión / restauración -----------------------------------------------
@@ -239,8 +293,28 @@ export function subscribeToAuth(listener: AuthSessionListener): () => void {
       listener(null)
       return
     }
-    signInWithToken(firebaseUser)
-      .then((user) => listener(user))
+    const restoreExistingSession = () =>
+      signInWithToken(firebaseUser)
+        .then((user) => listener(user))
+        .catch(() => listener(null))
+    if (getCurrentUserId()) {
+      restoreExistingSession()
+      return
+    }
+    firebaseUserExists()
+      .then((exists) => {
+        if (!exists) {
+          if (getCurrentUserId()) {
+            restoreExistingSession()
+            return
+          }
+          cachedUser = null
+          clearCurrentUser()
+          listener(null)
+          return
+        }
+        restoreExistingSession()
+      })
       .catch(() => listener(null))
   })
 }

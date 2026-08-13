@@ -1,5 +1,6 @@
 import type { User } from './data/users'
 import type { PersonProfile } from './data/personProfiles'
+import type { CompanyProfile } from './data/companyProfiles'
 import type { Wallet } from './data/wallets'
 import type { Balance } from './data/balances'
 import type { Card } from './data/cards'
@@ -8,9 +9,11 @@ import type { Contact } from './data/contacts'
 import type { AppNotification } from './data/notifications'
 import type { PaymentMethod } from './data/paymentMethods'
 import type { ExchangeRatePoint } from './data/exchangeRates'
+import type { PaymentRequest } from './data/paymentRequests'
 
 const USERS_KEY = 'globalance.mock.users'
 const PERSON_PROFILES_KEY = 'globalance.mock.personProfiles'
+const COMPANY_PROFILES_KEY = 'globalance.mock.companyProfiles'
 const WALLETS_KEY = 'globalance.mock.wallets'
 const BALANCES_KEY = 'globalance.mock.balances'
 const CARDS_KEY = 'globalance.mock.cards'
@@ -19,6 +22,7 @@ const CONTACTS_KEY = 'globalance.mock.contacts'
 const CONTACT_CATEGORIES_KEY = 'globalance.mock.contactCategories'
 const NOTIFICATIONS_KEY = 'globalance.mock.notifications'
 const PAYMENT_METHODS_KEY = 'globalance.mock.paymentMethods'
+const PAYMENT_REQUESTS_KEY = 'globalance.mock.paymentRequests'
 const RATE_HISTORY_KEY = 'globalance.mock.rateHistory'
 
 function readAll<T>(key: string): T[] {
@@ -62,6 +66,18 @@ export function addMockPersonProfile(profile: PersonProfile): void {
 
 export function updateMockPersonProfile(userId: string, patch: Partial<PersonProfile>): void {
   saveAll(PERSON_PROFILES_KEY, getMockPersonProfiles().map((p) => (p.user_id === userId ? { ...p, ...patch } : p)))
+}
+
+export function getMockCompanyProfiles(): CompanyProfile[] {
+  return readAll<CompanyProfile>(COMPANY_PROFILES_KEY)
+}
+
+export function addMockCompanyProfile(profile: CompanyProfile): void {
+  saveAll(COMPANY_PROFILES_KEY, [...getMockCompanyProfiles(), profile])
+}
+
+export function updateMockCompanyProfile(userId: string, patch: Partial<CompanyProfile>): void {
+  saveAll(COMPANY_PROFILES_KEY, getMockCompanyProfiles().map((c) => (c.user_id === userId ? { ...c, ...patch } : c)))
 }
 
 export function getMockWallets(): Wallet[] {
@@ -127,17 +143,28 @@ export function saveMockTransactions(items: Transaction[]): void {
 }
 
 export function getMockContacts(): Contact[] {
-  return readAll<Contact>(CONTACTS_KEY).map((c) => ({
-    ...c,
-    ...(c.category === undefined ? { category: null } : {}),
-    ...(c.email === undefined ? { email: null } : {}),
-    ...(c.description === undefined ? { description: null } : {}),
-    ...(c.favorite === undefined ? { favorite: false } : {}),
-    ...(c.account === undefined ? { account: null } : {}),
-    ...(c.currency_code === undefined ? { currency_code: null } : {}),
-    ...(c.last_amount === undefined ? { last_amount: null } : {}),
-    ...(c.last_activity === undefined ? { last_activity: null } : {}),
-  }))
+  return readAll<Contact>(CONTACTS_KEY).map((c) => {
+    const migrated = {
+      ...c,
+      ...(c.contact_type === undefined ? { contact_type: null } : {}),
+      ...(c.contact_value === undefined ? { contact_value: null } : {}),
+      ...(c.category === undefined ? { category: null } : {}),
+      ...(c.email === undefined ? { email: null } : {}),
+      ...(c.description === undefined ? { description: null } : {}),
+      ...(c.favorite === undefined ? { favorite: false } : {}),
+      ...(c.account === undefined ? { account: null } : {}),
+      ...(c.currency_code === undefined ? { currency_code: null } : {}),
+      ...(c.last_amount === undefined ? { last_amount: null } : {}),
+      ...(c.last_activity === undefined ? { last_activity: null } : {}),
+    }
+    // Contactos guardados antes de existir contact_type: si tienen número de
+    // cuenta, derivarlo como account_number; si no, son alias.
+    if (migrated.contact_type === null && migrated.account) {
+      migrated.contact_type = 'account_number'
+      migrated.contact_value = migrated.account
+    }
+    return migrated
+  })
 }
 
 export function addMockContact(contact: Contact): void {
@@ -237,6 +264,18 @@ export function saveMockPaymentMethods(items: PaymentMethod[]): void {
 
 export function deleteMockPaymentMethod(id: string): void {
   saveAll(PAYMENT_METHODS_KEY, getMockPaymentMethods().filter((p) => p.id !== id))
+}
+
+export function getMockPaymentRequests(): PaymentRequest[] {
+  return readAll<PaymentRequest>(PAYMENT_REQUESTS_KEY)
+}
+
+export function addMockPaymentRequests(items: PaymentRequest[]): void {
+  saveAll(PAYMENT_REQUESTS_KEY, [...getMockPaymentRequests(), ...items])
+}
+
+export function saveMockPaymentRequests(items: PaymentRequest[]): void {
+  saveAll(PAYMENT_REQUESTS_KEY, items)
 }
 
 export function getMockRateHistory(): ExchangeRatePoint[] {

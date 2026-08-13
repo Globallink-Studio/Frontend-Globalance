@@ -1,26 +1,30 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Download,
   Plus,
   Repeat,
-  Send,
 } from 'lucide-react'
-import { getCurrentBalanceSummary } from '../../../api/balances'
-import { getRecentTransactions, createDeposit, createMoneyRequest, createWithdrawal, createConversion } from '../../../api/transactions'
+import { getCurrentBalanceSummary, getUnifiedBalance, type BalanceSummaryItem } from '../../../api/balances'
+import { getCurrentUser } from '../../../api/users'
+import { getRecentTransactions, createDeposit, createMoneyRequest, createConversion } from '../../../api/transactions'
 import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getCurrentContacts } from '../../../api/contacts'
+import { getFriendlyErrorMessage, isDepositLimitError } from '../../../api/errors'
+import { transactionSign } from '../../../utils/transactionSign'
+import { DEPOSIT_LIMITS, formatDepositLimit } from '../../../api/limits'
 import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
 import Select from '../../../components/Select'
 import ConvertForm, { type ConvertData } from '../../../components/ConvertForm'
-import type { BalanceSummaryItem } from '../../../api/balances'
+import TransferWizard from '../../../components/TransferWizard'
 import type { Transaction } from '../../../mocks/data/transactions'
 import type { Card } from '../../../mocks/data/cards'
 import type { PaymentMethod } from '../../../mocks/data/paymentMethods'
@@ -43,7 +47,6 @@ const cardVariants = [
 ]
 
 export default function WalletSummary() {
-  const navigate = useNavigate()
   const [summary, setSummary] = useState<BalanceSummaryItem[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [cards, setCards] = useState<Card[]>([])
@@ -51,18 +54,21 @@ export default function WalletSummary() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [quotes, setQuotes] = useState<ExchangeRate[]>([])
   const [activeCardIndex, setActiveCardIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
   const [depositOpen, setDepositOpen] = useState(false)
   const [depositStep, setDepositStep] = useState(1)
   const [requestOpen, setRequestOpen] = useState(false)
   const [requestStep, setRequestStep] = useState(1)
-  const [withdrawOpen, setWithdrawOpen] = useState(false)
-  const [withdrawStep, setWithdrawStep] = useState(1)
   const [convertOpen, setConvertOpen] = useState(false)
   const [convertStep, setConvertStep] = useState(1)
+  const [transferOpen, setTransferOpen] = useState(false)
+  const [transferStep, setTransferStep] = useState(1)
   const [accountDetail, setAccountDetail] = useState<BalanceSummaryItem | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [unifiedBalance, setUnifiedBalance] = useState(0)
+  const [displayCurrency, setDisplayCurrency] = useState('USD')
 
   const reload = () => {
     getCurrentBalanceSummary().then(setSummary)
@@ -75,7 +81,13 @@ export default function WalletSummary() {
     getPaymentMethodsList().then(setPaymentMethods)
     getCurrentContacts().then(setContacts)
     getQuotes().then(setQuotes)
+    getCurrentUser().then((u) => setDisplayCurrency(u?.display_currency ?? 'USD'))
   }, [])
+
+  useEffect(() => {
+    if (!displayCurrency) return
+    getUnifiedBalance(displayCurrency).then(setUnifiedBalance)
+  }, [displayCurrency])
 
   useEffect(() => {
     if (!message) return
@@ -83,10 +95,32 @@ export default function WalletSummary() {
     return () => clearTimeout(t)
   }, [message])
 
-  const totalBalanceUSD = summary.reduce((acc, item) => {
-    const rate = item.currency_code === 'USD' ? 1 : item.currency_code === 'EUR' ? 1.08 : 0.0001
-    return acc + item.amount * rate
-  }, 0)
+  const unifiedSymbol =
+    summary.find((s) => s.currency_code === displayCurrency)?.symbol ??
+    (displayCurrency === 'USD' ? 'US$' : displayCurrency === 'EUR' ? '€' : '$')
+
+  const handleWizardError = (error: unknown) => {
+    const msg = typeof error === 'string' ? error : getFriendlyErrorMessage(error)
+    if (msg && !isDepositLimitError(error)) {
+      if (depositStep === 2) {
+        setDepositOpen(false)
+        setDepositStep(1)
+      }
+      if (requestStep === 2) {
+        setRequestOpen(false)
+        setRequestStep(1)
+      }
+      if (convertStep === 2) {
+        setConvertOpen(false)
+        setConvertStep(1)
+      }
+      if (transferStep === 2) {
+        setTransferOpen(false)
+        setTransferStep(1)
+      }
+    }
+    setErrorMessage(msg)
+  }
 
   return (
     <div className="wallet-summary">
@@ -95,17 +129,16 @@ export default function WalletSummary() {
           <section className="wallet-card wallet-banner">
             <p className="wallet-banner__label">SALDO UNIFICADO</p>
             <div className="wallet-banner__row">
-              <p className="wallet-banner__amount">US$ {totalBalanceUSD.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="wallet-banner__amount">
+              {unifiedSymbol} {unifiedBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              <span className="wallet-banner__currency">{displayCurrency}</span>
+            </p>
               <div className="wallet-banner__actions">
                 <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setDepositOpen(true)}>
                   <Plus className="wallet-banner__btn-icon" />
-                  Depositar
+                  Cargar saldo
                 </button>
-                <button type="button" className="wallet-banner__btn wallet-banner__btn--primary" onClick={() => setWithdrawOpen(true)}>
-                  <Send className="wallet-banner__btn-icon" />
-                  Retirar
-                </button>
-                <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => navigate('/dashboard/transactions/transfers')}>
+                <button type="button" className="wallet-banner__btn wallet-banner__btn--dark" onClick={() => setTransferOpen(true)}>
                   <ArrowUpRight className="wallet-banner__btn-icon" />
                   Transferir
                 </button>
@@ -154,15 +187,15 @@ export default function WalletSummary() {
 
           <section className="wallet-card wallet-transactions">
             <div className="wallet-card__header">
-              <h2 className="wallet-card__title">Últimos movimientos de la wallet</h2>
-              <Link to="/dashboard/history" className="wallet-card__link">
-                Historial global
+              <h2 className="wallet-card__title">Últimos movimientos de la billetera</h2>
+              <Link to="/dashboard/transactions" className="wallet-card__link">
+                Ver todas las transacciones
                 <ArrowRight className="wallet-card__link-icon" />
               </Link>
             </div>
             <ul className="wallet-transactions__list">
               {transactions.map((tx) => {
-                const isPositive = tx.type === 'deposit' || tx.type === 'conversion'
+                const sign = transactionSign(tx)
                 return (
                   <li key={tx.id} className="wallet-transaction">
                     <div className="wallet-transaction__info">
@@ -174,7 +207,7 @@ export default function WalletSummary() {
                         : tx.currency_code}
                     </span>
                     <span className="wallet-transaction__amount">
-                      {isPositive ? '+' : '-'}{tx.amount.toLocaleString('es-AR')}
+                      {sign}{tx.amount.toLocaleString('es-AR')}
                     </span>
                   </li>
                 )
@@ -192,7 +225,21 @@ export default function WalletSummary() {
               </div>
 
               <div className="wallet-cards__carousel">
-                <div className="wallet-cards__stack">
+                <div
+                  className="wallet-cards__stack"
+                  onTouchStart={(e) => {
+                    touchStartX.current = e.touches[0].clientX
+                  }}
+                  onTouchEnd={(e) => {
+                    if (touchStartX.current === null) return
+                    const dx = e.changedTouches[0].clientX - touchStartX.current
+                    touchStartX.current = null
+                    if (Math.abs(dx) < 40) return
+                    setActiveCardIndex((i) =>
+                      dx < 0 ? (i + 1) % cards.length : (i - 1 + cards.length) % cards.length,
+                    )
+                  }}
+                >
                   {cards.map((card, index) => {
                     const isActive = index === activeCardIndex
                     const diff = index - activeCardIndex
@@ -228,41 +275,62 @@ export default function WalletSummary() {
                   })}
                 </div>
 
-                <button
-                  type="button"
-                  className="wallet-cards__arrow wallet-cards__arrow--prev"
-                  onClick={() => setActiveCardIndex((i) => (i - 1 + cards.length) % cards.length)}
-                  aria-label="Tarjeta anterior"
-                >
-                  <ChevronLeft className="wallet-cards__arrow-icon" />
-                </button>
-                <button
-                  type="button"
-                  className="wallet-cards__arrow wallet-cards__arrow--next"
-                  onClick={() => setActiveCardIndex((i) => (i + 1) % cards.length)}
-                  aria-label="Tarjeta siguiente"
-                >
-                  <ChevronRight className="wallet-cards__arrow-icon" />
-                </button>
+                {cards.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="wallet-cards__arrow wallet-cards__arrow--prev"
+                      onClick={() => setActiveCardIndex((i) => (i - 1 + cards.length) % cards.length)}
+                      aria-label="Tarjeta anterior"
+                    >
+                      <ChevronLeft className="wallet-cards__arrow-icon" />
+                    </button>
+                    <button
+                      type="button"
+                      className="wallet-cards__arrow wallet-cards__arrow--next"
+                      onClick={() => setActiveCardIndex((i) => (i + 1) % cards.length)}
+                      aria-label="Tarjeta siguiente"
+                    >
+                      <ChevronRight className="wallet-cards__arrow-icon" />
+                    </button>
+                  </>
+                )}
               </div>
             </section>
           )}
 
-          {paymentMethods.length > 0 && (
-            <section className="wallet-card wallet-retiros">
-              <h2 className="wallet-card__title">Retiros</h2>
-              <ul className="wallet-retiros__list">
-                {paymentMethods.map((pm) => (
-                  <li key={pm.id} className="wallet-retiro">
-                    <span className="wallet-retiro__name">{pm.name}</span>
-                    <span className="wallet-retiro__detail">
-                      {pm.last_four ? `···${pm.last_four}` : 'Sin vincular'} · {pm.currency_name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          <section className="wallet-card wallet-retiros">
+            <h2 className="wallet-card__title">Retiros</h2>
+            <div className="wallet-retiros__wrap">
+              <div className="wallet-retiros__blur">
+                {paymentMethods.length > 0 ? (
+                  <ul className="wallet-retiros__list">
+                    {paymentMethods.map((pm) => (
+                      <li key={pm.id} className="wallet-retiro">
+                        <span className="wallet-retiro__name">{pm.name}</span>
+                        <span className="wallet-retiro__detail">
+                          {pm.last_four ? `···${pm.last_four}` : 'Sin vincular'} · {pm.currency_name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ul className="wallet-retiros__list">
+                    <li className="wallet-retiro">
+                      <span className="wallet-retiro__name">Tus cuentas vinculadas</span>
+                      <span className="wallet-retiro__detail">Aparecerán acá</span>
+                    </li>
+                  </ul>
+                )}
+              </div>
+              <div className="wallet-retiros__overlay">
+                <span className="wallet-retiros__coming">
+                  <Clock className="wallet-retiros__coming-icon" />
+                  Próximamente
+                </span>
+              </div>
+            </div>
+          </section>
         </aside>
       </div>
 
@@ -271,7 +339,6 @@ export default function WalletSummary() {
       <Modal open={depositOpen} onClose={() => setDepositOpen(false)} title="Depositar" step={depositStep} totalSteps={2}>
         <DepositWizard
           summary={summary}
-          paymentMethods={paymentMethods}
           step={depositStep}
           setStep={setDepositStep}
           onDone={(msg) => {
@@ -280,7 +347,7 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />
@@ -298,25 +365,7 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
-          sending={sending}
-          setSending={setSending}
-        />
-      </Modal>
-
-      <Modal open={withdrawOpen} onClose={() => setWithdrawOpen(false)} title="Retirar" step={withdrawStep} totalSteps={2}>
-        <WithdrawWizard
-          summary={summary}
-          paymentMethods={paymentMethods}
-          step={withdrawStep}
-          setStep={setWithdrawStep}
-          onDone={(msg) => {
-            setWithdrawOpen(false)
-            setWithdrawStep(1)
-            setMessage(msg)
-            reload()
-          }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />
@@ -334,7 +383,24 @@ export default function WalletSummary() {
             setMessage(msg)
             reload()
           }}
-          onError={setErrorMessage}
+          onError={handleWizardError}
+          sending={sending}
+          setSending={setSending}
+        />
+      </Modal>
+
+      <Modal open={transferOpen} onClose={() => setTransferOpen(false)} title="Transferir" step={transferStep} totalSteps={2}>
+        <TransferWizard
+          contacts={contacts}
+          step={transferStep}
+          setStep={setTransferStep}
+          onDone={(msg) => {
+            setTransferOpen(false)
+            setTransferStep(1)
+            setMessage(msg)
+            reload()
+          }}
+          onError={handleWizardError}
           sending={sending}
           setSending={setSending}
         />
@@ -365,23 +431,31 @@ export default function WalletSummary() {
 
 interface DepositWizardProps {
   summary: BalanceSummaryItem[]
-  paymentMethods: PaymentMethod[]
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
 }
 
-function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError, sending, setSending }: DepositWizardProps) {
+function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSending }: DepositWizardProps) {
   const [currencyCode, setCurrencyCode] = useState('ARS')
-  const [methodId, setMethodId] = useState('')
   const [amount, setAmount] = useState('')
+  const [focusAmount, setFocusAmount] = useState(0)
+  const amountInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (focusAmount > 0) {
+      amountInputRef.current?.focus()
+      setFocusAmount(0)
+    }
+  }, [focusAmount])
 
   const value = Number(amount)
-  const method = paymentMethods.find((pm) => pm.id === methodId)
-  const isValid = Boolean(method) && value > 0
+  const limit = DEPOSIT_LIMITS[currencyCode]
+  const exceedsLimit = limit !== undefined && value > limit
+  const isValid = value > 0 && !exceedsLimit
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -393,13 +467,13 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
     onError('')
     setSending(true)
     try {
-      await createDeposit({ currencyCode, amount: value, methodName: method?.name })
+      await createDeposit({ currencyCode, amount: value, methodName: 'Método de pago demo' })
       onDone(`Depositados ${value.toLocaleString('es-AR')} ${currencyCode}`)
     } catch (err) {
-      setMethodId('')
       setAmount('')
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar el depósito')
+      if (isDepositLimitError(err)) setFocusAmount((n) => n + 1)
+      onError(err)
     } finally {
       setSending(false)
     }
@@ -415,13 +489,17 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
           </div>
           <div className="tx-review__row">
             <dt className="tx-review__label">Desde</dt>
-            <dd className="tx-review__value">{method ? `${method.name}${method.last_four ? ` ····${method.last_four}` : ''}` : '—'}</dd>
+            <dd className="tx-review__value">Método de pago demo</dd>
           </div>
           <div className="tx-review__row">
             <dt className="tx-review__label">Monto</dt>
             <dd className="tx-review__value tx-review__amount">
               {value.toLocaleString('es-AR')} {currencyCode}
             </dd>
+          </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
           </div>
         </dl>
 
@@ -460,19 +538,17 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
         }))}
       />
 
-      <Select
-        id="deposit-method"
-        label="Desde"
-        value={methodId}
-        onChange={setMethodId}
-        options={[
-          { value: '', label: 'Elegí un método' },
-          ...paymentMethods.map((pm) => ({
-            value: pm.id,
-            label: `${pm.name}${pm.last_four ? ` ····${pm.last_four}` : ''}`,
-          })),
-        ]}
-      />
+      <div className="tx-form__field">
+        <label htmlFor="deposit-method" className="tx-form__label">Método de pago</label>
+        <input
+          id="deposit-method"
+          type="text"
+          value="Método de pago demo"
+          readOnly
+          className="tx-form__control"
+        />
+        <p className="tx-form__hint">Depósito de prueba en entorno demo.</p>
+      </div>
 
       <div className="tx-form__field">
         <label htmlFor="deposit-amount" className="tx-form__label">Monto</label>
@@ -485,159 +561,17 @@ function DepositWizard({ summary, paymentMethods, step, setStep, onDone, onError
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
           className="tx-form__control"
+          ref={amountInputRef}
+          aria-invalid={exceedsLimit}
         />
-      </div>
-
-      <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">
-        Continuar
-      </button>
-    </form>
-  )
-}
-
-interface WithdrawWizardProps {
-  summary: BalanceSummaryItem[]
-  paymentMethods: PaymentMethod[]
-  step: number
-  setStep: (v: number) => void
-  onDone: (msg: string) => void
-  onError: (msg: string) => void
-  sending: boolean
-  setSending: (v: boolean) => void
-}
-
-function WithdrawWizard({ summary, paymentMethods, step, setStep, onDone, onError, sending, setSending }: WithdrawWizardProps) {
-  const [currencyCode, setCurrencyCode] = useState('ARS')
-  const [methodId, setMethodId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [confirmed, setConfirmed] = useState(false)
-
-  const value = Number(amount)
-  const method = paymentMethods.find((pm) => pm.id === methodId)
-  const available = summary.find((s) => s.currency_code === currencyCode)?.amount ?? 0
-  const insufficient = value > 0 && value > available
-  const isValid = Boolean(method) && value > 0 && !insufficient
-
-  const handleNext = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!isValid) return
-    setStep(2)
-  }
-
-  const handleConfirm = async () => {
-    onError('')
-    setSending(true)
-    try {
-      await createWithdrawal({ currencyCode, amount: value, methodName: method?.name })
-      onDone(`Retirados ${value.toLocaleString('es-AR')} ${currencyCode} hacia ${method?.name}`)
-    } catch (err) {
-      setMethodId('')
-      setAmount('')
-      setConfirmed(false)
-      setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar el retiro')
-    } finally {
-      setSending(false)
-    }
-  }
-
-  if (step === 2) {
-    return (
-      <div className="tx-review">
-        <dl className="tx-review__rows">
-          <div className="tx-review__row">
-            <dt className="tx-review__label">Desde la cuenta</dt>
-            <dd className="tx-review__value">{currencyCode}</dd>
-          </div>
-          <div className="tx-review__row">
-            <dt className="tx-review__label">Hacia</dt>
-            <dd className="tx-review__value">{method ? `${method.name}${method.last_four ? ` ····${method.last_four}` : ''}` : '—'}</dd>
-          </div>
-          <div className="tx-review__row">
-            <dt className="tx-review__label">Monto</dt>
-            <dd className="tx-review__value tx-review__amount">
-              {value.toLocaleString('es-AR')} {currencyCode}
-            </dd>
-          </div>
-        </dl>
-
-        <label className="tx-form__option">
-          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-          <span>Estoy seguro de realizar este retiro</span>
-        </label>
-
-        <div className="tx-review__actions">
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            disabled={sending}
-            className="tx-button tx-button--secondary"
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={sending || !confirmed}
-            className="tx-button tx-button--primary"
-          >
-            {sending ? 'Retirando...' : 'Confirmar retiro'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <form onSubmit={handleNext} className="tx-form">
-      <Select
-        id="withdraw-account"
-        label="Desde qué cuenta"
-        value={currencyCode}
-        onChange={setCurrencyCode}
-        options={summary.map((s) => ({
-          value: s.currency_code,
-          label: `${s.currency_name} (${s.currency_code})`,
-        }))}
-      />
-
-      <Select
-        id="withdraw-method"
-        label="Hacia dónde"
-        value={methodId}
-        onChange={setMethodId}
-        options={[
-          { value: '', label: 'Elegí un método' },
-          ...paymentMethods.map((pm) => ({
-            value: pm.id,
-            label: `${pm.name}${pm.last_four ? ` ····${pm.last_four}` : ''}`,
-          })),
-        ]}
-      />
-
-      <div className="tx-form__field">
-        <label htmlFor="withdraw-amount" className="tx-form__label">Monto</label>
-        <input
-          id="withdraw-amount"
-          type="number"
-          min="0"
-          step="any"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
-          className="tx-form__control"
-        />
-        <p className="tx-form__hint">Disponible: {available.toLocaleString('es-AR')} {currencyCode}</p>
-        {insufficient && (
-          <p className="tx-form__error">Saldo insuficiente</p>
+        {exceedsLimit && (
+          <p className="tx-form__error" role="alert">
+            El máximo para depósitos en {currencyCode} es {formatDepositLimit(currencyCode)}.
+          </p>
         )}
       </div>
 
-      <button
-        type="submit"
-        disabled={!isValid}
-        className="tx-button tx-button--primary tx-button--block"
-      >
+      <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">
         Continuar
       </button>
     </form>
@@ -650,7 +584,7 @@ interface RequestWizardProps {
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
 }
@@ -663,11 +597,20 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
 
   const value = Number(amount)
   const contact = contacts.find((c) => c.id === contactId)
-  const isValid = Boolean(contact) && value > 0
+  const recipientFilled = Boolean(contactId)
+  const isValid = recipientFilled && value > 0
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!isValid) return
+    onError('')
+    if (!recipientFilled) {
+      onError('Elegí un contacto para continuar')
+      return
+    }
+    if (!(value > 0)) {
+      onError('Ingresá un monto válido para continuar')
+      return
+    }
     setStep(2)
   }
 
@@ -682,6 +625,9 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         currencyCode,
         amount: value,
         concept: concept.trim() || undefined,
+        ...(contact.contact_type === 'account_number'
+          ? { payerAccountNumber: contact.contact_value ?? contact.account ?? undefined }
+          : { payerAlias: contact.contact_value ?? contact.alias ?? undefined }),
       })
       onDone(`Solicitud de ${value.toLocaleString('es-AR')} ${currencyCode} enviada a ${contact.alias}`)
     } catch (err) {
@@ -689,7 +635,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
       setAmount('')
       setConcept('')
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar la solicitud')
+      onError(err)
     } finally {
       setSending(false)
     }
@@ -703,6 +649,16 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
             <dt className="tx-review__label">Cobrarle a</dt>
             <dd className="tx-review__value">{contact?.alias}</dd>
           </div>
+          {contact && (
+            <div className="tx-review__row">
+              <dt className="tx-review__label">
+                {contact.contact_type === 'account_number' || contact.account ? 'Número de cuenta' : 'Alias'}
+              </dt>
+              <dd className="tx-review__value">
+                {contact.contact_value ?? contact.account ?? contact.alias ?? ''}
+              </dd>
+            </div>
+          )}
           <div className="tx-review__row">
             <dt className="tx-review__label">Moneda</dt>
             <dd className="tx-review__value">{currencyCode}</dd>
@@ -712,6 +668,10 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
             <dd className="tx-review__value tx-review__amount">
               {value.toLocaleString('es-AR')} {currencyCode}
             </dd>
+          </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
           </div>
           {concept.trim() && (
             <div className="tx-review__row">
@@ -733,7 +693,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={sending}
+            disabled={sending || !contact || !(value > 0)}
             className="tx-button tx-button--primary"
           >
             {sending ? 'Enviando solicitud...' : 'Confirmar solicitud'}
@@ -751,9 +711,10 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         value={contactId}
         onChange={setContactId}
         options={[
-          { value: '', label: 'Elegí un contacto' },
+          { value: '', label: 'Elige un contacto' },
           ...contacts.map((c) => ({ value: c.id, label: c.alias })),
         ]}
+        required
       />
 
       <Select
@@ -765,7 +726,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
       />
 
       <div className="tx-form__field">
-        <label htmlFor="request-amount" className="tx-form__label">Monto</label>
+        <label htmlFor="request-amount" className="tx-form__label tx-form__label--required">Monto</label>
         <input
           id="request-amount"
           type="number"
@@ -775,6 +736,8 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
           className="tx-form__control"
+          required
+          aria-required="true"
         />
       </div>
 
@@ -803,7 +766,7 @@ interface ConvertWizardProps {
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
 }
@@ -821,7 +784,7 @@ function ConvertWizard({ summary, quotes, step, setStep, onDone, onError, sendin
     } catch (err) {
       setData(null)
       setStep(1)
-      onError(err instanceof Error ? err.message : 'No se pudo realizar la conversión')
+      onError(err)
     } finally {
       setSending(false)
     }
@@ -851,14 +814,10 @@ function ConvertWizard({ summary, quotes, step, setStep, onDone, onError, sendin
               {data.result > 0 ? `${data.result.toLocaleString('es-AR', { maximumFractionDigits: 2 })} ${data.toCurrency}` : '—'}
             </dd>
           </div>
-          {data.result > 0 && (
-            <div className="tx-review__row">
-              <dt className="tx-review__label">Comisión (0,4%)</dt>
-              <dd className="tx-review__value">
-                -{(data.result * 0.004).toLocaleString('es-AR', { maximumFractionDigits: 2 })} {data.toCurrency}
-              </dd>
-            </div>
-          )}
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
+          </div>
         </dl>
 
         <div className="tx-review__actions">

@@ -3,6 +3,7 @@ export interface CompanyProfile {
   legal_name: string
   document: string
   phone: string | null
+  timezone?: string
 }
 
 export const companyProfiles: CompanyProfile[] = [

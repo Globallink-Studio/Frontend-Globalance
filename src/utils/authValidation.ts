@@ -32,7 +32,7 @@ export function validateSignupField(
     case 'email': {
       const value = values.email.trim()
       if (!value) return 'El correo electrónico es obligatorio.'
-      if (!EMAIL_REGEX.test(value)) return 'Ingresá un correo electrónico válido.'
+      if (!EMAIL_REGEX.test(value)) return 'Ingresa un correo electrónico válido.'
       return undefined
     }
     case 'password': {
@@ -43,23 +43,26 @@ export function validateSignupField(
       return undefined
     }
     case 'confirmPassword': {
-      if (!values.confirmPassword) return 'Confirmá tu contraseña.'
+      if (!values.confirmPassword) return 'Confirma tu contraseña.'
       if (values.confirmPassword !== values.password) return 'Las contraseñas no coinciden.'
       return undefined
     }
     case 'firstName':
-      if (accountType === 'personal' && !values.firstName.trim()) return 'Ingresá tu nombre.'
+      if (accountType === 'personal' && !values.firstName.trim()) return 'El nombre es obligatorio.'
       return undefined
     case 'lastName':
-      if (accountType === 'personal' && !values.lastName.trim()) return 'Ingresá tu apellido.'
+      if (accountType === 'personal' && !values.lastName.trim()) return 'El apellido es obligatorio.'
       return undefined
     case 'legalName':
-      if (accountType === 'business' && !values.legalName.trim()) return 'Ingresá la razón social.'
+      if (accountType === 'business' && !values.legalName.trim()) return 'La razón social es obligatoria.'
       return undefined
     case 'document':
-      if (!values.document.trim()) return 'Ingresá tu documento.'
+      if (!values.document.trim()) return 'El documento es obligatorio.'
+      if (values.document.trim().length < 5) return 'El documento debe tener al menos 5 caracteres.'
       return undefined
     case 'phone':
+      if (!values.phone.trim()) return 'El teléfono es obligatorio.'
+      if (values.phone.trim().length < 7) return 'El teléfono debe tener al menos 7 caracteres.'
       return undefined
   }
 }
@@ -94,7 +97,7 @@ export function validateSigninField(
     case 'email': {
       const value = values.email.trim()
       if (!value) return 'El correo electrónico es obligatorio.'
-      if (!EMAIL_REGEX.test(value)) return 'Ingresá un correo electrónico válido.'
+      if (!EMAIL_REGEX.test(value)) return 'Ingresa un correo electrónico válido.'
       return undefined
     }
     case 'password':

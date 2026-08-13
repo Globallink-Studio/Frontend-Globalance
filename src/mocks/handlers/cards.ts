@@ -6,6 +6,7 @@ import {
   deleteMockCard,
 } from '../storage'
 import type { Card, CardBrand, CardStatus } from '../data/cards'
+import { getExpiryError } from '../../utils/cardFormat'
 
 export interface CardInput {
   brand: CardBrand
@@ -29,6 +30,8 @@ function validateCardInput(input: CardInput): void {
   }
   if (!input.holder?.trim()) throw new Error('El titular de la tarjeta es obligatorio')
   if (!input.expiry?.trim()) throw new Error('El vencimiento de la tarjeta es obligatorio')
+  const expiryError = getExpiryError(input.expiry.trim())
+  if (expiryError) throw new Error(expiryError)
 }
 
 export async function getCards(): Promise<Card[]> {

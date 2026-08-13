@@ -1,8 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { getCurrentCards, addCard, blockCard, unblockCard, deleteCard } from '../../../api/cards'
+import { getFriendlyErrorMessage } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import Select from '../../../components/Select'
 import type { Card } from '../../../mocks/data/cards'
+import { formatExpiry, getExpiryError } from '../../../utils/cardFormat'
+import '../../../styles/pages/private/transactions.css'
 
 const brandLabel: Record<string, string> = {
   visa: 'Visa',
@@ -61,7 +64,7 @@ export default function Cards() {
       setConfirm(null)
       await loadCards()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo completar la acción sobre la tarjeta')
+      setError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -151,11 +154,11 @@ export default function Cards() {
             </h3>
             <p className="tx-modal__message">
               {confirm.action === 'delete' &&
-                `¿Seguro que querés eliminar la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? Esta acción no se puede deshacer.`}
+                `¿Seguro que quieres eliminar la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? Esta acción no se puede deshacer.`}
               {confirm.action === 'block' &&
-                `¿Seguro que querés bloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? No vas a poder usarla hasta desbloquearla.`}
+                `¿Seguro que quieres bloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}? No vas a poder usarla hasta desbloquearla.`}
               {confirm.action === 'unblock' &&
-                `¿Seguro que querés desbloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}?`}
+                `¿Seguro que quieres desbloquear la tarjeta ${brandLabel[confirm.card.brand]} ····${confirm.card.last_four}?`}
             </p>
             {error && <p className="profile-edit__error" role="alert">{error}</p>}
             <div className="tx-review__actions">
@@ -200,10 +203,18 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
   const [brand, setBrand] = useState('visa')
   const [holder, setHolder] = useState('')
   const [expiry, setExpiry] = useState('')
+  const [expiryError, setExpiryError] = useState('')
   const [lastFour, setLastFour] = useState('')
   const [agreed, setAgreed] = useState(false)
 
-  const isValid = holder.trim() !== '' && expiry.trim() !== '' && lastFour.length === 4 && agreed
+  const expiryComplete = /^\d{2}\/\d{2}$/.test(expiry)
+  const isValid = holder.trim() !== '' && expiryComplete && !expiryError && lastFour.length === 4 && agreed
+
+  const handleExpiryChange = (value: string) => {
+    const formatted = formatExpiry(value)
+    setExpiry(formatted)
+    setExpiryError(formatted.length === 5 ? (getExpiryError(formatted) ?? '') : '')
+  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -214,7 +225,7 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
       await addCard({ brand: brand as Card['brand'], holder, expiry, last_four: lastFour })
       onDone()
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'No se pudo agregar la tarjeta')
+      onError(getFriendlyErrorMessage(err))
     } finally {
       setSending(false)
     }
@@ -250,11 +261,16 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
         <input
           id="card-expiry"
           type="text"
+          inputMode="numeric"
           value={expiry}
-          onChange={(e) => setExpiry(e.target.value)}
+          onChange={(e) => handleExpiryChange(e.target.value)}
           placeholder="MM/AA"
           className="tx-form__control"
+          aria-invalid={Boolean(expiryError)}
         />
+        {expiryError && (
+          <p className="tx-form__error" role="alert">{expiryError}</p>
+        )}
       </div>
 
       <div className="tx-form__field">

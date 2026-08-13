@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FetchState } from '../api/fetchState'
+import { getFriendlyErrorMessage } from '../api/errors'
 
 export function useAsync<T>(fn: () => Promise<T>) {
   const [state, setState] = useState<FetchState>('idle')
@@ -14,7 +15,7 @@ export function useAsync<T>(fn: () => Promise<T>) {
         setState('success')
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Error inesperado')
+        setError(getFriendlyErrorMessage(err))
         setState('error')
       })
   }, [fn])

@@ -17,9 +17,10 @@ interface SelectProps {
   hint?: string
   hideLabel?: boolean
   variant?: 'default' | 'ghost' | 'badge'
+  required?: boolean
 }
 
-export default function Select({ id, label, value, onChange, options, placeholder = '', hint, hideLabel, variant = 'default' }: SelectProps) {
+export default function Select({ id, label, value, onChange, options, placeholder = '', hint, hideLabel, variant = 'default', required = false }: SelectProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -45,7 +46,7 @@ export default function Select({ id, label, value, onChange, options, placeholde
 
   return (
     <div className="tx-form__field">
-      {!hideLabel && <label htmlFor={id} className="tx-form__label">{label}</label>}
+      {!hideLabel && <label htmlFor={id} className={`tx-form__label${required ? ' tx-form__label--required' : ''}`}>{label}</label>}
       <div className={`select${variantClass}`} ref={ref}>
         <button
           type="button"

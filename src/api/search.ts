@@ -97,15 +97,15 @@ export function searchGlobal(data: SearchData, query: string, maxHitsPerSection 
       id: t.id,
       title: t.description,
       subtitle: `${transactionTypeLabels[t.type]} · ${t.currency_code} ${t.amount.toLocaleString('es-AR')} · ${transactionStatusLabels[t.status]}`,
-      to: '/dashboard/history',
+      to: '/dashboard/transactions',
     }))
   if (transactionHits.length > 0) {
-    sections.push(buildSection('transactions', 'Transacciones', '/dashboard/history', transactionHits, maxHitsPerSection))
+    sections.push(buildSection('transactions', 'Transacciones', '/dashboard/transactions', transactionHits, maxHitsPerSection))
   }
 
   if (data.wallet && includes(q, data.wallet.alias, data.wallet.account_number)) {
     sections.push(
-      buildSection('wallet', 'Wallet', '/dashboard/wallet', [
+      buildSection('wallet', 'Billetera', '/dashboard/wallet', [
         {
           id: data.wallet.id,
           title: data.wallet.alias,

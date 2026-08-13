@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { LogOut, Settings, User } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
 import { useAuth } from '../../providers/authentication/AuthContext'
+import '../../styles/components/profile-menu.css'
 
 function getInitial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || 'U'
@@ -85,10 +86,6 @@ export default function ProfileMenu({ name }: { name: string }) {
             <button type="button" role="menuitem" className="profile-menu__item btn-hover-edit" onClick={() => go('/dashboard/profile')}>
               <User className="profile-menu__icon" />
               Ver perfil
-            </button>
-            <button type="button" role="menuitem" className="profile-menu__item btn-hover-edit" onClick={() => go('/dashboard/settings')}>
-              <Settings className="profile-menu__icon" />
-              Ajustes
             </button>
             <div className="profile-menu__divider" role="separator" />
             <button type="button" role="menuitem" className="profile-menu__item profile-menu__item--danger btn-hover-danger" onClick={handleLogout}>

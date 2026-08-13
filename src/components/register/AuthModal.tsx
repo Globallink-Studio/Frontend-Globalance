@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import "../../styles/components/auth-modal.css";
 
@@ -34,7 +35,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (!open) return null;
 
-    return (
+    return createPortal(
         <div className="auth-modal__backdrop" onClick={onClose}>
             <div
                 className="auth-modal"
@@ -64,6 +65,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </header>
                 <div className="auth-modal__content">{children}</div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 };

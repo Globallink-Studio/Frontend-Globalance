@@ -4,6 +4,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteCurrentNotification,
+  NOTIFICATIONS_CHANGED_EVENT,
 } from '../api/notifications'
 import type { AppNotification } from '../mocks/data/notifications'
 
@@ -25,6 +26,12 @@ export function useNotifications() {
 
   useEffect(() => {
     void refresh()
+  }, [refresh])
+
+  useEffect(() => {
+    const onChange = () => void refresh()
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChange)
+    return () => window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChange)
   }, [refresh])
 
   const unreadCount = notifications.filter((n) => !n.read).length

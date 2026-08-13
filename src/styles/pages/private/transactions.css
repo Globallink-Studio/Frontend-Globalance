@@ -71,6 +71,11 @@
   color: var(--muted-foreground);
 }
 
+.tx-form__label--required::after {
+  content: ' *';
+  color: var(--destructive);
+}
+
 .tx-form__control {
   width: 100%;
   border-radius: 9999px;
@@ -93,6 +98,17 @@
 .tx-form__control:focus {
   border-color: var(--ring);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 22%, transparent);
+}
+
+.tx-form__control--readonly {
+  background-color: var(--surface);
+  color: var(--muted-foreground);
+  cursor: default;
+}
+
+.tx-form__control--readonly:focus {
+  border-color: var(--border);
+  box-shadow: none;
 }
 
 /* Sin flechitas en inputs numéricos (solo tipado manual) */
@@ -140,6 +156,61 @@ input[type='number'].tx-amount::-webkit-inner-spin-button {
 
 .tx-form__option input {
   accent-color: var(--accent);
+}
+
+/* ── Checkbox/radio custom (estética del proyecto) ─────────────── */
+.tx-form__option input[type='checkbox'],
+.tx-form__option input[type='radio'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--ring) 55%, transparent);
+  background-color: var(--input);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.tx-form__option input[type='checkbox']:hover,
+.tx-form__option input[type='radio']:hover {
+  border-color: var(--ring);
+  background-color: color-mix(in oklab, var(--ring) 12%, transparent);
+}
+
+.tx-form__option input[type='checkbox']:focus-visible,
+.tx-form__option input[type='radio']:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 22%, transparent);
+}
+
+.tx-form__option input[type='checkbox']:checked,
+.tx-form__option input[type='radio']:checked {
+  background-color: var(--muted);
+  border-color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+}
+
+.tx-form__option input[type='checkbox']:checked::after,
+.tx-form__option input[type='radio']:checked::after {
+  content: '';
+  width: 0.625rem;
+  height: 0.375rem;
+  border-left: 2px solid var(--foreground);
+  border-bottom: 2px solid var(--foreground);
+  transform: rotate(-45deg) translate(0.05rem, -0.05rem);
+}
+
+.tx-form__option input[type='checkbox']:active,
+.tx-form__option input[type='radio']:active {
+  transform: scale(0.92);
 }
 
 /* ── Botones ─────────────────────────────────────────────────────── */
@@ -247,24 +318,55 @@ input[type='number'].tx-amount::-webkit-inner-spin-button {
 /* ── Toast (éxito) ───────────────────────────────────────────────── */
 .tx-toast {
   position: fixed;
-  top: 1rem;
+  top: calc(4rem + 0.75rem);
   right: 1rem;
-  z-index: 50;
-  max-width: 20rem;
-  padding: 0.75rem 1.125rem;
-  border-radius: var(--radius-lg);
+  z-index: 60;
+  max-width: 22rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-xl);
   font-size: 0.875rem;
   font-weight: 600;
-  color: oklch(0.99 0 0);
-  background-color: var(--success);
-  box-shadow: var(--shadow-soft);
+  line-height: 1.4;
+  color: var(--card-foreground);
+  background-color: color-mix(in oklab, var(--card) 78%, transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid color-mix(in oklab, var(--success) 42%, var(--border));
+  box-shadow: var(--shadow-soft), 0 0 24px -6px color-mix(in oklab, var(--success) 45%, transparent);
+  animation: tx-toast-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tx-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tx-toast {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .tx-toast {
+    top: calc(4rem + 0.75rem);
+    right: 0.75rem;
+    left: 0.75rem;
+    max-width: none;
+  }
 }
 
 /* ── Modal (error) ───────────────────────────────────────────────── */
 .tx-modal {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 70;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -718,4 +820,28 @@ input[type='number'].tx-amount::-webkit-inner-spin-button {
 
 .tx-table__amount--income {
   color: color-mix(in oklab, var(--success) 85%, var(--foreground));
+}
+
+@media (max-width: 640px) {
+  .profile-card.history-toolbar {
+    padding: 0.875rem;
+  }
+
+  .tx-table {
+    min-width: 42rem;
+    font-size: 0.9375rem;
+  }
+
+  .tx-table th {
+    padding: 1rem 0.875rem 0.75rem;
+  }
+
+  .tx-table td {
+    padding: 0.875rem;
+  }
+
+  .tx-table tbody tr {
+    background-size: calc(100% - 1.75rem) 1px;
+    background-position: 0.875rem bottom;
+  }
 }

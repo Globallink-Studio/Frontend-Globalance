@@ -1,4 +1,5 @@
 import { delay } from '../delay'
+import { ApiError, NetworkError } from '../../api/errors'
 import { exchangeRates } from '../data/exchangeRates'
 import type { ExchangeRate } from '../data/exchangeRates'
 
@@ -6,6 +7,19 @@ const CURRENCY_ALIASES: { codes: string[]; label: string }[] = [
   { codes: ['dolar', 'dólar', 'dolares', 'dólares', 'usd'], label: 'USD' },
   { codes: ['euro', 'euros', 'eur'], label: 'EUR' },
   { codes: ['peso', 'pesos', 'ars'], label: 'ARS' },
+]
+
+// En modo mock se pueden probar los errores escribiendo "error 400",
+// "error 500", "error 502", etc. en el chat.
+const SIMULATED_ERRORS: { pattern: RegExp; factory: () => Error }[] = [
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+(red|conexion|conexión)\b/, factory: () => new NetworkError() },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+400\b/, factory: () => new ApiError(400) },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+401\b/, factory: () => new ApiError(401) },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+429\b/, factory: () => new ApiError(429) },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+500\b/, factory: () => new ApiError(500) },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+502\b/, factory: () => new ApiError(502) },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+503\b/, factory: () => new ApiError(503) },
+  { pattern: /(^|\s)(error|simular error|probar el error)\s+504\b/, factory: () => new ApiError(504) },
 ]
 
 function findCurrency(text: string): ExchangeRate | undefined {
@@ -59,8 +73,11 @@ export async function ask(message: string): Promise<string> {
 
   const normalized = message.toLowerCase().trim()
 
+  const simulated = SIMULATED_ERRORS.find(({ pattern }) => pattern.test(normalized))
+  if (simulated) throw simulated.factory()
+
   if (/^(hola|buenas|buenos dias|buenos días|buenas tardes|buenas noches)\b/.test(normalized)) {
-    return '¡Hola! Soy tu asistente de Globalance. Preguntame por la cotización del dólar, el euro o el peso argentino.'
+    return '¡Hola! Soy tu asistente de Globalance. Pregúntame por la cotización del dólar, el euro o el peso argentino.'
   }
 
   if (normalized.includes('gracias')) {
@@ -70,5 +87,5 @@ export async function ask(message: string): Promise<string> {
   const rate = findCurrency(message)
   if (rate) return buildRateReply(rate)
 
-  return 'Puedo ayudarte con las cotizaciones de dólar, euro y peso argentino. Por ejemplo, preguntame "¿cuál es la cotización del dólar?".'
+  return 'Puedo ayudarte con las cotizaciones de dólar, euro y peso argentino. Por ejemplo, pregúntame "¿cuál es la cotización del dólar?".'
 }

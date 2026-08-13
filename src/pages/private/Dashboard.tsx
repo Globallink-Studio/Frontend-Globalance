@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Sparkles } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -10,9 +11,11 @@ import {
   Tooltip,
   Legend,
 } from 'recharts'
-import { dashboardMock, type Metric, type ChartPoint } from '../../data/mocks'
-import { getCurrentBalanceSummary, type BalanceSummaryItem } from '../../api/balances'
+import { type Metric, type ChartPoint } from '../../data/mocks'
+import { getCurrentBalanceSummary, getUnifiedBalance, type BalanceSummaryItem } from '../../api/balances'
+import { getCurrentUser } from '../../api/users'
 import { getDashboardMetrics, getDashboardChart } from '../../api/dashboard'
+import { convertCurrency } from '../../api/exchangeRates'
 import { getRecentTransactions } from '../../api/transactions'
 import type { Transaction } from '../../mocks/data/transactions'
 import '../../styles/pages/private/dashboard.css'
@@ -21,6 +24,8 @@ const statusLabel: Record<string, string> = {
   completed: 'Completada',
   pending: 'Pendiente',
   failed: 'Fallida',
+  cancelled: 'Cancelada',
+  reversed: 'Revertida',
 }
 
 const formatAmount = (value: number, currency: string) => {
@@ -28,18 +33,76 @@ const formatAmount = (value: number, currency: string) => {
 }
 
 export default function Dashboard() {
-  const { aiSummary } = dashboardMock
+  const navigate = useNavigate()
+  const [refreshKey, setRefreshKey] = useState(0)
   const [metrics, setMetrics] = useState<Metric[]>([])
+  const [baseMetrics, setBaseMetrics] = useState<Metric[]>([])
   const [chart, setChart] = useState<ChartPoint[]>([])
   const [balances, setBalances] = useState<BalanceSummaryItem[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [displayCurrency, setDisplayCurrency] = useState('ARS')
+
+  const aiSummary = useMemo(() => {
+    const total = metrics.find((m) => m.label === 'Saldo Total')
+    const income = metrics.find((m) => m.label === 'Ingresos del mes')
+    const expense = metrics.find((m) => m.label === 'Gastos del mes')
+    if (!total) return 'Consultá a tu asistente para conocer más sobre tus finanzas.'
+    return `Tu saldo total es ${formatAmount(total.amount, total.currency)}. Este mes registraste ${formatAmount(income?.amount ?? 0, income?.currency ?? displayCurrency)} en ingresos y ${formatAmount(expense?.amount ?? 0, expense?.currency ?? displayCurrency)} en gastos.`
+  }, [metrics, displayCurrency])
 
   useEffect(() => {
-    getDashboardMetrics().then(setMetrics)
-    getDashboardChart().then(setChart)
-    getCurrentBalanceSummary().then(setBalances)
-    getRecentTransactions(5).then(setTransactions)
+    getCurrentUser().then((u) => setDisplayCurrency(u?.display_currency ?? 'ARS'))
   }, [])
+
+  useEffect(() => {
+    const onFocus = () => setRefreshKey((k) => k + 1)
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      const [m, c, b, tx] = await Promise.allSettled([
+        getDashboardMetrics(),
+        getDashboardChart(),
+        getCurrentBalanceSummary(),
+        getRecentTransactions(5),
+      ])
+      if (cancelled) return
+      if (m.status === 'fulfilled') {
+        setBaseMetrics(m.value)
+        setMetrics(m.value)
+      }
+      if (c.status === 'fulfilled') setChart(c.value)
+      if (b.status === 'fulfilled') setBalances(b.value)
+      if (tx.status === 'fulfilled') setTransactions(tx.value)
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [refreshKey])
+
+  useEffect(() => {
+    if (!displayCurrency || baseMetrics.length === 0) return
+    const apply = async () => {
+      const converted: Metric[] = []
+      for (const m of baseMetrics) {
+        if (m.label === 'Saldo Total') {
+          const total = await getUnifiedBalance(displayCurrency)
+          converted.push({ ...m, amount: total, currency: displayCurrency })
+        } else if (m.label === 'Ingresos del mes' || m.label === 'Gastos del mes') {
+          const amount = await convertCurrency(m.currency, displayCurrency, m.amount)
+          converted.push({ ...m, amount, currency: displayCurrency })
+        } else {
+          converted.push(m)
+        }
+      }
+      setMetrics(converted)
+    }
+    void apply()
+  }, [displayCurrency, baseMetrics])
 
   return (
     <div className="dashboard">
@@ -59,13 +122,13 @@ export default function Dashboard() {
         <section className="dashboard-card dashboard-chart">
           <div className="dashboard-card__header">
             <h2 className="dashboard-card__title">Evolución financiera</h2>
-            <span className="dashboard-card__period">Últimos 7 meses</span>
+            <span className="dashboard-card__period">Mes actual</span>
           </div>
           <div className="dashboard-chart__plot">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{
@@ -89,10 +152,10 @@ export default function Dashboard() {
             <span className="dashboard-ai__icon" aria-hidden="true">
               <Sparkles className="dashboard-ai__icon-svg" />
             </span>
-            <h2 className="dashboard-card__title">Copiloto IA</h2>
+            <h2 className="dashboard-card__title">Asistente IA</h2>
           </div>
           <p className="dashboard-ai__summary">{aiSummary}</p>
-          <button type="button" className="dashboard-ai__button">
+          <button type="button" className="dashboard-ai__button" onClick={() => navigate('/dashboard/assistant')}>
             Consultar a mi asistente
           </button>
         </section>

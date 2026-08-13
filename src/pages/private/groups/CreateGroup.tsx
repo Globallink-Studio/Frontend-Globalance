@@ -1,3 +1,3 @@
 export default function CreateGroup() {
-  return <h2>Wallet Grupal / Crear grupo</h2>
+  return <h2>Billetera Grupal / Crear grupo</h2>
 }

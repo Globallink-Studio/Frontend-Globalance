@@ -7,7 +7,9 @@ import {
   register as apiRegister,
   subscribeToAuth,
 } from '../../api/auth'
+import { completeGoogleProfile as apiCompleteGoogleProfile } from '../../api/users'
 import type { User } from '../../mocks/data/users'
+import type { CompleteGoogleProfileInput } from '../../api/users'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -26,22 +28,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u)
   }
 
-  const loginWithGoogle = async () => {
-    const u = await apiLoginWithGoogle()
-    setUser(u)
+  const loginWithGoogle = async (): Promise<'authenticated' | 'pending'> => {
+    const result = await apiLoginWithGoogle()
+    if (result.status === 'authenticated') setUser(result.user)
+    return result.status
   }
 
-  const register = async (input: { fullName: string; email: string; password: string }) => {
+  const register = async (input: { fullName: string; email: string; password: string; userType?: 'person' | 'company' }) => {
     const u = await apiRegister(input)
     setUser(u)
   }
 
   const logout = async () => {
-    await apiLogout()
-    setUser(null)
+    setInitializing(true)
+    try {
+      await apiLogout()
+    } finally {
+      setUser(null)
+      setInitializing(false)
+    }
   }
 
-  const value: AuthContextValue = { user, initializing, isAuthenticated: !!user, login, loginWithGoogle, register, logout }
+  const completeGoogleProfile = async (patch: CompleteGoogleProfileInput) => {
+    const u = await apiCompleteGoogleProfile(patch)
+    if (u) setUser(u)
+  }
+
+  const value: AuthContextValue = {
+    user,
+    initializing,
+    isAuthenticated: !!user,
+    login,
+    loginWithGoogle,
+    register,
+    logout,
+    completeGoogleProfile,
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
