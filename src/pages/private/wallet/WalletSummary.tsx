@@ -496,6 +496,10 @@ function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSe
               {value.toLocaleString('es-AR')} {currencyCode}
             </dd>
           </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
+          </div>
         </dl>
 
         <div className="tx-review__actions">
@@ -661,6 +665,10 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
               {value.toLocaleString('es-AR')} {currencyCode}
             </dd>
           </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
+          </div>
           {concept.trim() && (
             <div className="tx-review__row">
               <dt className="tx-review__label">Concepto</dt>
@@ -799,14 +807,10 @@ function ConvertWizard({ summary, quotes, step, setStep, onDone, onError, sendin
               {data.result > 0 ? `${data.result.toLocaleString('es-AR', { maximumFractionDigits: 2 })} ${data.toCurrency}` : '—'}
             </dd>
           </div>
-          {data.result > 0 && (
-            <div className="tx-review__row">
-              <dt className="tx-review__label">Comisión (0,4%)</dt>
-              <dd className="tx-review__value">
-                -{(data.result * 0.004).toLocaleString('es-AR', { maximumFractionDigits: 2 })} {data.toCurrency}
-              </dd>
-            </div>
-          )}
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
+          </div>
         </dl>
 
         <div className="tx-review__actions">

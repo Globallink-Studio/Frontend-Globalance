@@ -157,6 +157,10 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
               {review.amount.toLocaleString('es-AR')} {review.currencyCode}
             </dd>
           </div>
+          <div className="tx-review__row">
+            <dt className="tx-review__label">Comisión</dt>
+            <dd className="tx-review__value">Próximamente</dd>
+          </div>
           {review.concept && (
             <div className="tx-review__row">
               <dt className="tx-review__label">Concepto</dt>

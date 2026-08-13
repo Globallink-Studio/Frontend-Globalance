@@ -205,9 +205,7 @@ export default function ConvertForm({
             : '—'}
         </p>
         {Number(result) > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Comisión (0,4%): -{(Number(result) * 0.004).toLocaleString('es-AR', { maximumFractionDigits: 2 })} {toCurrency}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Comisión: Próximamente</p>
         )}
       </div>
 
