@@ -103,26 +103,29 @@ describe('exchangeRates API — modo mock (desarrollo local)', () => {
     expect(result).toBe(0)
   })
 
-  test('getRateHistory siembra el histórico de una moneda al primer pedido', async () => {
-    const history = await getRateHistory('USD', 30)
+  test('getRateHistory devuelve el histórico de un par (USD/ARS)', async () => {
+    const history = await getRateHistory('USD', 'ARS', 30)
     expect(history.length).toBe(30)
-    expect(history[history.length - 1].buy_price).toBe(1250)
+    expect(history[history.length - 1].rate).toBe(1250)
     expect(history[history.length - 1].date).toBe('2026-07-31')
   })
 
   test('getRateHistory recorta a los días pedidos', async () => {
-    const week = await getRateHistory('USD', 7)
+    const week = await getRateHistory('USD', 'ARS', 7)
     expect(week.length).toBe(7)
   })
 
-  test('el histórico siembra las tres monedas', async () => {
-    const usd = await getRateHistory('USD', 30)
-    const eur = await getRateHistory('EUR', 30)
-    const ars = await getRateHistory('ARS', 30)
-    expect(usd.length).toBe(30)
-    expect(eur.length).toBe(30)
-    expect(ars.length).toBe(30)
-    expect(ars.every((p) => p.buy_price === 1)).toBe(true)
+  test('getRateHistory calcula el par contra ARS y entre monedas', async () => {
+    const usdArs = await getRateHistory('USD', 'ARS', 30)
+    const eurArs = await getRateHistory('EUR', 'ARS', 30)
+    const usdEur = await getRateHistory('USD', 'EUR', 30)
+    expect(usdArs.length).toBe(30)
+    expect(eurArs.length).toBe(30)
+    expect(usdEur.length).toBe(30)
+    expect(usdEur[usdEur.length - 1].rate).toBeCloseTo(
+      usdArs[usdArs.length - 1].rate / eurArs[eurArs.length - 1].rate,
+      3,
+    )
   })
 
   test('seedExchangeRateHistory es determinista', () => {
@@ -134,7 +137,7 @@ describe('exchangeRates API — modo mock (desarrollo local)', () => {
   })
 
   test('refrescar anexa un punto nuevo al histórico y persiste en storage', async () => {
-    const before = (await getRateHistory('USD', 30)).length
+    const before = (await getMockRateHistory('USD', 30)).length
     await refreshMockExchangeRates(0)
 
     const stored = readStoredHistory()
@@ -146,15 +149,20 @@ describe('exchangeRates API — modo mock (desarrollo local)', () => {
 
   test('el histórico se recorta al rango pedido tras refrescar', async () => {
     await refreshMockExchangeRates(0)
-    const week = await getRateHistory('USD', 7)
+    const week = await getRateHistory('USD', 'ARS', 7)
     expect(week.length).toBe(7)
   })
 
-  test('la API getRateHistory devuelve lo mismo que el handler', async () => {
+  test('la API getRateHistory devuelve el par USD/ARS calculado del handler', async () => {
     await refreshMockExchangeRates(0)
-    const viaApi = await getRateHistory('USD', 7)
-    const viaHandler = await getMockRateHistory('USD', 7)
-    expect(viaApi).toEqual(viaHandler)
+    const viaApi = await getRateHistory('USD', 'ARS', 7)
+    const usdHandler = await getMockRateHistory('USD', 7)
+    const arsHandler = await getMockRateHistory('ARS', 7)
+    expect(viaApi.length).toBe(7)
+    expect(viaApi[viaApi.length - 1].rate).toBeCloseTo(
+      usdHandler[usdHandler.length - 1].buy_price / arsHandler[arsHandler.length - 1].buy_price,
+      3,
+    )
   })
 
   test('guardar el histórico manualmente se refleja en el handler', () => {
@@ -239,41 +247,68 @@ describe('exchangeRates API — modo firebase (API real)', () => {
     expect(quotes[0].fetched_at).toBe('2026-08-10T12:05:00.000Z')
   })
 
-  test('getRateHistory semilla un histórico de 30 días cuando el caché está vacío', async () => {
+  test('getRateHistory consulta /exchange/rates/history y devuelve el histórico real del par', async () => {
     mockFetch.mockResolvedValue({
-      rates: {
-        base: 'ARS',
-        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
-        provider: 'frankfurter',
-        fetchedAt: '2026-08-10T12:00:00.000Z',
-        expiresAt: '2026-08-10T12:01:00.000Z',
+      history: {
+        source: 'USD',
+        target: 'ARS',
+        days: 30,
+        history: Array.from({ length: 30 }, (_, i) => ({
+          date: `2026-07-${String(i + 1).padStart(2, '0')}`,
+          rate: String(1200 + i),
+          provider: 'frankfurter',
+        })),
       },
     })
 
-    const history = await getRateHistory('USD', 30)
+    const history = await getRateHistory('USD', 'ARS', 30)
 
+    expect(mockFetch).toHaveBeenCalledWith('/exchange/rates/history?source=USD&target=ARS&days=30')
     expect(history).toHaveLength(30)
-    expect(history[history.length - 1].buy_price).toBe(1250)
-    expect(mockFetch).toHaveBeenCalledWith('/exchange/rates?base=ARS')
+    expect(history[history.length - 1].rate).toBe(1229)
+    expect(history[history.length - 1].date).toBe('2026-07-30')
   })
 
-  test('getRateHistory devuelve los últimos días pedidos del caché', async () => {
+  test('getRateHistory devuelve los últimos días pedidos del histórico real', async () => {
     mockFetch.mockResolvedValue({
-      rates: {
-        base: 'ARS',
-        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
-        provider: 'frankfurter',
-        fetchedAt: '2026-08-10T12:00:00.000Z',
-        expiresAt: '2026-08-10T12:01:00.000Z',
+      history: {
+        source: 'USD',
+        target: 'ARS',
+        days: 30,
+        history: Array.from({ length: 30 }, (_, i) => ({
+          date: `2026-07-${String(i + 1).padStart(2, '0')}`,
+          rate: String(1200 + i),
+          provider: 'frankfurter',
+        })),
       },
     })
 
-    const full = await getRateHistory('USD', 30)
-    const week = await getRateHistory('USD', 7)
+    const full = await getRateHistory('USD', 'ARS', 30)
+    const week = await getRateHistory('USD', 'ARS', 7)
 
     expect(full.length).toBe(30)
     expect(week.length).toBe(7)
-    expect(week[week.length - 1].buy_price).toBe(full[full.length - 1].buy_price)
+    expect(week[week.length - 1].rate).toBe(full[full.length - 1].rate)
+  })
+
+  test('getRateHistory usa el respaldo local cuando el endpoint de histórico falla', async () => {
+    mockFetch
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce({
+        rates: {
+          base: 'ARS',
+          rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+          provider: 'frankfurter',
+          fetchedAt: '2026-08-10T12:00:00.000Z',
+          expiresAt: '2026-08-10T12:01:00.000Z',
+        },
+      })
+
+    const history = await getRateHistory('USD', 'ARS', 30)
+
+    expect(mockFetch).toHaveBeenCalledWith('/exchange/rates/history?source=USD&target=ARS&days=30')
+    expect(history).toHaveLength(30)
+    expect(history[history.length - 1].rate).toBe(1250)
   })
 
   test('getQuotes guarda el histórico en localStorage y usa el punto anterior como prev_buy_price', async () => {

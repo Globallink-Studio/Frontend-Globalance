@@ -42,6 +42,23 @@ interface ApiQuoteResponse {
 
 type RatesHistoryCache = Record<string, ExchangeRatePoint[]>
 
+type RatesPairHistoryCache = Record<string, RateHistoryPoint[]>
+
+export interface RateHistoryPoint {
+  date: string
+  rate: number
+  provider?: string
+}
+
+interface ApiRateHistoryResponse {
+  history: {
+    source: string
+    target: string
+    days: number
+    history: { date: string; rate: string; provider?: string }[]
+  }
+}
+
 function toDate(iso: string): string {
   return new Date(iso).toISOString().slice(0, 10)
 }
@@ -58,6 +75,25 @@ function loadRatesCache(): RatesHistoryCache {
 function saveRatesCache(cache: RatesHistoryCache): void {
   try {
     localStorage.setItem(RATES_HISTORY_KEY, JSON.stringify(cache))
+  } catch {
+    // Ignoramos errores de localStorage (modo privado, quota excedida, etc.)
+  }
+}
+
+const RATES_PAIR_HISTORY_KEY = 'globalance.rates.pairHistory'
+
+function loadPairHistoryCache(): RatesPairHistoryCache {
+  try {
+    const raw = localStorage.getItem(RATES_PAIR_HISTORY_KEY)
+    return raw ? (JSON.parse(raw) as RatesPairHistoryCache) : {}
+  } catch {
+    return {}
+  }
+}
+
+function savePairHistoryCache(cache: RatesPairHistoryCache): void {
+  try {
+    localStorage.setItem(RATES_PAIR_HISTORY_KEY, JSON.stringify(cache))
   } catch {
     // Ignoramos errores de localStorage (modo privado, quota excedida, etc.)
   }
@@ -100,6 +136,29 @@ function seedHistoryFromRate(
     })
   }
   return points
+}
+
+function pairKey(source: string, target: string): string {
+  return `${source}-${target}`
+}
+
+function computePairFromCurrencyCache(source: string, target: string, days: number): RateHistoryPoint[] {
+  const cache = loadRatesCache()
+  const a = cache[source]
+  const b = cache[target]
+  if (!a || !b || a.length === 0 || b.length === 0) return []
+  const targetByDate = new Map(b.map((p) => [p.date, p.buy_price]))
+  const points: RateHistoryPoint[] = []
+  for (const p of a) {
+    const targetRate = targetByDate.get(p.date)
+    if (targetRate && targetRate > 0) {
+      points.push({
+        date: p.date,
+        rate: Math.round((p.buy_price / targetRate) * 10000) / 10000,
+      })
+    }
+  }
+  return points.slice(-days)
 }
 
 function appendRatesToCache(rates: ExchangeRate[], date: string): void {
@@ -167,7 +226,8 @@ export async function getQuotes(): Promise<ExchangeRate[]> {
         history = seedHistoryFromRate(quote.currency_code, quote.buy_price, date)
         cache[quote.currency_code] = history
       }
-      const prevPoint = history[history.length - 1]
+      const lastPoint = history[history.length - 1]
+      const prevPoint = lastPoint && lastPoint.date >= date ? history[history.length - 2] : lastPoint
       if (prevPoint && prevPoint.date !== date) {
         quote.prev_buy_price = prevPoint.buy_price
         quote.prev_sell_price = prevPoint.buy_price
@@ -185,23 +245,58 @@ export async function getQuotes(): Promise<ExchangeRate[]> {
   }
 }
 
-export async function getRateHistory(currencyCode: string, days: number): Promise<ExchangeRatePoint[]> {
+export async function getRateHistory(
+  source: string,
+  target: string,
+  days: number,
+): Promise<RateHistoryPoint[]> {
   if (getAuthMode() === 'mock') {
-    return getMockRateHistory(currencyCode, days)
+    const [a, b] = await Promise.all([getMockRateHistory(source, days), getMockRateHistory(target, days)])
+    return a.map((p, i) => {
+      const bPoint = b[i]
+      return {
+        date: p.date,
+        rate:
+          bPoint && bPoint.buy_price > 0
+            ? Math.round((p.buy_price / bPoint.buy_price) * 10000) / 10000
+            : p.buy_price,
+      }
+    }).slice(-days)
   }
 
-  const cache = loadRatesCache()
-  let points = cache[currencyCode]
-  if (!points || points.length < 2) {
-    const quotes = await getQuotes()
-    const quote = quotes.find((q) => q.currency_code === currencyCode)
-    if (!quote) return []
-    const refDate = quote.fetched_at ? toDate(quote.fetched_at) : new Date().toISOString().slice(0, 10)
-    points = seedHistoryFromRate(currencyCode, quote.buy_price, refDate)
-    cache[currencyCode] = points
-    saveRatesCache(cache)
+  try {
+    const url = `/exchange/rates/history?source=${encodeURIComponent(source)}&target=${encodeURIComponent(target)}&days=${days}`
+    const resp = await fetchApi<ApiRateHistoryResponse>(url)
+    const points = (resp.history.history ?? []).map((p) => ({
+      date: p.date,
+      rate: Number(p.rate),
+      provider: p.provider,
+    }))
+    if (points.length > 0) {
+      const cache = loadPairHistoryCache()
+      cache[pairKey(source, target)] = points
+      savePairHistoryCache(cache)
+      return points.slice(-days)
+    }
+  } catch {
+    // Si el endpoint de histórico no responde, usamos el caché local o el seed.
   }
-  return points.slice(-days)
+
+  const pairCache = loadPairHistoryCache()
+  const cached = pairCache[pairKey(source, target)]
+  if (cached && cached.length >= 2) return cached.slice(-days)
+
+  let fallback = computePairFromCurrencyCache(source, target, days)
+  if (fallback.length < 2) {
+    await getQuotes()
+    fallback = computePairFromCurrencyCache(source, target, days)
+  }
+  if (fallback.length > 0) {
+    const cache = loadPairHistoryCache()
+    cache[pairKey(source, target)] = fallback
+    savePairHistoryCache(cache)
+  }
+  return fallback.slice(-days)
 }
 
 export async function refreshExchangeRates(): Promise<ExchangeRate[]> {

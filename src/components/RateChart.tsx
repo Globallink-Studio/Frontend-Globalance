@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { getRateHistory } from '../api/exchangeRates'
-import type { ExchangeRatePoint } from '../mocks/data/exchangeRates'
+import type { RateHistoryPoint } from '../api/exchangeRates'
 import '../styles/components/rate-chart.css'
 
 const DAYS = 30
@@ -34,10 +34,10 @@ function ChartTooltip({ active, label, payload }: { active?: boolean; label?: st
   )
 }
 
-function asPoints(history: ExchangeRatePoint[], ratioTo?: number): { label: string; value: number }[] {
+function asPoints(history: RateHistoryPoint[]): { label: string; value: number }[] {
   return history.map((p) => ({
     label: p.date.slice(5),
-    value: ratioTo !== undefined ? Math.round((p.buy_price / ratioTo) * 10000) / 10000 : p.buy_price,
+    value: p.rate,
   }))
 }
 
@@ -49,18 +49,9 @@ export default function RateChart({ refreshKey = 0 }: { refreshKey?: number }) {
 
   useEffect(() => {
     let cancelled = false
-    if (quote === 'ARS') {
-      getRateHistory(base, DAYS).then((history) => {
-        if (cancelled) return
-        setPoints(asPoints(history))
-      })
-      return () => {
-        cancelled = true
-      }
-    }
-    Promise.all([getRateHistory(base, DAYS), getRateHistory(quote, DAYS)]).then(([a, b]) => {
+    getRateHistory(base, quote, DAYS).then((history) => {
       if (cancelled) return
-      setPoints(asPoints(a).map((p, i) => ({ ...p, value: Math.round((a[i].buy_price / (b[i]?.buy_price ?? 1)) * 10000) / 10000 })))
+      setPoints(asPoints(history))
     })
     return () => {
       cancelled = true
