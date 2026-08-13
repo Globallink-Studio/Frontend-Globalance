@@ -85,6 +85,11 @@ const faqs = [
       'Puedes cargar saldo desde la sección Billetera usando tu tarjeta o una transferencia desde otra cuenta de Globalance. Elige el método, ingresa el monto y confirma la operación.',
   },
   {
+    question: '¿Existe un límite de transacciones por día?',
+    answer:
+      'Sí. Puedes realizar hasta 30 transacciones por día entre depósitos, transferencias, solicitudes de cobro y conversiones. Además, cada depósito tiene un tope máximo por moneda: ARS 10.000.000, EUR 10.000 y USD 10.000. Puedes repetir los depósitos las veces que quieras mientras cada uno respete ese tope.',
+  },
+  {
     question: '¿Cómo envío dinero a otra persona?',
     answer:
       'Ingresa a Billetera y toca el botón de transferencia. Completa el alias o número de cuenta del destinatario, elige la moneda y el monto, y confirma.',
