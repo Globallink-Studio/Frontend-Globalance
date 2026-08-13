@@ -4,7 +4,7 @@ import { getFriendlyErrorMessage } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import Select from '../../../components/Select'
 import type { Card } from '../../../mocks/data/cards'
-import { formatExpiry } from '../../../utils/cardFormat'
+import { formatExpiry, getExpiryError } from '../../../utils/cardFormat'
 import '../../../styles/pages/private/transactions.css'
 
 const brandLabel: Record<string, string> = {
@@ -203,10 +203,18 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
   const [brand, setBrand] = useState('visa')
   const [holder, setHolder] = useState('')
   const [expiry, setExpiry] = useState('')
+  const [expiryError, setExpiryError] = useState('')
   const [lastFour, setLastFour] = useState('')
   const [agreed, setAgreed] = useState(false)
 
-  const isValid = holder.trim() !== '' && expiry.trim() !== '' && lastFour.length === 4 && agreed
+  const expiryComplete = /^\d{2}\/\d{2}$/.test(expiry)
+  const isValid = holder.trim() !== '' && expiryComplete && !expiryError && lastFour.length === 4 && agreed
+
+  const handleExpiryChange = (value: string) => {
+    const formatted = formatExpiry(value)
+    setExpiry(formatted)
+    setExpiryError(formatted.length === 5 ? (getExpiryError(formatted) ?? '') : '')
+  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -255,10 +263,14 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
           type="text"
           inputMode="numeric"
           value={expiry}
-          onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+          onChange={(e) => handleExpiryChange(e.target.value)}
           placeholder="MM/AA"
           className="tx-form__control"
+          aria-invalid={Boolean(expiryError)}
         />
+        {expiryError && (
+          <p className="tx-form__error" role="alert">{expiryError}</p>
+        )}
       </div>
 
       <div className="tx-form__field">

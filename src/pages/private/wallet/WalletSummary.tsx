@@ -18,6 +18,7 @@ import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getCurrentContacts } from '../../../api/contacts'
 import { getFriendlyErrorMessage, isDepositLimitError } from '../../../api/errors'
+import { DEPOSIT_LIMITS, formatDepositLimit } from '../../../api/limits'
 import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
 import Select from '../../../components/Select'
@@ -451,7 +452,9 @@ function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSe
   }, [focusAmount])
 
   const value = Number(amount)
-  const isValid = value > 0
+  const limit = DEPOSIT_LIMITS[currencyCode]
+  const exceedsLimit = limit !== undefined && value > limit
+  const isValid = value > 0 && !exceedsLimit
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -554,7 +557,13 @@ function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSe
           placeholder="0"
           className="tx-form__control"
           ref={amountInputRef}
+          aria-invalid={exceedsLimit}
         />
+        {exceedsLimit && (
+          <p className="tx-form__error" role="alert">
+            El máximo para depósitos en {currencyCode} es {formatDepositLimit(currencyCode)}.
+          </p>
+        )}
       </div>
 
       <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">

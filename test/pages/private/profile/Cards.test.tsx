@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import Cards from '../../../../src/pages/private/profile/Cards'
-import { formatExpiry } from '../../../../src/utils/cardFormat'
+import { formatExpiry, getExpiryError } from '../../../../src/utils/cardFormat'
 import { seedDemoUser } from '../../../fixtures/db'
 
 describe('formatExpiry', () => {
@@ -29,6 +29,25 @@ describe('formatExpiry', () => {
   })
 })
 
+describe('getExpiryError', () => {
+  test('valida el formato MM/AA', () => {
+    expect(getExpiryError('')).toBe('El vencimiento es obligatorio.')
+    expect(getExpiryError('01')).toBe('El vencimiento debe tener formato MM/AA.')
+    expect(getExpiryError('13/30')).toBe('El mes debe estar entre 01 y 12.')
+    expect(getExpiryError('00/30')).toBe('El mes debe estar entre 01 y 12.')
+  })
+
+  test('rechaza un vencimiento anterior a la fecha actual', () => {
+    expect(getExpiryError('01/20')).toBe('La tarjeta está vencida.')
+  })
+
+  test('acepta un vencimiento en el mes actual o posterior', () => {
+    const futureYear = new Date().getFullYear() + 5
+    const yy = String(futureYear).slice(-2)
+    expect(getExpiryError(`01/${yy}`)).toBeUndefined()
+  })
+})
+
 describe('Cards — vencimiento', () => {
   beforeEach(async () => {
     localStorage.clear()
@@ -39,11 +58,14 @@ describe('Cards — vencimiento', () => {
     const user = userEvent.setup()
     render(<Cards />)
 
+    const futureYear = new Date().getFullYear() + 5
+    const yy = String(futureYear).slice(-2)
+
     await user.click(screen.getByRole('button', { name: 'Agregar tarjeta' }))
     const expiryInput = screen.getByLabelText('Vencimiento')
-    await user.type(expiryInput, '0187')
+    await user.type(expiryInput, `01${yy}`)
 
-    expect(expiryInput).toHaveValue('01/87')
+    expect(expiryInput).toHaveValue(`01/${yy}`)
 
     await user.type(screen.getByLabelText('Titular'), 'Sofia Test')
     await user.type(screen.getByLabelText('Últimos 4 dígitos'), '4242')
@@ -52,6 +74,20 @@ describe('Cards — vencimiento', () => {
     )
     await user.click(screen.getAllByRole('button', { name: 'Agregar tarjeta' })[1])
 
-    expect(await screen.findByText('01/87')).toBeInTheDocument()
+    expect(await screen.findByText(`01/${yy}`)).toBeInTheDocument()
+  })
+
+  test('muestra un error si el vencimiento es anterior a la fecha actual', async () => {
+    const user = userEvent.setup()
+    render(<Cards />)
+
+    await user.click(screen.getByRole('button', { name: 'Agregar tarjeta' }))
+    const expiryInput = screen.getByLabelText('Vencimiento')
+    await user.type(expiryInput, '0120')
+
+    expect(await screen.findByText('La tarjeta está vencida.')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Agregar tarjeta' }),
+    ).toBeDisabled()
   })
 })

@@ -60,6 +60,10 @@ describe('cards API', () => {
     await expect(
       addCard({ brand: 'visa', last_four: '5678', holder: 'Ana', expiry: '' }),
     ).rejects.toThrow('El vencimiento de la tarjeta es obligatorio')
+
+    await expect(
+      addCard({ brand: 'visa', last_four: '5678', holder: 'Ana', expiry: '01/20' }),
+    ).rejects.toThrow('La tarjeta está vencida')
   })
 
   test('bloquea y desbloquea una tarjeta (toggle)', async () => {
