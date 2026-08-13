@@ -34,6 +34,7 @@ const formatAmount = (value: number, currency: string) => {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const [refreshKey, setRefreshKey] = useState(0)
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [baseMetrics, setBaseMetrics] = useState<Metric[]>([])
   const [chart, setChart] = useState<ChartPoint[]>([])
@@ -54,14 +55,34 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    getDashboardMetrics().then((m) => {
-      setBaseMetrics(m)
-      setMetrics(m)
-    })
-    getDashboardChart().then(setChart)
-    getCurrentBalanceSummary().then(setBalances)
-    getRecentTransactions(5).then(setTransactions)
+    const onFocus = () => setRefreshKey((k) => k + 1)
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      const [m, c, b, tx] = await Promise.allSettled([
+        getDashboardMetrics(),
+        getDashboardChart(),
+        getCurrentBalanceSummary(),
+        getRecentTransactions(5),
+      ])
+      if (cancelled) return
+      if (m.status === 'fulfilled') {
+        setBaseMetrics(m.value)
+        setMetrics(m.value)
+      }
+      if (c.status === 'fulfilled') setChart(c.value)
+      if (b.status === 'fulfilled') setBalances(b.value)
+      if (tx.status === 'fulfilled') setTransactions(tx.value)
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [refreshKey])
 
   useEffect(() => {
     if (!displayCurrency || baseMetrics.length === 0) return

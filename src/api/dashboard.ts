@@ -1,16 +1,19 @@
-import { getAuthMode } from './auth'
 import { getCurrentBalanceSummary } from './balances'
 import { convertCurrency } from './exchangeRates'
 import { getCurrentTransactions } from './transactions'
-import { dashboardMock, type ChartPoint, type Metric } from '../data/mocks'
+import type { ChartPoint, Metric } from '../data/mocks'
 import type { Transaction } from '../mocks/data/transactions'
 
 function isIncome(t: Transaction): boolean {
-  return t.type === 'deposit' && t.status === 'completed'
+  if (t.status !== 'completed') return false
+  if (t.type === 'deposit') return true
+  return t.type === 'transfer' && t.direction === 'in'
 }
 
 function isExpense(t: Transaction): boolean {
-  return (t.type === 'transfer' || t.type === 'withdrawal') && t.status === 'completed'
+  if (t.status !== 'completed') return false
+  if (t.type === 'withdrawal') return true
+  return t.type === 'transfer' && t.direction !== 'in'
 }
 
 function getTransactionMonth(dateStr: string): string {
@@ -33,8 +36,6 @@ async function sumByCurrencyToUsd(amounts: Record<string, number>): Promise<numb
 }
 
 export async function getDashboardMetrics(): Promise<Metric[]> {
-  if (getAuthMode() === 'mock') return dashboardMock.metrics
-
   const balances = await getCurrentBalanceSummary()
   const transactions = await getCurrentTransactions()
   const month = getDashboardMonth(transactions)
@@ -73,8 +74,6 @@ export async function getDashboardMetrics(): Promise<Metric[]> {
 }
 
 export async function getDashboardChart(): Promise<ChartPoint[]> {
-  if (getAuthMode() === 'mock') return dashboardMock.chart
-
   const transactions = await getCurrentTransactions()
   const month = getDashboardMonth(transactions)
   const [year, monthNum] = month.split('-').map(Number)
