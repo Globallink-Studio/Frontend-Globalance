@@ -425,7 +425,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: color-mix(in oklab, var(--background) 55%, transparent);
+  background-color: var(--background);
   pointer-events: none;
   animation: page-loader-fade 0.2s ease;
 }
