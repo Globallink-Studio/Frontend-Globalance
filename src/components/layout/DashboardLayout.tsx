@@ -59,6 +59,7 @@ export default function DashboardLayout() {
   const [notifOpen, setNotifOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [routeLoading, setRouteLoading] = useState(false)
   const location = useLocation()
   const notifRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -93,6 +94,12 @@ export default function DashboardLayout() {
     setNotifOpen(false)
     setSearchOpen(false)
     setSidebarOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    setRouteLoading(true)
+    const t = setTimeout(() => setRouteLoading(false), 450)
+    return () => clearTimeout(t)
   }, [location.pathname])
 
   useEffect(() => {
@@ -214,6 +221,11 @@ export default function DashboardLayout() {
         </header>
 
         <main className="app-shell__content">
+          {routeLoading && (
+            <div className="page-loader" role="status" aria-label="Cargando página">
+              <span className="page-loader__spinner" aria-hidden="true" />
+            </div>
+          )}
           <Outlet />
         </main>
 

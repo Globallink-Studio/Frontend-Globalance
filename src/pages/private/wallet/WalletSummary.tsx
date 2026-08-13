@@ -70,9 +70,15 @@ export default function WalletSummary() {
   const [unifiedBalance, setUnifiedBalance] = useState(0)
   const [displayCurrency, setDisplayCurrency] = useState('USD')
 
+  const reloadUnifiedBalance = () => {
+    if (!displayCurrency) return
+    getUnifiedBalance(displayCurrency).then(setUnifiedBalance)
+  }
+
   const reload = () => {
     getCurrentBalanceSummary().then(setSummary)
     getRecentTransactions(5).then(setTransactions)
+    reloadUnifiedBalance()
   }
 
   useEffect(() => {
@@ -85,8 +91,7 @@ export default function WalletSummary() {
   }, [])
 
   useEffect(() => {
-    if (!displayCurrency) return
-    getUnifiedBalance(displayCurrency).then(setUnifiedBalance)
+    reloadUnifiedBalance()
   }, [displayCurrency])
 
   useEffect(() => {
