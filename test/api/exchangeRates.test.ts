@@ -310,8 +310,28 @@ describe('exchangeRates API — modo firebase (API real)', () => {
     expect(usdSecond.prev_buy_price).toBe(usdFirst.buy_price)
   })
 
-  test('getQuotes propaga los errores de la API', async () => {
+  test('getQuotes devuelve un array vacío si la API falla y no hay caché', async () => {
     mockFetch.mockRejectedValue(new Error('Network error'))
-    await expect(getQuotes()).rejects.toThrow('Network error')
+    const quotes = await getQuotes()
+    expect(quotes).toEqual([])
+  })
+
+  test('getQuotes usa las cotizaciones cacheadas si la API falla', async () => {
+    mockFetch.mockResolvedValueOnce({
+      rates: {
+        base: 'ARS',
+        rates: { ARS: '1', USD: '0.0008', EUR: '0.00075' },
+        provider: 'frankfurter',
+        fetchedAt: '2026-08-10T12:00:00.000Z',
+        expiresAt: '2026-08-10T12:01:00.000Z',
+      },
+    })
+    const first = await getQuotes()
+    expect(first).toHaveLength(3)
+
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    const fallback = await getQuotes()
+    expect(fallback).toHaveLength(3)
+    expect(fallback.find((q) => q.currency_code === 'USD')?.buy_price).toBe(1250)
   })
 })

@@ -313,6 +313,7 @@ Authorization: Bearer <Firebase ID Token>
 | **Auth** | `POST /auth/sync` | Crea/actualiza el usuario en el backend, genera billetera y balances iniciales. |
 | **Users** | `GET /users/profile` | Obtiene el perfil completo del usuario. |
 | **Users** | `PATCH /users/profile` | Actualiza los datos del perfil. |
+| **Users** | `DELETE /users/profile` | Elimina la cuenta (baja lógica, anonimiza datos y borra de Firebase Auth). |
 | **Users** | `PATCH /users/password` | Cambia la contraseña. |
 | **Wallets** | `GET /wallet` | Obtiene la billetera del usuario. |
 | **Balances** | `GET /balances` | Obtiene los balances por divisa. |
@@ -346,6 +347,61 @@ Authorization: Bearer <Firebase ID Token>
 - Las conversiones mueven saldo entre esos balances; no se crean nuevas cuentas.
 - Los depósitos, transferencias y conversiones generan transacciones que alimentan el dashboard y el historial.
 - El usuario puede elegir la moneda de visualización para el saldo unificado.
+
+---
+
+## 💱 Estrategia de cotizaciones y caching
+
+El frontend consume cotizaciones desde el backend (`/exchange/rates`), el cual a su vez puede integrarse con proveedores como Frankfurter, ExchangeRate-API o Currency Freaks.
+
+### Caché local
+
+- Las cotizaciones se almacenan en `localStorage` bajo las keys:
+  - `globalance.rates.last`: últimas cotizaciones completas.
+  - `globalance.rates.history`: histórico de puntos por moneda.
+- Cada vez que la API responde correctamente, se actualizan ambas keys.
+- El histórico se siembra con **30 días** de datos cuando está vacío, usando la cotización actual como referencia.
+
+### Fallback ante fallas
+
+- Si `/exchange/rates` no responde, el frontend devuelve las cotizaciones guardadas en `globalance.rates.last`.
+- Si no hay cotizaciones previas, devuelve un array vacío y la UI muestra un mensaje amigable.
+- Esto garantiza que el usuario pueda seguir viendo tasas recientes incluso si el proveedor externo tiene problemas momentáneos.
+
+### Frecuencia de actualización
+
+- Las cotizaciones se consultan al cargar la pantalla de **Exchange** y la **Billetera**.
+- El usuario puede refrescarlas manualmente con el botón de actualización.
+- El backend define la expiración de cada cotización (`expiresAt`); el frontend no cachea más allá de la sesión actual.
+
+---
+
+## 🧠 Decisiones de diseño
+
+### ¿Por qué una wallet única con balances fijos?
+
+Optamos por el modelo **wallet → balances** en lugar de cuentas separadas porque:
+
+- Simplifica la experiencia del usuario: una sola billetera con divisas claras.
+- Facilita el saldo unificado: siempre se puede convertir entre ARS, USD y EUR.
+- Reduce la complejidad del backend: no hay que crear/eliminar cuentas dinámicamente.
+- Es coherente con el negocio: un freelancer opera sobre sus fondos totales, no sobre múltiples cuentas bancarias.
+
+### ¿Por qué transacciones unificadas?
+
+Todas las operaciones (depósito, transferencia, conversión, solicitud) se registran en una única tabla `transactions` con campos como `type`, `direction`, `from_currency` y `to_currency`. Esto permite:
+
+- Un único historial consultable y filtrable.
+- Cálculos de ingresos/gastos para el dashboard sin joins complejos.
+- Extensibilidad: agregar nuevos tipos de operación no requiere nuevas tablas.
+
+### ¿Por qué modo mock / firebase?
+
+La capa `src/api/` abstrae la fuente de datos. En desarrollo se usan mocks para no depender del backend; en producción se usa Firebase + API. Esta separación permitió:
+
+- Desarrollar UI y lógica de negocio en paralelo al backend.
+- Testear flujos sin credenciales reales.
+- Cambiar la fuente de datos sin tocar las páginas.
 
 ---
 

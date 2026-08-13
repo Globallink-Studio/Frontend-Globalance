@@ -300,4 +300,13 @@ export async function completeGoogleProfile(patch: CompleteGoogleProfileInput): 
   return user
 }
 
+export async function deleteAccount(): Promise<void> {
+  if (getAuthMode() === 'mock') {
+    throw new Error('Eliminar cuenta no está disponible en modo mock')
+  }
+  await fetchApi<{ data: { message: string } }>('/users/profile', {
+    method: 'DELETE',
+  })
+}
+
 export { getUsers, getUserById, getUserByEmail }

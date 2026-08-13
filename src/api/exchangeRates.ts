@@ -15,6 +15,7 @@ const CURRENCY_NAMES: Record<string, { name: string; symbol: string }> = {
 }
 
 const RATES_HISTORY_KEY = 'globalance.rates.history'
+const RATES_LAST_KEY = 'globalance.rates.last'
 
 interface ApiRatesResponse {
   rates: {
@@ -57,6 +58,23 @@ function loadRatesCache(): RatesHistoryCache {
 function saveRatesCache(cache: RatesHistoryCache): void {
   try {
     localStorage.setItem(RATES_HISTORY_KEY, JSON.stringify(cache))
+  } catch {
+    // Ignoramos errores de localStorage (modo privado, quota excedida, etc.)
+  }
+}
+
+function loadLastQuotes(): ExchangeRate[] {
+  try {
+    const raw = localStorage.getItem(RATES_LAST_KEY)
+    return raw ? (JSON.parse(raw) as ExchangeRate[]) : []
+  } catch {
+    return []
+  }
+}
+
+function saveLastQuotes(quotes: ExchangeRate[]): void {
+  try {
+    localStorage.setItem(RATES_LAST_KEY, JSON.stringify(quotes))
   } catch {
     // Ignoramos errores de localStorage (modo privado, quota excedida, etc.)
   }
@@ -131,33 +149,40 @@ export async function getQuotes(): Promise<ExchangeRate[]> {
   if (getAuthMode() === 'mock') {
     return getExchangeRates()
   }
-  const resp = await fetchApi<ApiRatesResponse>('/exchange/rates?base=ARS')
-  const { base, rates, provider, fetchedAt } = resp.rates
-  const date = toDate(fetchedAt)
-  const quotes = currencies
-    .filter((c) => c.active)
-    .map((c) => {
-      const arsValue = c.code === base ? 1 : 1 / Number(rates[c.code] ?? 1)
-      return toExchangeRate(c.code, arsValue, provider, fetchedAt)
-    })
+  try {
+    const resp = await fetchApi<ApiRatesResponse>('/exchange/rates?base=ARS')
+    const { base, rates, provider, fetchedAt } = resp.rates
+    const date = toDate(fetchedAt)
+    const quotes = currencies
+      .filter((c) => c.active)
+      .map((c) => {
+        const arsValue = c.code === base ? 1 : 1 / Number(rates[c.code] ?? 1)
+        return toExchangeRate(c.code, arsValue, provider, fetchedAt)
+      })
 
-  const cache = loadRatesCache()
-  for (const quote of quotes) {
-    let history = cache[quote.currency_code]
-    if (!history || history.length < 2) {
-      history = seedHistoryFromRate(quote.currency_code, quote.buy_price, date)
-      cache[quote.currency_code] = history
+    const cache = loadRatesCache()
+    for (const quote of quotes) {
+      let history = cache[quote.currency_code]
+      if (!history || history.length < 2) {
+        history = seedHistoryFromRate(quote.currency_code, quote.buy_price, date)
+        cache[quote.currency_code] = history
+      }
+      const prevPoint = history[history.length - 1]
+      if (prevPoint && prevPoint.date !== date) {
+        quote.prev_buy_price = prevPoint.buy_price
+        quote.prev_sell_price = prevPoint.buy_price
+      }
     }
-    const prevPoint = history[history.length - 1]
-    if (prevPoint && prevPoint.date !== date) {
-      quote.prev_buy_price = prevPoint.buy_price
-      quote.prev_sell_price = prevPoint.buy_price
-    }
+    appendRatesToCache(quotes, date)
+    saveRatesCache(cache)
+    saveLastQuotes(quotes)
+
+    return quotes
+  } catch {
+    const cached = loadLastQuotes()
+    if (cached.length > 0) return cached
+    return []
   }
-  appendRatesToCache(quotes, date)
-  saveRatesCache(cache)
-
-  return quotes
 }
 
 export async function getRateHistory(currencyCode: string, days: number): Promise<ExchangeRatePoint[]> {

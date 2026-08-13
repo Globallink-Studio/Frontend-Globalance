@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { User, FileText, KeyRound, Trash2, Check, ShieldCheck } from 'lucide-react'
 import Modal from '../../../components/Modal'
 import { InputField } from '../../../components/register/InputField'
+import { deleteAccount } from '../../../api/users'
+import { useAuth } from '../../../providers/authentication/AuthContext'
 import TermsContent from './TermsContent'
 import PrivacyPolicyContent from './PrivacyPolicyContent'
 import '../../../styles/pages/private/transactions.css'
@@ -228,21 +231,44 @@ function PrivacyModal({ open, onClose }: { open: boolean; onClose: () => void })
 /* ── Eliminar cuenta ────────────────────────────── */
 
 function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [text, setText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleClose = () => {
     setText('')
+    setError(null)
     onClose()
   }
 
   const confirmed = text.trim().toUpperCase() === 'ELIMINAR'
 
+  const handleDelete = async () => {
+    if (!confirmed) return
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteAccount()
+      await logout()
+      navigate('/')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'No se pudo eliminar la cuenta'
+      if (message.includes('ACCOUNT_HAS_FUNDS') || message.includes('saldo')) {
+        setError('No podés eliminar la cuenta porque tenés saldo disponible. Transferí o convertí tus fondos primero.')
+      } else {
+        setError(message)
+      }
+      setLoading(false)
+    }
+  }
+
   return (
     <Modal open={open} onClose={handleClose} title="Eliminar cuenta" step={1} totalSteps={1}>
       <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">
-          Vas a eliminar tu cuenta de Globalance de forma permanente. Esta acción no se puede
-          deshacer: se borrarán tus datos, tus billeteras y el historial de operaciones.
+          Vas a eliminar tu cuenta de Globalance. Esta acción no se puede deshacer.
         </p>
         <p className="text-sm font-semibold text-destructive">
           Escribí «ELIMINAR» para confirmar.
@@ -253,13 +279,25 @@ function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => v
           onChange={(e) => setText(e.target.value)}
           placeholder="ELIMINAR"
           className="tx-form__control"
+          disabled={loading}
         />
+        {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
         <div className="tx-review__actions">
-          <button type="button" className="profile-edit__btn profile-edit__btn--ghost" onClick={handleClose}>
+          <button
+            type="button"
+            className="profile-edit__btn profile-edit__btn--ghost"
+            onClick={handleClose}
+            disabled={loading}
+          >
             Cancelar
           </button>
-          <button type="button" disabled={!confirmed} className="profile-edit__btn profile-edit__btn--danger">
-            Eliminar mi cuenta
+          <button
+            type="button"
+            disabled={!confirmed || loading}
+            className="profile-edit__btn profile-edit__btn--danger"
+            onClick={handleDelete}
+          >
+            {loading ? 'Eliminando...' : 'Eliminar mi cuenta'}
           </button>
         </div>
       </div>
