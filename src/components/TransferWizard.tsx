@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createTransfer } from '../api/transactions'
 import { getCurrentBalances } from '../api/balances'
 import { getAuthMode } from '../api/auth'
-import { getWalletByAlias } from '../mocks/handlers/wallets'
+import { getWalletByAlias, getWalletByAccountNumber } from '../mocks/handlers/wallets'
 import Select from './Select'
 import type { Contact } from '../mocks/data/contacts'
 import type { Balance } from '../mocks/data/balances'
@@ -31,8 +31,8 @@ interface TransferWizardProps {
 
 export default function TransferWizard({ contacts, step, setStep, onDone, onError, sending, setSending, initialContactId }: TransferWizardProps) {
   const [balances, setBalances] = useState<Balance[]>([])
-  const [sendMethod, setSendMethod] = useState<'alias' | 'contact'>(initialContactId ? 'contact' : 'alias')
-  const [alias, setAlias] = useState('')
+  const [sendMethod, setSendMethod] = useState<'alias' | 'accountNumber' | 'contact'>(initialContactId ? 'contact' : 'alias')
+  const [destination, setDestination] = useState('')
   const [contactId, setContactId] = useState(initialContactId ?? '')
   const [currencyCode, setCurrencyCode] = useState('ARS')
   const [amount, setAmount] = useState('')
@@ -45,7 +45,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
 
   const selectedBalance = balances.find((b) => b.currency_code === currencyCode)
   const value = Number(amount)
-  const recipientFilled = sendMethod === 'contact' ? Boolean(contactId) : Boolean(alias.trim())
+  const recipientFilled = sendMethod === 'contact' ? Boolean(contactId) : Boolean(destination.trim())
 
   const handleNext = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -73,20 +73,29 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
       idLabel = destinationType === 'accountNumber' ? 'Número de cuenta' : 'Alias'
       idValue = contact?.contact_value ?? contact?.account ?? contact?.alias ?? ''
     } else {
-      const trimmedAlias = alias.trim()
+      const trimmedDestination = destination.trim()
+      destinationType = sendMethod === 'accountNumber' ? 'accountNumber' : 'alias'
+      idLabel = sendMethod === 'accountNumber' ? 'Número de cuenta' : 'Alias'
       if (getAuthMode() === 'mock') {
-        const wallet = await getWalletByAlias(trimmedAlias)
+        const wallet =
+          sendMethod === 'accountNumber'
+            ? await getWalletByAccountNumber(trimmedDestination)
+            : await getWalletByAlias(trimmedDestination)
         if (!wallet || wallet.status !== 'active') {
-          onError('No se encontró ninguna billetera activa con ese alias')
+          onError(
+            sendMethod === 'accountNumber'
+              ? 'No se encontró ninguna cuenta activa con ese número'
+              : 'No se encontró ninguna billetera activa con ese alias',
+          )
           return
         }
         recipient = wallet.alias
         recipientUserId = wallet.user_id
       } else {
-        recipient = trimmedAlias
+        recipient = trimmedDestination
         recipientUserId = ''
       }
-      idValue = trimmedAlias
+      idValue = trimmedDestination
     }
 
     setReview({
@@ -197,6 +206,16 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
               <input
                 type="radio"
                 name="sendMethod"
+                value="accountNumber"
+                checked={sendMethod === 'accountNumber'}
+                onChange={() => setSendMethod('accountNumber')}
+              />
+              Número de cuenta
+            </label>
+            <label className="tx-form__option">
+              <input
+                type="radio"
+                name="sendMethod"
                 value="contact"
                 checked={sendMethod === 'contact'}
                 onChange={() => setSendMethod('contact')}
@@ -243,13 +262,15 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
         </>
       ) : (
         <div className="tx-form__field">
-          <label htmlFor="alias" className="tx-form__label">Alias del destinatario</label>
+          <label htmlFor="alias" className="tx-form__label">
+            {sendMethod === 'accountNumber' ? 'Número de cuenta del destinatario' : 'Alias del destinatario'}
+          </label>
           <input
             id="alias"
             type="text"
-            value={alias}
-            onChange={(e) => setAlias(e.target.value)}
-            placeholder="juan.cash"
+            value={destination}
+            onChange={(e) => setDestination(e.target.value)}
+            placeholder={sendMethod === 'accountNumber' ? '0000000002' : 'juan.cash'}
             className="tx-form__control"
           />
         </div>

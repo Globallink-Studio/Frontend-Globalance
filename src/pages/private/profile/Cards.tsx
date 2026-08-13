@@ -4,6 +4,7 @@ import { getFriendlyErrorMessage } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import Select from '../../../components/Select'
 import type { Card } from '../../../mocks/data/cards'
+import { formatExpiry } from '../../../utils/cardFormat'
 import '../../../styles/pages/private/transactions.css'
 
 const brandLabel: Record<string, string> = {
@@ -252,8 +253,9 @@ function AddCardForm({ onDone, onError, sending, setSending }: AddCardFormProps)
         <input
           id="card-expiry"
           type="text"
+          inputMode="numeric"
           value={expiry}
-          onChange={(e) => setExpiry(e.target.value)}
+          onChange={(e) => setExpiry(formatExpiry(e.target.value))}
           placeholder="MM/AA"
           className="tx-form__control"
         />

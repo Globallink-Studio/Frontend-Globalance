@@ -28,6 +28,12 @@ export async function getWalletByAlias(alias: string): Promise<Wallet | undefine
   return getMockWallets().find((w) => w.alias.toLowerCase() === normalized)
 }
 
+export async function getWalletByAccountNumber(accountNumber: string): Promise<Wallet | undefined> {
+  await delay()
+  const normalized = accountNumber.trim()
+  return getMockWallets().find((w) => w.account_number === normalized)
+}
+
 export async function updateWallet(id: string, patch: Partial<Wallet>): Promise<Wallet | undefined> {
   await delay()
   const current = getMockWallets().find((w) => w.id === id)
