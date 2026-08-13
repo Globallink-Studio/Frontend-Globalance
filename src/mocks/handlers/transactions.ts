@@ -1,5 +1,7 @@
 import { delay } from '../delay'
 import { getMockTransactions, saveMockTransactions } from '../storage'
+import { MAX_TRANSACTIONS_PER_DAY } from '../../api/limits'
+import { TransactionLimitError } from '../../api/errors'
 import type { Transaction, TransactionStatus } from '../data/transactions'
 
 export async function getTransactions(): Promise<Transaction[]> {
@@ -31,6 +33,11 @@ export async function createTransaction(input: {
   to_currency?: string
   direction?: 'in' | 'out'
 }): Promise<Transaction> {
+  const today = new Date().toISOString().slice(0, 10)
+  const todayCount = getMockTransactions().filter((t) => t.created_at.slice(0, 10) === today).length
+  if (todayCount >= MAX_TRANSACTIONS_PER_DAY) {
+    throw new TransactionLimitError()
+  }
   await delay()
   const tx: Transaction = {
     id: crypto.randomUUID(),

@@ -6,6 +6,8 @@ import { getCurrentBalances } from './balances'
 import { convertCurrency } from './exchangeRates'
 import { fetchApi } from './fetchApi'
 import { notifyCurrentUser, notifyUser } from './notifications'
+import { DepositLimitError } from './errors'
+import { DEPOSIT_LIMITS, formatDepositLimit } from './limits'
 import type { Transaction, TransactionStatus, TransactionType } from '../mocks/data/transactions'
 
 export const transactionStatusLabels: Record<TransactionStatus, string> = {
@@ -237,6 +239,12 @@ export async function createDeposit(input: {
   methodName?: string
 }): Promise<Transaction> {
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
+  const depositLimit = DEPOSIT_LIMITS[input.currencyCode]
+  if (depositLimit !== undefined && input.amount > depositLimit) {
+    throw new DepositLimitError(
+      `Estás excediendo el límite máximo de dinero de esta moneda, el cual es ${formatDepositLimit(input.currencyCode)}`,
+    )
+  }
 
   if (getAuthMode() === 'firebase') {
     const resp = await fetchApi<ApiIncomeResponse>('/transactions/income', {

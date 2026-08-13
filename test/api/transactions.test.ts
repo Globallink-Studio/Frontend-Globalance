@@ -10,7 +10,8 @@ import {
 } from '../../src/api/transactions'
 import { getCurrentWallet, getWalletByUserId } from '../../src/api/wallets'
 import { getBalancesByWallet } from '../../src/mocks/handlers/balances'
-import { getTransactionsByWallet } from '../../src/mocks/handlers/transactions'
+import { getTransactionsByWallet, createTransaction } from '../../src/mocks/handlers/transactions'
+import { saveMockTransactions } from '../../src/mocks/storage'
 import { fetchApi } from '../../src/api/fetchApi'
 import { DEMO_USER_EMAIL, JUAN_USER_ID, seedDemoUser } from '../fixtures/db'
 
@@ -353,6 +354,33 @@ describe('createDeposit — modo mock (desarrollo local)', () => {
 
     const after = await getBalancesByWallet(wallet!.id)
     expect(balanceOf(after, 'ARS')).toBe(arsBefore + 1000)
+  })
+
+  test('rechaza depósitos que superan el límite máximo por moneda', async () => {
+    await expect(createDeposit({ currencyCode: 'ARS', amount: 10_000_001 })).rejects.toThrow(
+      'Estás excediendo el límite máximo de dinero de esta moneda, el cual es 10.000.000 ARS',
+    )
+    await expect(createDeposit({ currencyCode: 'USD', amount: 10_001 })).rejects.toThrow(
+      'Estás excediendo el límite máximo de dinero de esta moneda, el cual es 10.000 USD',
+    )
+    await expect(createDeposit({ currencyCode: 'EUR', amount: 10_001 })).rejects.toThrow(
+      'Estás excediendo el límite máximo de dinero de esta moneda, el cual es 10.000 EUR',
+    )
+  })
+
+  test('permite repetir depósitos por día mientras cada uno respete el tope', async () => {
+    await seedDemoUser()
+    const wallet = await getCurrentWallet()
+    expect(wallet).toBeDefined()
+
+    const before = await getBalancesByWallet(wallet!.id)
+    const arsBefore = balanceOf(before, 'ARS')
+
+    await createDeposit({ currencyCode: 'ARS', amount: 5_000_000 })
+    await createDeposit({ currencyCode: 'ARS', amount: 5_000_000 })
+
+    const after = await getBalancesByWallet(wallet!.id)
+    expect(balanceOf(after, 'ARS')).toBe(arsBefore + 10_000_000)
   })
 })
 
@@ -720,5 +748,37 @@ describe('historial de transacciones — modo firebase (API real)', () => {
   test('propaga los errores de la API', async () => {
     mockFetch.mockRejectedValue(new Error('Network error'))
     await expect(getCurrentTransactions()).rejects.toThrow('Network error')
+  })
+})
+
+describe('límite diario de transacciones — modo mock (desarrollo local)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test('rechaza operaciones cuando ya se hicieron 30 transacciones en el día', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    saveMockTransactions(
+      Array.from({ length: 30 }, (_, i) => ({
+        id: `50000000-0000-4000-8000-${String(900000000001 + i)}`,
+        wallet_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        currency_code: 'ARS',
+        type: 'deposit' as const,
+        amount: 1000,
+        description: `Movimiento ${i + 1}`,
+        status: 'completed' as const,
+        created_at: `${today}T12:00:00.000Z`,
+      })),
+    )
+
+    await expect(
+      createTransaction({
+        wallet_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        currency_code: 'ARS',
+        type: 'deposit',
+        amount: 1000,
+        description: 'Uno más',
+      }),
+    ).rejects.toThrow('Llegaste al límite de transacciones permitidas por día')
   })
 })
