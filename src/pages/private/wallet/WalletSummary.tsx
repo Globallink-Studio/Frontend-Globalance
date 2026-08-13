@@ -597,6 +597,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
   const value = Number(amount)
   const contact = contacts.find((c) => c.id === contactId)
   const recipientFilled = Boolean(contactId)
+  const isValid = recipientFilled && value > 0
 
   const handleNext = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -689,7 +690,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={sending}
+            disabled={sending || !contact || !(value > 0)}
             className="tx-button tx-button--primary"
           >
             {sending ? 'Enviando solicitud...' : 'Confirmar solicitud'}
@@ -710,6 +711,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
           { value: '', label: 'Elige un contacto' },
           ...contacts.map((c) => ({ value: c.id, label: c.alias })),
         ]}
+        required
       />
 
       <Select
@@ -721,7 +723,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
       />
 
       <div className="tx-form__field">
-        <label htmlFor="request-amount" className="tx-form__label">Monto</label>
+        <label htmlFor="request-amount" className="tx-form__label tx-form__label--required">Monto</label>
         <input
           id="request-amount"
           type="number"
@@ -731,6 +733,8 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
           className="tx-form__control"
+          required
+          aria-required="true"
         />
       </div>
 
@@ -746,7 +750,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         />
       </div>
 
-      <button type="submit" className="tx-button tx-button--primary tx-button--block">
+      <button type="submit" disabled={!isValid} className="tx-button tx-button--primary tx-button--block">
         Continuar
       </button>
     </form>

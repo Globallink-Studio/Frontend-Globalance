@@ -141,6 +141,7 @@ export default function DashboardLayout() {
               key={item.to}
               to={item.to}
               end={item.to === '/dashboard'}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `app-sidebar__link${isActive ? ' app-sidebar__link--active' : ''}`
               }

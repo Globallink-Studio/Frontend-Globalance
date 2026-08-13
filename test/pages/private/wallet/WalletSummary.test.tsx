@@ -62,6 +62,22 @@ describe('WalletSummary — límites de depósito', () => {
     spy.mockRestore()
   })
 
+  test('deshabilita Continuar en Cobrar mientras faltan datos obligatorios', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <WalletSummary />
+      </MemoryRouter>,
+    )
+
+    await user.click(await screen.findByRole('button', { name: 'Cobrar' }))
+    const continueBtn = await screen.findByRole('button', { name: 'Continuar' })
+    expect(continueBtn).toBeDisabled()
+
+    await user.type(screen.getByLabelText('Monto'), '1000')
+    expect(continueBtn).toBeDisabled()
+  })
+
   test('límite diario: cierra el modal de depósito y muestra el error', async () => {
     const walletId = await seedDemoWallet()
     const today = new Date().toISOString().slice(0, 10)

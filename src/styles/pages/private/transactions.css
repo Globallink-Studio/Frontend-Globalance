@@ -71,6 +71,11 @@
   color: var(--muted-foreground);
 }
 
+.tx-form__label--required::after {
+  content: ' *';
+  color: var(--destructive);
+}
+
 .tx-form__control {
   width: 100%;
   border-radius: 9999px;

@@ -46,6 +46,8 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
   const selectedBalance = balances.find((b) => b.currency_code === currencyCode)
   const value = Number(amount)
   const recipientFilled = sendMethod === 'contact' ? Boolean(contactId) : Boolean(destination.trim())
+  const exceedsBalance = selectedBalance ? value > selectedBalance.amount : false
+  const isValid = recipientFilled && value > 0 && !exceedsBalance
 
   const handleNext = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -240,6 +242,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
               { value: '', label: 'Elige un contacto' },
               ...contacts.map((c) => ({ value: c.id, label: c.alias })),
             ]}
+            required
           />
           {(() => {
             const contact = contacts.find((c) => c.id === contactId)
@@ -266,7 +269,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
         </>
       ) : (
         <div className="tx-form__field">
-          <label htmlFor="alias" className="tx-form__label">
+          <label htmlFor="alias" className="tx-form__label tx-form__label--required">
             {sendMethod === 'accountNumber' ? 'Número de cuenta del destinatario' : 'Alias del destinatario'}
           </label>
           <input
@@ -276,6 +279,8 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             onChange={(e) => setDestination(e.target.value)}
             placeholder={sendMethod === 'accountNumber' ? 'GLB-1A2B3C4D' : 'juan.cash'}
             className="tx-form__control"
+            required
+            aria-required="true"
           />
         </div>
       )}
@@ -295,7 +300,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
         />
 
         <div className="tx-form__field">
-          <label htmlFor="amount" className="tx-form__label">Monto</label>
+          <label htmlFor="amount" className="tx-form__label tx-form__label--required">Monto</label>
           <input
             id="amount"
             type="number"
@@ -305,6 +310,8 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
             className="tx-form__control"
+            required
+            aria-required="true"
           />
           {selectedBalance && value > selectedBalance.amount && (
             <p className="tx-form__error" role="alert">Saldo insuficiente</p>
@@ -326,7 +333,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
 
       <button
         type="submit"
-        disabled={Boolean(selectedBalance && value > selectedBalance.amount)}
+        disabled={!isValid}
         className="tx-button tx-button--primary tx-button--block"
       >
         Continuar

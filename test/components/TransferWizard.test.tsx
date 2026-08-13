@@ -82,6 +82,22 @@ describe('TransferWizard — métodos de envío', () => {
     await waitFor(() => expect(onDone).toHaveBeenCalledWith('Transferencia a juan.cash enviada'))
   })
 
+  test('deshabilita Continuar mientras faltan datos obligatorios', async () => {
+    render(<Harness />)
+    const continueBtn = screen.getByRole('button', { name: 'Continuar' })
+    expect(continueBtn).toBeDisabled()
+
+    await userEvent.type(screen.getByLabelText('Alias del destinatario'), 'juan.cash')
+    expect(continueBtn).toBeDisabled()
+
+    await userEvent.clear(screen.getByLabelText('Alias del destinatario'))
+    await userEvent.type(screen.getByLabelText('Monto'), '1000')
+    expect(continueBtn).toBeDisabled()
+
+    await userEvent.type(screen.getByLabelText('Alias del destinatario'), 'juan.cash')
+    expect(continueBtn).toBeEnabled()
+  })
+
   test('muestra un error si el número de cuenta no existe', async () => {
     const user = userEvent.setup()
     render(<Harness />)
