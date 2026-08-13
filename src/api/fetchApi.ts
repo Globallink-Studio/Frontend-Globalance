@@ -43,8 +43,15 @@ export async function fetchApi<T>(
   if (!response.ok) {
     let serverMessage: string | undefined
     try {
-      const body = (await response.json()) as { message?: string; error?: string; detail?: string } | null
-      serverMessage = body?.message ?? body?.error ?? body?.detail
+      const body = (await response.json()) as
+        | { message?: unknown; error?: unknown; detail?: unknown }
+        | null
+      const error = body?.error
+      const raw = body?.message ?? error ?? body?.detail
+      if (typeof raw === 'string') serverMessage = raw
+      else if (error && typeof error === 'object' && typeof (error as { message?: unknown }).message === 'string') {
+        serverMessage = (error as { message: string }).message
+      }
     } catch {
       serverMessage = undefined
     }
