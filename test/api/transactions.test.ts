@@ -282,7 +282,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
       recipientUserId: JUAN_USER_ID,
       currencyCode: 'USD',
       amount: 150,
-      payerEmail: 'juan@ejemplo.com',
+      payerAlias: 'juan.cash',
     })
 
     expect(mockFetch).toHaveBeenCalledWith(
@@ -290,7 +290,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
       expect.objectContaining({
         method: 'POST',
         body: {
-          payerEmail: 'juan@ejemplo.com',
+          payerAlias: 'juan.cash',
           currency: 'USD',
           amount: '150',
         },
@@ -300,7 +300,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
     expect(tx.type).toBe('request')
     expect(tx.currency_code).toBe('USD')
     expect(tx.amount).toBe(150)
-    expect(tx.description).toBe('Solicitud de cobro a juan@ejemplo.com')
+    expect(tx.description).toBe('Solicitud de cobro a juan.cash')
     expect(tx.status).toBe('pending')
   })
 
@@ -312,7 +312,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
         currencyCode: 'USD',
         amount: 150,
       }),
-    ).rejects.toThrow('Se necesita el correo, alias o número de cuenta del pagador')
+    ).rejects.toThrow('Se necesita el alias o número de cuenta del pagador')
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
@@ -339,7 +339,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
       }),
     )
     expect(tx.type).toBe('request')
-    expect(tx.description).toBe('Solicitud de cobro a juan@ejemplo.com')
+    expect(tx.description).toBe('Solicitud de cobro a Juan Pérez')
   })
 
   test('crea la solicitud vía POST /payment-requests usando el número de cuenta del pagador', async () => {
@@ -374,7 +374,7 @@ describe('createMoneyRequest — modo firebase (API real)', () => {
         recipientUserId: JUAN_USER_ID,
         currencyCode: 'USD',
         amount: 150,
-        payerEmail: 'juan@ejemplo.com',
+        payerAlias: 'juan.cash',
       }),
     ).rejects.toThrow('Network error')
   })

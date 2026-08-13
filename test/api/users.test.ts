@@ -1,6 +1,7 @@
 import { getCurrentUser, getCurrentUserProfile, updateCurrentPersonProfile, updateCurrentCompanyProfile, createCurrentUserPersonProfile, createCurrentUserCompanyProfile } from '../../src/api/users'
 import { refreshCachedUser, logout } from '../../src/api/auth'
 import { fetchApi } from '../../src/api/fetchApi'
+import { ApiError } from '../../src/api/errors'
 import { seedDemoUser } from '../fixtures/db'
 import type { User } from '../../src/mocks/data/users'
 
@@ -143,6 +144,21 @@ describe('users API — modo firebase (API real)', () => {
       last_name: 'Martínez',
     })
     expect(profile).not.toHaveProperty('legal_name')
+  })
+
+  test('getCurrentUserProfile devuelve undefined cuando el perfil no existe (404)', async () => {
+    mockFetch.mockRejectedValue(new ApiError(404))
+
+    const profile = await getCurrentUserProfile()
+
+    expect(mockFetch).toHaveBeenCalledWith('/users/profile')
+    expect(profile).toBeUndefined()
+  })
+
+  test('getCurrentUserProfile propaga errores que no son 404', async () => {
+    mockFetch.mockRejectedValue(new ApiError(500))
+
+    await expect(getCurrentUserProfile()).rejects.toThrow()
   })
 
   test('getCurrentUserProfile separa el nombre completo cuando el back manda first_name sin last_name', async () => {

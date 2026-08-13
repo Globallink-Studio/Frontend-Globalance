@@ -18,6 +18,7 @@ import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getCurrentContacts } from '../../../api/contacts'
 import { getFriendlyErrorMessage, isDepositLimitError } from '../../../api/errors'
+import { transactionSign } from '../../../utils/transactionSign'
 import { DEPOSIT_LIMITS, formatDepositLimit } from '../../../api/limits'
 import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
@@ -194,7 +195,7 @@ export default function WalletSummary() {
             </div>
             <ul className="wallet-transactions__list">
               {transactions.map((tx) => {
-                const isPositive = tx.type === 'deposit' || tx.type === 'conversion'
+                const sign = transactionSign(tx)
                 return (
                   <li key={tx.id} className="wallet-transaction">
                     <div className="wallet-transaction__info">
@@ -206,7 +207,7 @@ export default function WalletSummary() {
                         : tx.currency_code}
                     </span>
                     <span className="wallet-transaction__amount">
-                      {isPositive ? '+' : '-'}{tx.amount.toLocaleString('es-AR')}
+                      {sign}{tx.amount.toLocaleString('es-AR')}
                     </span>
                   </li>
                 )
@@ -624,10 +625,9 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
         currencyCode,
         amount: value,
         concept: concept.trim() || undefined,
-        ...(contact.email ? { payerEmail: contact.email } : {}),
         ...(contact.contact_type === 'account_number'
           ? { payerAccountNumber: contact.contact_value ?? contact.account ?? undefined }
-          : { payerAlias: contact.contact_value ?? contact.account ?? contact.alias ?? undefined }),
+          : { payerAlias: contact.contact_value ?? contact.alias ?? undefined }),
       })
       onDone(`Solicitud de ${value.toLocaleString('es-AR')} ${currencyCode} enviada a ${contact.alias}`)
     } catch (err) {

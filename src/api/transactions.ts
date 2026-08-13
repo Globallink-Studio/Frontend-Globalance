@@ -322,7 +322,6 @@ export async function createMoneyRequest(input: {
   currencyCode: string
   amount: number
   concept?: string
-  payerEmail?: string
   payerAlias?: string
   payerAccountNumber?: string
 }): Promise<Transaction> {
@@ -330,12 +329,11 @@ export async function createMoneyRequest(input: {
   if (!input.amount || input.amount <= 0) throw new Error('El monto debe ser mayor a 0')
 
   if (getAuthMode() === 'firebase') {
-    const hasPayer = Boolean(input.payerEmail || input.payerAlias || input.payerAccountNumber)
-    if (!hasPayer) throw new Error('Se necesita el correo, alias o número de cuenta del pagador')
+    const hasPayer = Boolean(input.payerAlias || input.payerAccountNumber)
+    if (!hasPayer) throw new Error('Se necesita el alias o número de cuenta del pagador')
     const resp = await fetchApi<ApiPaymentRequestResponse>('/payment-requests', {
       method: 'POST',
       body: {
-        ...(input.payerEmail ? { payerEmail: input.payerEmail } : {}),
         ...(input.payerAlias ? { payerAlias: input.payerAlias } : {}),
         ...(input.payerAccountNumber ? { payerAccountNumber: input.payerAccountNumber } : {}),
         currency: input.currencyCode,
@@ -345,7 +343,7 @@ export async function createMoneyRequest(input: {
     const pr = resp.paymentRequest
     await notifyCurrentUser(
       'Solicitud de dinero enviada',
-      `Solicitaste ${input.amount} ${input.currencyCode} a ${pr.payer_email}.`,
+      `Solicitaste ${input.amount} ${input.currencyCode} a ${input.recipient}.`,
       'request',
       '/dashboard/transactions',
     )
@@ -355,7 +353,7 @@ export async function createMoneyRequest(input: {
       currency_code: pr.currency_code,
       type: 'request',
       amount: Number(pr.amount),
-      description: `Solicitud de cobro a ${pr.payer_email}`,
+      description: `Solicitud de cobro a ${input.recipient}`,
       status: pr.status as TransactionStatus,
       created_at: pr.created_at,
     }

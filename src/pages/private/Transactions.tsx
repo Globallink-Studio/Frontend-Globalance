@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Filter, RotateCcw, Search } from 'lucide-react'
 import { getRecentTransactions, transactionStatusLabels } from '../../api/transactions'
+import { transactionSign } from '../../utils/transactionSign'
 import Select from '../../components/Select'
 import DatePicker from '../../components/DatePicker'
 import Pagination from '../../components/Pagination'
@@ -226,9 +227,7 @@ export default function Transactions() {
                     </thead>
                     <tbody>
                       {paged.map((t) => {
-                        const isIncome = t.type === 'deposit' || t.type === 'request' || (t.type === 'transfer' && t.direction === 'in')
-                        const isExpense = t.type === 'withdrawal' || (t.type === 'transfer' && t.direction !== 'in')
-                        const sign = isExpense ? '-' : isIncome ? '+' : ''
+                        const sign = transactionSign(t)
                         return (
                           <tr key={t.id} className="tx-table__row" onClick={() => setSelected(t)}>
                             <td className="tx-table__date">
@@ -254,7 +253,7 @@ export default function Transactions() {
                             <td>
                               <span
                                 className={`tx-table__amount${
-                                  isIncome ? ' tx-table__amount--income' : ''
+                                  sign === '+' ? ' tx-table__amount--income' : ''
                                 }`}
                               >
                                 {sign}

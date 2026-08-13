@@ -55,23 +55,30 @@ export const SignupFormPanel: React.FC<SignupFormPanelProps> = ({ accountType, o
         try {
             await register({ fullName, email: values.email, password: values.password, userType: isPersonal ? 'person' : 'company' });
             if (getAuthMode() === 'firebase') {
-                if (isPersonal) {
-                    await createCurrentUserPersonProfile({
-                        first_name: values.firstName.trim(),
-                        last_name: values.lastName.trim(),
-                        document: values.document.trim(),
-                        phone: values.phone.trim(),
-                        alias: generateAlias(values.firstName, values.lastName),
-                        display_currency: 'ARS',
-                    });
-                } else {
-                    await createCurrentUserCompanyProfile({
-                        legal_name: values.legalName.trim(),
-                        document: values.document.trim(),
-                        phone: values.phone.trim(),
-                        alias: generateAlias(values.legalName, ''),
-                        display_currency: 'ARS',
-                    });
+                try {
+                    if (isPersonal) {
+                        await createCurrentUserPersonProfile({
+                            first_name: values.firstName.trim(),
+                            last_name: values.lastName.trim(),
+                            document: values.document.trim(),
+                            phone: values.phone.trim(),
+                            alias: generateAlias(values.firstName, values.lastName),
+                            display_currency: 'ARS',
+                        });
+                    } else {
+                        await createCurrentUserCompanyProfile({
+                            legal_name: values.legalName.trim(),
+                            document: values.document.trim(),
+                            phone: values.phone.trim(),
+                            alias: generateAlias(values.legalName, ''),
+                            display_currency: 'ARS',
+                        });
+                    }
+                } catch {
+                    // La cuenta ya quedó creada en Firebase: redirigimos a completar el perfil
+                    // para que el usuario pueda reintentarlo sin chocar con "email en uso".
+                    navigate('/complete-profile');
+                    return;
                 }
             }
             navigate('/dashboard');

@@ -86,7 +86,7 @@ Este repositorio contiene únicamente la **aplicación frontend**, desarrollada 
 
 ### 💰 Cobrar (solicitudes de pago)
 
-- Solicitar un pago a un contacto o por alias/número de cuenta/correo.
+- Solicitar un pago a un contacto o por alias/número de cuenta.
 - Estados de la solicitud: pendiente, pagada, cancelada.
 - Las solicitudes se registran en el backend (`POST /payment-requests`).
 
@@ -328,7 +328,7 @@ Authorization: Bearer <Firebase ID Token>
 | **Transactions** | `POST /transactions/income` | Carga saldo (depósito) en una divisa. |
 | **Transactions** | `POST /transactions/transfers/internal` | Transfiere a otro usuario (por alias o número de cuenta). |
 | **Transactions** | `POST /transactions/exchange` | Convierte entre divisas. |
-| **Transactions** | `POST /payment-requests` | Solicita un cobro a otro usuario (por email, alias o número de cuenta). |
+| **Transactions** | `POST /payment-requests` | Solicita un cobro a otro usuario (por alias o número de cuenta). |
 | **Transactions** | `GET /payment-requests` | Solicitudes de cobro enviadas/recibidas. |
 | **Transactions** | `GET /payment-requests/{token}` | Consulta una solicitud de cobro. |
 | **Transactions** | `POST /payment-requests/{token}/pay` | Paga una solicitud de cobro recibida. |

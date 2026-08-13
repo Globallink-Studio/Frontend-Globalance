@@ -13,6 +13,7 @@ import {
   syncWithGoogleAccount,
 } from './auth'
 import { fetchApi } from './fetchApi'
+import { ApiError } from './errors'
 
 interface ApiAuthMe {
   uid: string
@@ -88,40 +89,45 @@ export async function getCurrentUserProfile(): Promise<PersonProfile | CompanyPr
     }
     return getMockCompanyProfiles().find((c) => c.user_id === user.id) ?? companyProfiles.find((c) => c.user_id === user.id)
   }
-  const resp = await fetchApi<{ data: ApiUserProfile }>('/users/profile')
-  const p = resp.data
-  if (!p) return undefined
+  try {
+    const resp = await fetchApi<{ data: ApiUserProfile }>('/users/profile')
+    const p = resp.data
+    if (!p) return undefined
 
-  const firstName = p.first_name ?? ''
-  const lastName = p.last_name ?? ''
-  const legalName = p.legal_name ?? ''
-  const firebaseName = getFirebaseDisplayName() ?? ''
-  const personName = `${firstName} ${lastName}`.trim() || firebaseName
+    const firstName = p.first_name ?? ''
+    const lastName = p.last_name ?? ''
+    const legalName = p.legal_name ?? ''
+    const firebaseName = getFirebaseDisplayName() ?? ''
+    const personName = `${firstName} ${lastName}`.trim() || firebaseName
 
-  let isPerson: boolean
-  if (p.user_type === 'company') isPerson = false
-  else if (p.user_type === 'person') isPerson = true
-  else if (legalName && !firstName && !lastName) isPerson = false
-  else isPerson = true
+    let isPerson: boolean
+    if (p.user_type === 'company') isPerson = false
+    else if (p.user_type === 'person') isPerson = true
+    else if (legalName && !firstName && !lastName) isPerson = false
+    else isPerson = true
 
-  if (isPerson) {
-    const fb = firebaseName ? splitFullName(firebaseName) : { first: '', last: '' }
-    const name = splitPersonName(firstName, lastName, fb)
+    if (isPerson) {
+      const fb = firebaseName ? splitFullName(firebaseName) : { first: '', last: '' }
+      const name = splitPersonName(firstName, lastName, fb)
+      return {
+        user_id: p.id,
+        first_name: name.first_name,
+        last_name: name.last_name,
+        document: p.document ?? '',
+        phone: p.phone ?? null,
+        timezone: p.timezone ?? undefined,
+      }
+    }
     return {
       user_id: p.id,
-      first_name: name.first_name,
-      last_name: name.last_name,
+      legal_name: legalName || personName,
       document: p.document ?? '',
       phone: p.phone ?? null,
       timezone: p.timezone ?? undefined,
     }
-  }
-  return {
-    user_id: p.id,
-    legal_name: legalName || personName,
-    document: p.document ?? '',
-    phone: p.phone ?? null,
-    timezone: p.timezone ?? undefined,
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return undefined
+    throw error
   }
 }
 
