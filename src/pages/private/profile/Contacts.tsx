@@ -292,14 +292,20 @@ export default function Contacts() {
             <div className="contacts-filters">
               <button
                 type="button"
-                onClick={() => setFilter('all')}
-                className={`contacts-chip${filter === 'all' ? ' contacts-chip--active' : ''}`}
+                onClick={() => {
+                  setFilter('all')
+                  setFavOnly(false)
+                }}
+                className={`contacts-chip${filter === 'all' && !favOnly ? ' contacts-chip--active' : ''}`}
               >
                 Todos
               </button>
               <button
                 type="button"
-                onClick={() => setFavOnly(!favOnly)}
+                onClick={() => {
+                  setFavOnly(!favOnly)
+                  setFilter('all')
+                }}
                 className={`contacts-chip${favOnly ? ' contacts-chip--active' : ''}`}
               >
                 <Star />
@@ -309,7 +315,10 @@ export default function Contacts() {
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setFilter(filter === cat ? 'all' : cat)}
+                  onClick={() => {
+                    setFilter(filter === cat ? 'all' : cat)
+                    setFavOnly(false)
+                  }}
                   className={`contacts-chip${filter === cat ? ' contacts-chip--active' : ''}`}
                 >
                   {cat}
