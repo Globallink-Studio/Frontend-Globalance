@@ -270,7 +270,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
             type="text"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
-            placeholder={sendMethod === 'accountNumber' ? '0000000002' : 'juan.cash'}
+            placeholder={sendMethod === 'accountNumber' ? 'GLB-1A2B3C4D' : 'juan.cash'}
             className="tx-form__control"
           />
         </div>

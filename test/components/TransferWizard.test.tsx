@@ -56,7 +56,7 @@ describe('TransferWizard — métodos de envío', () => {
     expect(screen.getByLabelText('Número de cuenta del destinatario')).toBeInTheDocument()
     expect(screen.getByLabelText('Número de cuenta del destinatario')).toHaveAttribute(
       'placeholder',
-      '0000000002',
+      'GLB-1A2B3C4D',
     )
 
     await user.click(screen.getByRole('radio', { name: 'Alias' }))
