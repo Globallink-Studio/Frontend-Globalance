@@ -55,12 +55,11 @@ Este repositorio contiene únicamente la **aplicación frontend**, desarrollada 
 
 ### 🔐 Autenticación y registro
 
-- Registro con email y contraseña.
+- Registro con email y contraseña: crea el **perfil completo** (Persona o Empresa) en el backend y deja la sesión iniciada.
 - Login con email y contraseña.
-- Login con Google (Firebase Authentication).
+- Login con Google (Firebase Authentication) con flujo de **completar perfil** (Persona o Empresa) al primer ingreso.
 - Cierre de sesión.
 - Rutas protegidas: el dashboard no es accesible sin sesión activa.
-- Flujo de **completar perfil** (Persona o Empresa) después del primer registro.
 
 ### 📊 Dashboard
 
@@ -85,6 +84,12 @@ Este repositorio contiene únicamente la **aplicación frontend**, desarrollada 
 - Wizard de 2 pasos con revisión antes de confirmar.
 - Validaciones de monto y destinatario.
 
+### 💰 Cobrar (solicitudes de pago)
+
+- Solicitar un pago a un contacto o por alias/número de cuenta/correo.
+- Estados de la solicitud: pendiente, pagada, cancelada.
+- Las solicitudes se registran en el backend (`POST /payment-requests`).
+
 ### 🔄 Conversiones
 
 - Conversión entre divisas con cotizaciones en tiempo real.
@@ -98,6 +103,7 @@ Este repositorio contiene únicamente la **aplicación frontend**, desarrollada 
 - Filtros por tipo, moneda, estado, fechas y búsqueda por concepto.
 - Chips de filtro rápido.
 - Modal de detalle de transacción.
+- Transferencias identificadas como **recibidas** o **enviadas**, con el signo (+/−) correcto según la dirección.
 
 ### 👥 Contactos
 
@@ -264,7 +270,7 @@ npm run test
 npm run test:watch
 ```
 
-> Actualmente el proyecto cuenta con **174 tests** que cubren autenticación, balances, transacciones, contactos, cotizaciones, dashboard y mensajes de error.
+> Actualmente el proyecto cuenta con **215 tests** que cubren autenticación, balances, transacciones, solicitudes de cobro, contactos, cotizaciones, dashboard y mensajes de error.
 
 ---
 
@@ -311,32 +317,31 @@ Authorization: Bearer <Firebase ID Token>
 | Módulo | Endpoint | Uso en el frontend |
 |---|---|---|
 | **Auth** | `POST /auth/sync` | Crea/actualiza el usuario en el backend, genera billetera y balances iniciales. |
+| **Auth** | `GET /auth/me` | Obtiene el usuario autenticado (se usa al restaurar la sesión). |
+| **Users** | `POST /users/profile` | Crea el perfil (Persona o Empresa) al registrarse con email o al completar el perfil. |
 | **Users** | `GET /users/profile` | Obtiene el perfil completo del usuario. |
 | **Users** | `PATCH /users/profile` | Actualiza los datos del perfil. |
-| **Users** | `DELETE /users/profile` | Elimina la cuenta (baja lógica, anonimiza datos y borra de Firebase Auth). |
-| **Users** | `PATCH /users/password` | Cambia la contraseña. |
+| **Users** | `DELETE /users/profile` | Elimina la cuenta del usuario. |
 | **Wallets** | `GET /wallet` | Obtiene la billetera del usuario. |
-| **Balances** | `GET /balances` | Obtiene los balances por divisa. |
-| **Balances** | `GET /balances/unified` | Calcula el saldo unificado en una moneda elegida. |
+| **Balances** | `GET /balances` | Obtiene los balances por divisa. El saldo unificado se calcula en el frontend con las cotizaciones. |
 | **Transactions** | `GET /transactions` | Historial de transacciones. |
-| **Transactions** | `POST /transactions/deposit` | Carga saldo en una divisa. |
-| **Transactions** | `POST /transactions/transfer` | Transfiere a otro usuario. |
-| **Transactions** | `POST /transactions/convert` | Convierte entre divisas. |
-| **Transactions** | `POST /transactions/request` | Solicita un pago a otro usuario. |
+| **Transactions** | `POST /transactions/income` | Carga saldo (depósito) en una divisa. |
+| **Transactions** | `POST /transactions/transfers/internal` | Transfiere a otro usuario (por alias o número de cuenta). |
+| **Transactions** | `POST /transactions/exchange` | Convierte entre divisas. |
+| **Transactions** | `POST /payment-requests` | Solicita un cobro a otro usuario (por email, alias o número de cuenta). |
 | **Transactions** | `GET /payment-requests` | Solicitudes de cobro enviadas/recibidas. |
+| **Transactions** | `GET /payment-requests/{token}` | Consulta una solicitud de cobro. |
+| **Transactions** | `POST /payment-requests/{token}/pay` | Paga una solicitud de cobro recibida. |
+| **Transactions** | `PATCH /payment-requests/{id}/cancel` | Cancela una solicitud de cobro. |
 | **Contacts** | `GET /contacts` | Lista de contactos. |
 | **Contacts** | `POST /contacts` | Crear contacto. |
-| **Contacts** | `PATCH /contacts/:id` | Editar contacto. |
 | **Contacts** | `DELETE /contacts/:id` | Eliminar contacto. |
-| **Cards** | `GET /cards` | Tarjetas del usuario. |
-| **Cards** | `POST /cards` | Agregar tarjeta. |
-| **Cards** | `PATCH /cards/:id` | Bloquear/desbloquear tarjeta. |
-| **Cards** | `DELETE /cards/:id` | Eliminar tarjeta. |
-| **Exchange** | `GET /exchange-rates` | Cotizaciones actuales. |
-| **Exchange** | `GET /exchange-rates/history` | Histórico de cotizaciones. |
-| **Assistant** | `POST /api/ai/assistant` | Consulta al asistente de IA. |
+| **Exchange** | `GET /exchange/rates` | Cotizaciones actuales. |
+| **Exchange** | `GET /exchange/rates/history` | Histórico de cotizaciones para el gráfico. |
+| **Exchange** | `GET /exchange/quotes` | Cotización puntual para una conversión. |
+| **Assistant** | `POST /ai/assistant` | Consulta al asistente de IA. |
 
-> En modo **mock** estos endpoints son interceptados por handlers locales que usan `localStorage` para persistir datos de prueba.
+> **Nota:** las **tarjetas**, los **métodos de pago** y las **notificaciones** se gestionan con datos locales (`localStorage`), sin endpoints de backend por ahora. En modo **mock**, el resto de los endpoints son interceptados por handlers locales que también persisten en `localStorage`.
 
 ---
 
