@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createTransfer } from '../api/transactions'
-import { getFriendlyErrorMessage } from '../api/errors'
 import { getCurrentBalances } from '../api/balances'
 import { getAuthMode } from '../api/auth'
 import { getWalletByAlias } from '../mocks/handlers/wallets'
@@ -24,7 +23,7 @@ interface TransferWizardProps {
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
   initialContactId?: string
@@ -121,7 +120,7 @@ export default function TransferWizard({ contacts, step, setStep, onDone, onErro
     } catch (err) {
       setReview(null)
       setStep(1)
-      onError(getFriendlyErrorMessage(err))
+      onError(err)
     } finally {
       setSending(false)
     }

@@ -935,7 +935,7 @@ export default function Contacts() {
             setTransferStep(1)
             setMessage(msg)
           }}
-          onError={setTransferError}
+          onError={(error) => setTransferError(typeof error === 'string' ? error : getFriendlyErrorMessage(error))}
           sending={sending}
           setSending={setSending}
         />

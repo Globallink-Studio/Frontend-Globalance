@@ -17,7 +17,7 @@ import { getQuotes } from '../../../api/exchangeRates'
 import { getCurrentCards } from '../../../api/cards'
 import { getPaymentMethodsList } from '../../../api/paymentMethods'
 import { getCurrentContacts } from '../../../api/contacts'
-import { getFriendlyErrorMessage } from '../../../api/errors'
+import { getFriendlyErrorMessage, isDepositLimitError } from '../../../api/errors'
 import Modal from '../../../components/Modal'
 import AccountDetailModal from './AccountDetailModal'
 import Select from '../../../components/Select'
@@ -97,8 +97,9 @@ export default function WalletSummary() {
     summary.find((s) => s.currency_code === displayCurrency)?.symbol ??
     (displayCurrency === 'USD' ? 'US$' : displayCurrency === 'EUR' ? '€' : '$')
 
-  const handleWizardError = (msg: string) => {
-    if (msg) {
+  const handleWizardError = (error: unknown) => {
+    const msg = typeof error === 'string' ? error : getFriendlyErrorMessage(error)
+    if (msg && !isDepositLimitError(error)) {
       if (depositStep === 2) {
         setDepositOpen(false)
         setDepositStep(1)
@@ -431,7 +432,7 @@ interface DepositWizardProps {
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
 }
@@ -439,6 +440,15 @@ interface DepositWizardProps {
 function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSending }: DepositWizardProps) {
   const [currencyCode, setCurrencyCode] = useState('ARS')
   const [amount, setAmount] = useState('')
+  const [focusAmount, setFocusAmount] = useState(0)
+  const amountInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (focusAmount > 0) {
+      amountInputRef.current?.focus()
+      setFocusAmount(0)
+    }
+  }, [focusAmount])
 
   const value = Number(amount)
   const isValid = value > 0
@@ -458,7 +468,8 @@ function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSe
     } catch (err) {
       setAmount('')
       setStep(1)
-      onError(getFriendlyErrorMessage(err))
+      if (isDepositLimitError(err)) setFocusAmount((n) => n + 1)
+      onError(err)
     } finally {
       setSending(false)
     }
@@ -542,6 +553,7 @@ function DepositWizard({ summary, step, setStep, onDone, onError, sending, setSe
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0"
           className="tx-form__control"
+          ref={amountInputRef}
         />
       </div>
 
@@ -558,7 +570,7 @@ interface RequestWizardProps {
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
 }
@@ -606,7 +618,7 @@ function RequestWizard({ summary, contacts, step, setStep, onDone, onError, send
       setAmount('')
       setConcept('')
       setStep(1)
-      onError(getFriendlyErrorMessage(err))
+      onError(err)
     } finally {
       setSending(false)
     }
@@ -730,7 +742,7 @@ interface ConvertWizardProps {
   step: number
   setStep: (v: number) => void
   onDone: (msg: string) => void
-  onError: (msg: string) => void
+  onError: (error: unknown) => void
   sending: boolean
   setSending: (v: boolean) => void
 }
@@ -748,7 +760,7 @@ function ConvertWizard({ summary, quotes, step, setStep, onDone, onError, sendin
     } catch (err) {
       setData(null)
       setStep(1)
-      onError(getFriendlyErrorMessage(err))
+      onError(err)
     } finally {
       setSending(false)
     }
